@@ -83,7 +83,7 @@ a {
 .navbar {
     background-color: var(--text-color-light);
     padding: 15px 0;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.290);
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -113,7 +113,7 @@ a {
 }
 
 .navbar .logo-text {
-    color: var(--text-color-dark);
+    color: #fc7a87;
 }
 
 .navbar .nav-links a {
