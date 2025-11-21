@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Pig Management, Simplified.</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="container">
+            <div class="logo">
+                <img src="Icons/Icon.png" alt="Poinky Logo">
+                <span class="logo-text">Poinky</span>
+            </div>
+            <nav class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#about">About</a>
+                <a href="#contact">Contact Us</a>
+            </nav>
+            <div class="auth-buttons">
+                <button class="btn btn-login">Login</button>
+                <button class="btn btn-signup">Sign Up</button>
+            </div>
+            <div class="hamburger" onclick="toggleMenu()">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero-section">
+            <div class="container">
+                <div class="hero-content">
+                    <h1>Smart Pig Management, Simplified.</h1>
+                    <p>Monitor your pigs' growth, expenses, and health – all in one place.</p>
+                    <button class="btn-get-started">Get started</button>
+                </div>
+            </div>
+            <div class="hero-bg-overlay"></div>
+            <img src="Background Images/BG.png" alt="Pig Farm Background" class="hero-bg-image">
+        </section>
+
+        <section id="features" class="features-section">
+            <div class="container">
+                <h2>Features</h2>
+                <div class="features-grid">
+                    <div class="feature-item">
+                        <img src="Icons/Pig.png" alt="View Pigs Icon" class="feature-icon">
+                        <h3>View Pigs</h3>
+                        <p>Track pig growth, status, and details easily</p>
+                    </div>
+                    <div class="feature-item">
+                        <img src="Icons/Business Report.png" alt="Expenses & Reports Icon" class="feature-icon">
+                        <h3>Expenses & Reports</h3>
+                        <p>Record feed, medicine, and other costs.</p>
+                    </div>
+                    <div class="feature-item">
+                        <img src="Icons/Alarm.png" alt="Reminders Icon" class="feature-icon">
+                        <h3>Reminders</h3>
+                        <p>Get notified about vaccination or feeding times.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="about-section">
+            <div class="container">
+                <h2>About Poinky</h2>
+                <div class="about-content">
+                    <div class="about-image">
+                        <img src="Icons/About.png" alt="Poinky App Interface">
+                    </div>
+                    <div class="about-text">
+                        <p>Poinky is a smart livestock management platform designed to help small and large-scale pig farms track pig growth, health, and farm expenses efficiently.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="why-switch-section">
+            <div class="container">
+                <h2>From Manual to Smart:<br>Why Farmers Switch to POINKY</h2>
+                <div class="switch-content">
+                    <div class="manual-list">
+                        <ul>
+                            <li><i class="fas fa-times-circle"></i> Manual record keeping in notebooks</li>
+                            <li><i class="fas fa-times-circle"></i> Forget vaccine dates</li>
+                            <li><i class="fas fa-times-circle"></i> Hard to monitor expenses</li>
+                            <li><i class="fas fa-times-circle"></i> No clear growth data</li>
+                            <li><i class="fas fa-times-circle"></i> Lost data or miscounted pigs</li>
+                        </ul>
+                    </div>
+                    <div class="poinky-list">
+                        <ul>
+                            <li><i class="fas fa-check-circle"></i> All-in-one digital tracking</li>
+                            <li><i class="fas fa-check-circle"></i> Automatic reminders</li>
+                            <li><i class="fas fa-check-circle"></i> Smart expense summaries</li>
+                            <li><i class="fas fa-check-circle"></i> Real-time pig growth analytics</li>
+                            <li><i class="fas fa-check-circle"></i> Cloud-based backup and storage</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="join-community-section">
+            <div class="container">
+                <div class="join-content">
+                    <div class="join-text">
+                        <h2>Join the POINKY Community!</h2>
+                        <p>Every Oink matters. Do it the PoinKY way.</p>
+                        <button class="btn btn-sign-up-bottom">Sign Up</button>
+                    </div>
+                    <div class="join-image">
+                        <img src="Icons/Community.png" alt="Happy Pig illustration">
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer id="contact" class="footer">
+        <div class="container">
+            <div class="footer-logo">
+                <img src="Icons/Footer.png" alt="Poinky Logo">
+                <span class="logo-text">Poinky</span>
+            </div>
+            <div class="footer-columns">
+                <div class="footer-col">
+                    <h4>Contact Us</h4>
+                    <ul>
+                        <li><i class="fas fa-phone-alt"></i> 123-456-7890</li>
+                        <li><i class="fas fa-envelope"></i> info@poinky.com</li>
+                        <li><i class="fas fa-globe"></i> poinky.com</li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Follow Us</h4>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2023 poinky. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
