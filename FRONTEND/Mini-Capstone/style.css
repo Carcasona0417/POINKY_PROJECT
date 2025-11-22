@@ -285,7 +285,7 @@ a {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 200px;
+    gap: 250px;
     margin-top: 40px;
 }
 
@@ -303,7 +303,7 @@ a {
 .about-text {
     flex: 1;
     min-width: 30%;
-    font-size: 1.5em;
+    font-size: 2em;
     color: var(--text-color-gray);
 }
 
@@ -555,32 +555,39 @@ a {
     width: 100%;
     max-width: 768px;
     position: relative;
-    display: block; /* ADD THIS */
+    display: block;
 }
 
+/* Close button - hidden on Log In, visible on Sign Up */
 .close-btn {
     position: absolute;
-    top: 15px; /* CHANGED */
-    right: 15px; /* CHANGED */
+    top: 15px;
+    right: 15px;
     background: rgba(0, 0, 0, 0.7);
     border: none;
     font-size: 24px;
     cursor: pointer;
     color: white;
-    z-index: 10;
+    z-index: 1001;
     width: 35px;
     height: 35px;
     border-radius: 50%;
-    display: flex;
+    display: none; /* Hidden by default (Log In) */
     align-items: center;
     justify-content: center;
+    transition: background 0.3s ease;
+}
+
+/* Show close button when auth container has active class (Sign Up) */
+.auth-container.active .close-btn {
+    display: flex;
 }
 
 .close-btn:hover {
     background: rgba(0, 0, 0, 0.9);
 }
 
-/* Auth Container Styles - Fixed to avoid conflicts */
+/* Auth Container Styles - FIXED SPACING */
 .auth-container {
     background-color: #fff;
     border-radius: 30px;
@@ -589,29 +596,52 @@ a {
     overflow: hidden;
     width: 768px;
     max-width: 100%;
-    min-height: 480px;
+    min-height: 520px; /* Increased height */
+}
+
+.auth-container form {
+    background-color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* Changed from center */
+    flex-direction: column;
+    padding: 30px 40px; /* Reduced top padding */
+    height: 100%;
+    overflow-y: auto;
+}
+
+/* Adjust form content spacing to prevent overflow */
+.auth-container form h1 {
+    margin-bottom: 10px; /* Reduced */
+    font-size: 28px;
+}
+
+.modal .social-icons {
+    margin: 10px 0; /* Reduced */
+}
+
+.auth-container span {
+    font-size: 12px;
+    margin: 8px 0; /* Reduced */
 }
 
 .auth-container p {
     font-size: 14px;
     line-height: 20px;
     letter-spacing: 0.3px;
-    margin: 20px 0;
-}
-
-.auth-container span {
-    font-size: 12px;
+    margin: 15px 0; /* Reduced */
 }
 
 .auth-container a {
     color: #333;
     font-size: 13px;
     text-decoration: none;
-    margin: 15px 0 10px;
+    margin: 10px 0 8px; /* Reduced */
+    transition: color 0.3s ease;
 }
 
 .auth-container button {
-    background-color: var(--primary-color); /* Using your pink color */
+    background-color: var(--primary-color);
     color: var(--text-color-light);
     font-size: 12px;
     padding: 10px 45px;
@@ -620,13 +650,16 @@ a {
     font-weight: 600;
     letter-spacing: 0.5px;
     text-transform: uppercase;
-    margin-top: 10px;
+    margin-top: 8px; /* Reduced */
+    margin-bottom: 5px; /* Added bottom margin */
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: all 0.3s ease;
 }
 
 .auth-container button:hover {
-    background-color: #e66a6a; /* Slightly darker pink */
+    background-color: #e66a6a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .auth-container button.hidden {
@@ -638,25 +671,72 @@ a {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-.auth-container form {
-    background-color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    padding: 0 40px;
-    height: 100%;
-}
-
+/* Input field styles with borders */
 .auth-container input {
-    background-color: #eee;
-    border: none;
-    margin: 8px 0;
-    padding: 10px 15px;
+    background-color: #f8f8f8;
+    border: 2px solid #e0e0e0;
+    margin: 6px 0; /* Reduced */
+    padding: 10px 15px; /* Slightly reduced */
     font-size: 13px;
     border-radius: 8px;
     width: 100%;
     outline: none;
+    transition: all 0.3s ease;
+    font-family: var(--font-body);
+}
+
+.auth-container input:focus {
+    border-color: var(--primary-color);
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(255, 125, 125, 0.1);
+}
+
+.auth-container input:hover {
+    border-color: #ccc;
+}
+
+/* Toggle link styles */
+.auth-toggle-text {
+    display: block;
+    text-align: center;
+    margin-top: 15px; /* Reduced */
+    padding-top: 15px; /* Reduced */
+    border-top: 1px solid #eee;
+    font-size: 14px;
+    color: #666;
+}
+
+.auth-toggle-text a {
+    color: var(--primary-color);
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.auth-toggle-text a:hover {
+    color: #e66a6a;
+    background-color: rgba(255, 125, 125, 0.1);
+    transform: translateY(-1px);
+}
+
+.auth-toggle-text a::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 50%;
+    background-color: var(--primary-color);
+    transition: all 0.3s ease;
+}
+
+.auth-toggle-text a:hover::after {
+    width: 100%;
+    left: 0;
 }
 
 .form-container {
@@ -702,7 +782,7 @@ a {
 }
 
 .modal .social-icons {
-    margin: 20px 0;
+    margin: 15px 0; /* Adjusted */
 }
 
 .modal .social-icons a {
@@ -721,6 +801,8 @@ a {
 .modal .social-icons a:hover {
     background-color: #f0f0f0;
     transform: translateY(-2px);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
 }
 
 .toggle-container {
@@ -741,9 +823,9 @@ a {
 }
 
 .toggle {
-    background-color: var(--primary-color); /* Using your pink color */
+    background-color: var(--primary-color);
     height: 100%;
-    background: linear-gradient(to right, var(--primary-color), #ff9d9d); /* Pink gradient */
+    background: linear-gradient(to right, var(--primary-color), #ff9d9d);
     color: #fff;
     position: relative;
     left: -100%;
@@ -822,7 +904,7 @@ a {
         width: 100%;
         background-color: var(--text-color-light);
         position: absolute;
-        top: 70px; /* Adjust based on navbar height */
+        top: 70px;
         left: 0;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         border-top: 1px solid #eee;
@@ -844,7 +926,7 @@ a {
         padding: 15px 20px;
         background-color: var(--text-color-light);
         position: absolute;
-        top: calc(70px + 3 * 50px); /* Adjust based on navbar height + nav links height */
+        top: calc(70px + 3 * 50px);
         left: 0;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         border-top: 1px solid #eee;
@@ -896,10 +978,58 @@ a {
         justify-content: center;
     }
 
-    /* Modal responsive adjustments */
+    .social-icons {
+        justify-content: center;
+    }
+
+    /* Modal responsive adjustments - CLOSE BUTTON ONLY ON SIGN UP */
+    .modal-content {
+        max-width: 90%;
+        margin: 20px;
+        position: relative;
+    }
+    
     .auth-container {
-        width: 90%;
-        min-height: 450px;
+        width: 100%;
+        min-height: 480px;
+        border-radius: 25px;
+    }
+    
+    .close-btn {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: rgba(0, 0, 0, 0.7);
+        width: 32px;
+        height: 32px;
+        font-size: 20px;
+        z-index: 1001;
+        /* Hide close button by default (for Log In) */
+        display: none;
+    }
+    
+    /* Show close button only when Sign Up form is active */
+    .auth-container.active .close-btn {
+        display: flex;
+    }
+    
+    /* Ensure modal content fits properly */
+    .auth-container form {
+        padding: 25px 35px;
+    }
+    
+    /* Adjust toggle container for smaller screens */
+    .toggle-container {
+        border-radius: 120px 0 0 80px;
+        z-index: 3;
+    }
+    
+    .auth-container.active .toggle-container {
+        border-radius: 0 120px 80px 0;
+    }
+    
+    .toggle-panel {
+        padding: 0 25px;
     }
 }
 
@@ -965,6 +1095,10 @@ a {
         text-align: center;
     }
 
+    .about-image img {
+        width: 85%;
+    }
+
     /* Why Switch Section Adjustments */
     .switch-content {
         flex-direction: column;
@@ -1027,17 +1161,126 @@ a {
         padding-top: 15px;
     }
 
-    /* Modal mobile adjustments */
+    /* ========== MODAL FIXES FOR 768px ========== */
+    .modal-content {
+        max-width: 90%;
+        margin: 20px;
+    }
+    
     .auth-container {
-        min-height: 400px;
+        width: 100%;
+        min-height: 520px; /* Increased height */
+        border-radius: 20px;
     }
     
+    /* Fix form container layout */
+    .form-container {
+        position: relative !important;
+        width: 100% !important;
+        height: auto;
+    }
+    
+    .sign-in,
+    .sign-up {
+        width: 100%;
+        position: relative;
+    }
+    
+    /* Remove desktop transforms */
+    .auth-container .sign-in {
+        transform: translateX(0) !important;
+    }
+    
+    .auth-container .sign-up {
+        transform: translateX(0) !important;
+        opacity: 1 !important;
+    }
+    
+    .auth-container.active .sign-in {
+        transform: translateX(0) !important;
+    }
+    
+    .auth-container.active .sign-up {
+        transform: translateX(0) !important;
+    }
+    
+    /* Stack forms vertically and show both */
+    .auth-container .form-container {
+        display: block;
+        height: auto;
+    }
+    
+    .sign-in {
+        padding-bottom: 25px; /* Reduced */
+        border-bottom: 2px solid #f0f0f0;
+        margin-bottom: 25px; /* Reduced */
+    }
+    
+    .sign-up {
+        padding-top: 0;
+    }
+    
+    /* Hide the toggle container on mobile */
     .toggle-container {
-        border-radius: 100px 0 0 100px;
+        display: none !important;
     }
     
-    .auth-container.active .toggle-container {
-        border-radius: 0 100px 100px 0;
+    .close-btn {
+        /* Don't force display: flex here - let JavaScript handle it */
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.7);
+        width: 35px;
+        height: 35px;
+        font-size: 20px;
+        z-index: 1001;
+        /* Let JavaScript control display property */
+    }
+    
+    /* Form adjustments */
+    .auth-container form {
+        padding: 25px 30px; /* Reduced top padding */
+        height: auto;
+        min-height: 200px;
+        justify-content: flex-start;
+    }
+    
+    .auth-container input {
+        padding: 10px 12px; /* Reduced */
+        font-size: 14px;
+        border-width: 1px;
+        margin: 5px 0; /* Reduced */
+    }
+    
+    .auth-container button {
+        padding: 10px 30px; /* Reduced */
+        font-size: 14px;
+        width: 100%;
+        margin-top: 10px; /* Reduced */
+        margin-bottom: 5px;
+    }
+    
+    /* Mobile toggle text */
+    .auth-toggle-text {
+        margin-top: 12px; /* Reduced */
+        padding-top: 12px; /* Reduced */
+        font-size: 14px;
+    }
+    
+    .auth-toggle-text a {
+        padding: 6px 10px; /* Reduced */
+        display: inline-block;
+    }
+    
+    /* Ensure proper modal display */
+    .modal {
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal.active {
+        display: flex;
     }
 }
 
@@ -1114,22 +1357,82 @@ a {
         font-size: 1.2em;
     }
 
-    /* Modal small screen adjustments */
+    /* ========== MODAL FIXES FOR 480px ========== */
+    .modal-content {
+        max-width: 95%;
+        margin: 10px;
+    }
+    
     .auth-container {
-        width: 95%;
-        min-height: 380px;
-    }
-    
-    .auth-container form {
-        padding: 0 20px;
-    }
-    
-    .toggle-panel {
-        padding: 0 15px;
+        min-height: 480px; /* Adjusted */
+        border-radius: 15px;
     }
     
     .close-btn {
-        top: -35px;
-        right: -5px;
+        /* Same as above - no forced display */
+        top: 8px;
+        right: 8px;
+        width: 30px;
+        height: 30px;
+        font-size: 18px;
+    }
+    
+    .auth-container form {
+        padding: 20px; /* Reduced */
+    }
+    
+    .auth-container h1 {
+        font-size: 1.4em; /* Smaller */
+        margin-bottom: 10px; /* Reduced */
+    }
+    
+    .auth-container p {
+        font-size: 12px; /* Smaller */
+        margin: 10px 0; /* Reduced */
+    }
+    
+    .auth-container input {
+        padding: 8px 12px; /* Reduced */
+        font-size: 13px;
+        margin: 4px 0; /* Reduced */
+    }
+    
+    .auth-container button {
+        padding: 8px 20px; /* Reduced */
+        font-size: 12px;
+        margin-top: 8px;
+    }
+    
+    .modal .social-icons {
+        margin: 10px 0; /* Reduced */
+    }
+    
+    .modal .social-icons a {
+        width: 32px; /* Smaller */
+        height: 32px; /* Smaller */
+        margin: 0 2px;
+    }
+    
+    /* Adjust form spacing for very small screens */
+    .sign-in {
+        padding-bottom: 15px; /* Reduced */
+        margin-bottom: 15px; /* Reduced */
+    }
+    
+    .auth-toggle-text {
+        margin-top: 10px; /* Reduced */
+        padding-top: 10px; /* Reduced */
+        font-size: 12px; /* Smaller */
+    }
+    
+    /* Ensure modal is centered properly */
+    .modal {
+        padding: 10px;
+        align-items: center;
+        overflow-y: auto;
+    }
+    
+    .modal.active {
+        align-items: center;
     }
 }
