@@ -22,8 +22,7 @@
                 <a href="#contact">Contact Us</a>
             </nav>
             <div class="auth-buttons">
-                <button class="btn btn-login">Login</button>
-                <button class="btn btn-signup">Sign Up</button>
+                <button class="btn btn-signup triggerBtn" id="triggerModal">Sign Up</button>
             </div>
             <div class="hamburger" onclick="toggleMenu()">
                 <i class="fas fa-bars"></i>
@@ -31,13 +30,68 @@
         </div>
     </header>
 
+    <!-- Modal Structure -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <button class="close-btn" id="closeModal">&times;</button>
+            <div class="auth-container" id="authContainer">
+                <div class="form-container sign-up">
+                    <form>
+                        <h1>Create Account</h1>
+                        <div class="social-icons">
+                            <a href="#" class="icon"><i class="fa-brands fa-google-plus-g"></i></a>
+                            <a href="#" class="icon"><i class="fa-brands fa-facebook-f"></i></a>
+                            <a href="#" class="icon"><i class="fa-brands fa-github"></i></a>
+                            <a href="#" class="icon"><i class="fa-brands fa-linkedin-in"></i></a>
+                        </div>
+                        <span>or use your email for registration</span>
+                        <input type="text" placeholder="Name">
+                        <input type="email" placeholder="Email">
+                        <input type="password" placeholder="Password">
+                        <button>Sign Up</button>
+                    </form>
+                </div>
+                <div class="form-container sign-in">
+                    <form>
+                        <h1>Log In</h1>
+                        <div class="social-icons">
+                            <a href="#" class="icon"><i class="fa-brands fa-google-plus-g"></i></a>
+                            <a href="#" class="icon"><i class="fa-brands fa-facebook-f"></i></a>
+                            <a href="#" class="icon"><i class="fa-brands fa-github"></i></a>
+                            <a href="#" class="icon"><i class="fa-brands fa-linkedin-in"></i></a>
+                        </div>
+                        <span>or use your email password</span>
+                        <input type="email" placeholder="Email" required>
+                        <input type="password" placeholder="Password" required>
+                        <a href="#">Forget Your Password?</a>
+                        <button>Log In</button>
+                    </form>
+                </div>
+                <div class="toggle-container">
+                    <div class="toggle">
+                        <div class="toggle-panel toggle-left">
+                            <h1>Welcome Back!</h1>
+                            <p>Enter your personal details to use all of site features</p>
+                            <button class="hidden" id="login">Log In</button>
+                        </div>
+                        <div class="toggle-panel toggle-right">
+                            <h1>Hello, Users!</h1>
+                            <p>Register with your personal details to use all of site features</p>
+                            <button class="hidden" id="register">Sign Up</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <main>
         <section class="hero-section" id="first-page">
             <div class="container">
                 <div class="hero-content">
                     <h1>Smart Pig Management, Simplified.</h1>
                     <p>Monitor your pigs' growth, expenses, and health – all in one place.</p>
-                    <button class="btn-get-started">Get started</button>
+                    <button class="btn btn-get-started">Get started</button>
                 </div>
             </div>
             <div class="hero-bg-overlay"></div>
@@ -112,8 +166,8 @@
                 <div class="join-content">
                     <div class="join-text">
                         <h2>Join the POINKY Community!</h2>
-                        <p>Every Oink matters. Do it the PoinKY way.</p>
-                        <button class="btn btn-sign-up-bottom">Sign Up</button>
+                        <p>Every Oink matters. Do it the Poinky way.</p>
+                        <button class="btn btn-sign-up-bottom" id="triggerModalBottom">Sign Up</button>
                     </div>
                     <div class="join-image">
                         <img src="Icons/Community.png" alt="Happy Pig illustration">
@@ -153,6 +207,7 @@
         </div>
     </footer>
 
+    <!-- Add modal JavaScript -->
     <script src="script.js"></script>
 </body>
 </html>
