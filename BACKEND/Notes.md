@@ -32,3 +32,4 @@ because it's the url of each pages
 
 # WHAT IS NEED TO BE ADDED
 - OTP for forget password using SMTP
+- Make the password hashed when creating account password (needs to install bcrypt)
