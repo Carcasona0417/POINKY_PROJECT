@@ -19,10 +19,11 @@
             <nav class="nav-links">
                 <a href="#features">Features</a>
                 <a href="#about">About</a>
-                <a href="#contact">Contact Us</a>
+                <a href="#contact">Contact</a>
             </nav>
             <div class="auth-buttons">
-                <button class="btn btn-signup triggerBtn" id="triggerModal">Sign Up</button>
+                <button class="btn btn-login triggerBtn" id="triggerLogin">Login</button>
+                <button class="btn btn-signup triggerBtn" id="triggerSignup">Sign Up</button>
             </div>
             <div class="hamburger" id="hamburgerMenu">
                 <i class="fas fa-bars"></i>
@@ -33,7 +34,6 @@
     <!-- Modal Structure -->
     <div class="modal" id="loginModal">
         <div class="modal-content">
-            <button class="close-btn" id="closeModal">&times;</button>
             <div class="auth-container" id="authContainer">
                 <div class="form-container sign-up">
                     <form>
@@ -97,7 +97,7 @@
                 <div class="hero-content">
                     <h1>Smart Pig Management, Simplified.</h1>
                     <p>Monitor your pigs' growth, expenses, and health – all in one place.</p>
-                    <button class="btn btn-get-started">Get started</button>
+                    <button class="btn btn-get-started triggerBtn" id="triggerGetStarted">Get started</button>
                 </div>
             </div>
             <div class="hero-bg-overlay"></div>
@@ -173,7 +173,7 @@
                     <div class="join-text">
                         <h2>Join the POINKY Community!</h2>
                         <p>Every Oink matters. Do it the Poinky way.</p>
-                        <button class="btn btn-sign-up-bottom" id="triggerModalBottom">Sign Up</button>
+                        <button class="btn btn-sign-up-bottom triggerBtn" id="triggerModalBottom">Sign Up</button>
                     </div>
                     <div class="join-image">
                         <img src="Icons/Community.png" alt="Happy Pig illustration">
@@ -213,7 +213,6 @@
         </div>
     </footer>
 
-    <!-- Add modal JavaScript -->
     <script src="script.js"></script>
     
 </body>
