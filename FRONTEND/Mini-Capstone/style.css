@@ -788,6 +788,7 @@ a {
     width: 50%;
     z-index: 2;
     opacity: 1;
+    margin-top: 10%;
 }
 
 .sign-up {
@@ -795,6 +796,7 @@ a {
     width: 50%;
     opacity: 0;
     z-index: 1;
+    margin-top: 10%;
 }
 
 /* FIX: Instant form switching without animation delay */
@@ -841,11 +843,6 @@ a {
 
 .modal .social-icons {
     margin: 10px 0;
-}
-
-.auth-container span {
-    font-size: 12px;
-    margin: 8px 0;
 }
 
 .auth-container p {
@@ -1162,7 +1159,7 @@ a {
         justify-content: center;
     }
 
-    .social-icons {
+        .social-icons {
         justify-content: center;
     }
 
@@ -1331,12 +1328,12 @@ a {
         justify-content: center;
     }
     
-    .social-icons {
-        justify-content: center;
-    }
-    
     .footer-bottom {
         padding-top: 15px;
+    }
+
+    .social-icons {
+        justify-content: center;
     }
 
     /* ========== MODAL FIXES FOR 768px ========== */
@@ -1502,7 +1499,7 @@ a {
         font-size: 0.9em;
         margin-bottom: 6px;
     }
-    
+
     .social-icons a {
         font-size: 1.2em;
     }
@@ -1543,7 +1540,7 @@ a {
         font-size: 12px;
         margin-top: 8px;
     }
-    
+
     .modal .social-icons {
         margin: 10px 0;
     }
