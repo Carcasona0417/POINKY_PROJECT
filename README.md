@@ -20,6 +20,7 @@ ADD THIS PACKAGES, EXTENSIONS, AND DEPENDENCIES
 - npm i cors        => The purpose for this is to block unfamiliar host request
 - npm install "express@5" => for the framework express this is where all the API POST will stored
 - npm i -D nodemon  => this will run your server continouosly just type npm run dev
+- npm i bcrypt      => for the hash to function (not integrated yet)
 
 NOTES: If still error ask OSKAR :> 
 
