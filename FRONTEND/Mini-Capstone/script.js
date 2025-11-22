@@ -57,15 +57,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Modal functionality
+    // Modal functionality - UPDATED FOR LOGIN BUTTON
     const modal = document.getElementById('loginModal');
-    const triggerBtn = document.getElementById('triggerModal');
+    const triggerBtn = document.getElementById('triggerSignup');
+    const triggerLoginBtn = document.getElementById('triggerLogin');
+    const triggerGetStartedBtn = document.getElementById('triggerGetStarted');
     const triggerBtnBottom = document.getElementById('triggerModalBottom');
     const closeBtn = document.getElementById('closeModal');
 
-    // Open modal from buttons
-    if (triggerBtn) triggerBtn.addEventListener('click', openModal);
-    if (triggerBtnBottom) triggerBtnBottom.addEventListener('click', openModal);
+    // Open modal from buttons - UPDATED
+    if (triggerBtn) triggerBtn.addEventListener('click', () => openModal('signup'));
+    if (triggerLoginBtn) triggerLoginBtn.addEventListener('click', () => openModal('login'));
+    if (triggerGetStartedBtn) triggerGetStartedBtn.addEventListener('click', () => openModal('signup'));
+    if (triggerBtnBottom) triggerBtnBottom.addEventListener('click', () => openModal('signup'));
 
     // Close modal
     if (closeBtn) closeBtn.addEventListener('click', closeModal);
@@ -172,32 +176,45 @@ function setupMobileFormToggles() {
     });
 }
 
-// Open modal function
-function openModal() {
+// Open modal function - FIXED FOR INSTANT SIGN UP DISPLAY
+function openModal(mode = 'signup') {
     const modal = document.getElementById('loginModal');
     const authContainer = document.getElementById('authContainer');
     const closeBtn = document.getElementById('closeModal');
+    const signInForm = document.querySelector('.sign-in');
+    const signUpForm = document.querySelector('.sign-up');
     
     if (modal) {
+        // First, set the form state BEFORE showing the modal
+        if (window.innerWidth <= 768) {
+            // Mobile layout
+            if (signInForm && signUpForm) {
+                if (mode === 'login') {
+                    signInForm.style.display = 'block';
+                    signUpForm.style.display = 'none';
+                    if (closeBtn) closeBtn.style.display = 'none';
+                } else {
+                    signInForm.style.display = 'none';
+                    signUpForm.style.display = 'block';
+                    if (closeBtn) closeBtn.style.display = 'flex';
+                }
+            }
+        } else {
+            // Desktop layout - set the state instantly without animation delay
+            if (authContainer) {
+                if (mode === 'login') {
+                    authContainer.classList.remove('active');
+                    if (closeBtn) closeBtn.style.display = 'none';
+                } else {
+                    authContainer.classList.add('active');
+                    if (closeBtn) closeBtn.style.display = 'flex';
+                }
+            }
+        }
+        
+        // Now show the modal with the correct form already set
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
-        
-        // Set initial close button state
-        if (closeBtn) {
-            closeBtn.style.display = authContainer?.classList.contains('active') ? 'flex' : 'none';
-        }
-        
-        // Handle form display based on screen size
-        if (window.innerWidth <= 768) {
-            const signInForm = document.querySelector('.sign-in');
-            const signUpForm = document.querySelector('.sign-up');
-            if (signInForm && signUpForm) {
-                signInForm.style.display = 'block';
-                signUpForm.style.display = 'none';
-            }
-        } else if (authContainer) {
-            authContainer.classList.remove('active');
-        }
     }
 }
 

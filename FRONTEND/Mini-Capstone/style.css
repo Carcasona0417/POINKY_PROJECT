@@ -118,7 +118,7 @@ a {
 
 .navbar .nav-links a {
     color: var(--text-color-dark);
-    margin-left: 30px;
+    margin-left: 50px;
     font-weight: 500;
     transition: color 0.3s ease;
 }
@@ -127,8 +127,11 @@ a {
     color: var(--primary-color);
 }
 
-.navbar .auth-buttons .btn {
-    margin-left: 15px;
+/* UPDATED: Auth buttons styling for Login and Sign Up */
+.navbar .auth-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Added gap between buttons */
 }
 
 .navbar .auth-buttons .btn-login {
@@ -136,11 +139,27 @@ a {
     color: var(--primary-color);
     border: 1px solid var(--primary-color);
     padding: 10px 20px;
+    transition: all 0.3s ease;
 }
 
 .navbar .auth-buttons .btn-login:hover {
     background-color: var(--primary-color);
     color: var(--text-color-light);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 125, 125, 0.3);
+}
+
+.navbar .auth-buttons .btn-signup {
+    background-color: var(--primary-color);
+    color: var(--text-color-light);
+    padding: 10px 20px;
+    transition: all 0.3s ease;
+}
+
+.navbar .auth-buttons .btn-signup:hover {
+    background-color: #e66a6a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 125, 125, 0.3);
 }
 
 .hamburger {
@@ -207,11 +226,14 @@ a {
     font-size: 1.1em;
     border: none;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
 }
 
 .btn-get-started:hover {
     background-color: #E74A5A; /* Slight off-white hover */
     color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
 }
 
 .hero-content h1 {
@@ -228,6 +250,10 @@ a {
     max-width: 500px; /* Constrain width of description */
 }
 
+/* Features Section */
+.features-section {
+    padding: var(--padding-section);
+}
 
 .features-section h2 {
     color: #E74A5A;
@@ -312,14 +338,45 @@ a {
     color: #E74A5A;
 }
 
-/* Why Switch Section */
+/* Why Switch Section - ENHANCED WITH COLORS AND SHAPES */
 .why-switch-section {
     padding: var(--padding-section);
     background-color: var(--text-color-light);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Background decorative shapes */
+.why-switch-section::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    right: -100px;
+    width: 300px;
+    height: 300px;
+    background: linear-gradient(135deg, rgba(255, 125, 125, 0.1) 0%, rgba(255, 125, 125, 0.05) 100%);
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.why-switch-section::after {
+    content: '';
+    position: absolute;
+    bottom: -80px;
+    left: -80px;
+    width: 250px;
+    height: 250px;
+    background: linear-gradient(135deg, rgba(78, 205, 196, 0.1) 0%, rgba(78, 205, 196, 0.05) 100%);
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    z-index: 1;
 }
 
 .why-switch-section h2 {
     margin-bottom: 40px;
+    position: relative;
+    z-index: 2;
+    text-align: center; /* Added center alignment */
+    width: 100%; /* Ensure full width */
 }
 
 .switch-content {
@@ -327,41 +384,186 @@ a {
     flex-wrap: wrap;
     justify-content: center;
     gap: 50px;
+    position: relative;
+    z-index: 2;
 }
 
-.manual-list, .poinky-list {
+/* Manual List - Enhanced with gradient and shape */
+.manual-list {
     flex: 1;
     min-width: 300px;
     max-width: 500px;
-    background-color: var(--secondary-color);
-    padding: 30px;
-    border-radius: var(--border-radius);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    padding: 35px 30px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(231, 76, 60, 0.1);
+    border: 1px solid rgba(231, 76, 60, 0.1);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.manual-list::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background: linear-gradient(90deg, #e74c3c, #ff7979);
+}
+
+.manual-list::after {
+    content: '';
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, rgba(231, 76, 60, 0.1) 0%, rgba(231, 76, 60, 0.05) 100%);
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.manual-list:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(231, 76, 60, 0.15);
+}
+
+/* Poinky List - Enhanced with gradient and shape */
+.poinky-list {
+    flex: 1;
+    min-width: 300px;
+    max-width: 500px;
+    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+    padding: 35px 30px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(39, 174, 96, 0.1);
+    border: 1px solid rgba(39, 174, 96, 0.1);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.poinky-list::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background: linear-gradient(90deg, #27ae60, #2ecc71);
+}
+
+.poinky-list::after {
+    content: '';
+    position: absolute;
+    bottom: -20px;
+    left: -20px;
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, rgba(39, 174, 96, 0.1) 0%, rgba(39, 174, 96, 0.05) 100%);
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.poinky-list:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(39, 174, 96, 0.15);
 }
 
 .manual-list ul, .poinky-list ul {
     list-style: none;
     padding: 0;
+    position: relative;
+    z-index: 2;
 }
 
 .manual-list li, .poinky-list li {
     display: flex;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 18px;
     font-size: 1.1em;
     color: var(--text-color-dark);
+    padding: 12px 15px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(5px);
+}
+
+.manual-list li:hover, .poinky-list li:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateX(5px);
+}
+
+.manual-list li:last-child, .poinky-list li:last-child {
+    margin-bottom: 0;
 }
 
 .manual-list li i {
-    color: #e74c3c; /* Red for 'times' */
+    color: #e74c3c;
     margin-right: 15px;
     font-size: 1.3em;
+    background: rgba(231, 76, 60, 0.1);
+    padding: 10px;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.manual-list li:hover i {
+    background: rgba(231, 76, 60, 0.2);
+    transform: scale(1.1);
 }
 
 .poinky-list li i {
-    color: #27ae60; /* Green for 'check' */
+    color: #27ae60;
     margin-right: 15px;
     font-size: 1.3em;
+    background: rgba(39, 174, 96, 0.1);
+    padding: 10px;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.poinky-list li:hover i {
+    background: rgba(39, 174, 96, 0.2);
+    transform: scale(1.1);
+}
+
+/* Section header enhancement */
+.why-switch-section h2 {
+    background: linear-gradient(135deg, #E74A5A, #FF7D7D);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: inline-block;
+    position: relative;
+    align-items: center;
+}
+
+.why-switch-section h2::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 3px;
+    background: linear-gradient(90deg, #E74A5A, #FF7D7D);
+    border-radius: 2px;
 }
 
 /* Join Community Section */
@@ -419,11 +621,14 @@ a {
     color: var(--primary-color);
     padding: 15px 30px;
     font-size: 1.1em;
+    transition: all 0.3s ease;
 }
 
 .btn-sign-up-bottom:hover {
     background-color: #f0f0f0;
     color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Footer - Fixed Spacing */
@@ -452,8 +657,8 @@ a {
 
 .footer-logo img {
     margin-right: 10px;
-    height: 40px;
-    width: 40px;
+    height: 100px;
+    width: 100px;
     border-radius: 50%;
     object-fit: cover;
 }
@@ -466,7 +671,7 @@ a {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 40px; /* Reduced from 50px */
+    gap: 50%; /* Reduced from 50px */
     width: 100%;
     max-width: 800px;
     margin-bottom: 30px; /* Reduced from 40px */
@@ -531,7 +736,7 @@ a {
     margin: 0;
 }
 
-/* Modal Styles - Fixed and Updated */
+/* Modal Styles - FIXED FOR INSTANT DISPLAY */
 .modal {
     display: none;
     position: fixed;
@@ -558,36 +763,7 @@ a {
     display: block;
 }
 
-/* Close button - hidden on Log In, visible on Sign Up */
-.close-btn {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: rgba(0, 0, 0, 0.7);
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: white;
-    z-index: 1001;
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    display: none; /* Hidden by default (Log In) */
-    align-items: center;
-    justify-content: center;
-    transition: background 0.3s ease;
-}
-
-/* Show close button when auth container has active class (Sign Up) */
-.auth-container.active .close-btn {
-    display: flex;
-}
-
-.close-btn:hover {
-    background: rgba(0, 0, 0, 0.9);
-}
-
-/* Auth Container Styles - FIXED SPACING */
+/* Auth Container Styles - FIXED FOR INSTANT FORM DISPLAY */
 .auth-container {
     background-color: #fff;
     border-radius: 30px;
@@ -596,47 +772,94 @@ a {
     overflow: hidden;
     width: 768px;
     max-width: 100%;
-    min-height: 520px; /* Increased height */
+    min-height: 520px;
+}
+
+/* FIX: Ensure forms are properly positioned without animation delay */
+.form-container {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    transition: all 0.3s ease-in-out; /* Reduced from 0.6s for faster transition */
+}
+
+.sign-in {
+    left: 0;
+    width: 50%;
+    z-index: 2;
+    opacity: 1;
+}
+
+.sign-up {
+    left: 0;
+    width: 50%;
+    opacity: 0;
+    z-index: 1;
+}
+
+/* FIX: Instant form switching without animation delay */
+.auth-container.active .sign-in {
+    transform: translateX(100%);
+    opacity: 0;
+}
+
+.auth-container.active .sign-up {
+    transform: translateX(100%);
+    opacity: 1;
+    z-index: 5;
+    animation: none; /* Remove animation that causes delay */
+}
+
+/* Remove the move animation that causes delay */
+@keyframes move {
+    0%, 49.99% {
+        opacity: 0;
+        z-index: 1;
+    }
+    50%, 100% {
+        opacity: 1;
+        z-index: 5;
+    }
 }
 
 .auth-container form {
     background-color: #fff;
     display: flex;
     align-items: center;
-    justify-content: flex-start; /* Changed from center */
+    justify-content: flex-start;
     flex-direction: column;
-    padding: 30px 40px; /* Reduced top padding */
+    padding: 30px 40px;
     height: 100%;
     overflow-y: auto;
 }
 
 /* Adjust form content spacing to prevent overflow */
 .auth-container form h1 {
-    margin-bottom: 10px; /* Reduced */
+    margin-bottom: 10px;
     font-size: 28px;
 }
 
 .modal .social-icons {
-    margin: 10px 0; /* Reduced */
+    margin: 10px 0;
 }
 
 .auth-container span {
     font-size: 12px;
-    margin: 8px 0; /* Reduced */
+    margin: 8px 0;
 }
 
 .auth-container p {
     font-size: 14px;
     line-height: 20px;
     letter-spacing: 0.3px;
-    margin: 15px 0; /* Reduced */
+    margin: 15px 0;
 }
 
 .auth-container a {
     color: #333;
     font-size: 13px;
     text-decoration: none;
-    margin: 10px 0 8px; /* Reduced */
+    margin: 10px 0 8px;
     transition: color 0.3s ease;
 }
 
@@ -650,8 +873,8 @@ a {
     font-weight: 600;
     letter-spacing: 0.5px;
     text-transform: uppercase;
-    margin-top: 8px; /* Reduced */
-    margin-bottom: 5px; /* Added bottom margin */
+    margin-top: 8px;
+    margin-bottom: 5px;
     cursor: pointer;
     transition: all 0.3s ease;
 }
@@ -675,8 +898,8 @@ a {
 .auth-container input {
     background-color: #f8f8f8;
     border: 2px solid #e0e0e0;
-    margin: 6px 0; /* Reduced */
-    padding: 10px 15px; /* Slightly reduced */
+    margin: 6px 0;
+    padding: 10px 15px;
     font-size: 13px;
     border-radius: 8px;
     width: 100%;
@@ -699,8 +922,8 @@ a {
 .auth-toggle-text {
     display: block;
     text-align: center;
-    margin-top: 15px; /* Reduced */
-    padding-top: 15px; /* Reduced */
+    margin-top: 15px;
+    padding-top: 15px;
     border-top: 1px solid #eee;
     font-size: 14px;
     color: #666;
@@ -739,50 +962,8 @@ a {
     left: 0;
 }
 
-.form-container {
-    position: absolute;
-    top: 0;
-    height: 100%;
-    transition: all 0.6s ease-in-out;
-}
-
-.sign-in {
-    left: 0;
-    width: 50%;
-    z-index: 2;
-}
-
-.auth-container.active .sign-in {
-    transform: translateX(100%);
-}
-
-.sign-up {
-    left: 0;
-    width: 50%;
-    opacity: 0;
-    z-index: 1;
-}
-
-.auth-container.active .sign-up {
-    transform: translateX(100%);
-    opacity: 1;
-    z-index: 5;
-    animation: move 0.6s;
-}
-
-@keyframes move {
-    0%, 49.99% {
-        opacity: 0;
-        z-index: 1;
-    }
-    50%, 100% {
-        opacity: 1;
-        z-index: 5;
-    }
-}
-
 .modal .social-icons {
-    margin: 15px 0; /* Adjusted */
+    margin: 15px 0;
 }
 
 .modal .social-icons a {
@@ -812,7 +993,7 @@ a {
     width: 50%;
     height: 100%;
     overflow: hidden;
-    transition: all 0.6s ease-in-out;
+    transition: all 0.3s ease-in-out; /* Reduced from 0.6s */
     border-radius: 150px 0 0 100px;
     z-index: 1000;
 }
@@ -832,7 +1013,7 @@ a {
     height: 100%;
     width: 200%;
     transform: translateX(0);
-    transition: all 0.6s ease-in-out;
+    transition: all 0.3s ease-in-out; /* Reduced from 0.6s */
 }
 
 .auth-container.active .toggle {
@@ -851,7 +1032,7 @@ a {
     text-align: center;
     top: 0;
     transform: translateX(0);
-    transition: all 0.6s ease-in-out;
+    transition: all 0.3s ease-in-out; /* Reduced from 0.6s */
 }
 
 .toggle-left {
@@ -919,6 +1100,7 @@ a {
         border-bottom: none;
     }
 
+    /* UPDATED: Mobile auth buttons styling */
     .navbar.active .auth-buttons {
         display: flex;
         flex-direction: column;
@@ -930,11 +1112,13 @@ a {
         left: 0;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         border-top: 1px solid #eee;
+        gap: 10px;
     }
 
     .navbar.active .auth-buttons .btn {
-        margin: 10px 0;
+        margin: 0;
         width: 100%;
+        text-align: center;
     }
 
     .hero-section {
@@ -982,7 +1166,7 @@ a {
         justify-content: center;
     }
 
-    /* Modal responsive adjustments - CLOSE BUTTON ONLY ON SIGN UP */
+    /* Modal responsive adjustments */
     .modal-content {
         max-width: 90%;
         margin: 20px;
@@ -993,24 +1177,6 @@ a {
         width: 100%;
         min-height: 480px;
         border-radius: 25px;
-    }
-    
-    .close-btn {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        background: rgba(0, 0, 0, 0.7);
-        width: 32px;
-        height: 32px;
-        font-size: 20px;
-        z-index: 1001;
-        /* Hide close button by default (for Log In) */
-        display: none;
-    }
-    
-    /* Show close button only when Sign Up form is active */
-    .auth-container.active .close-btn {
-        display: flex;
     }
     
     /* Ensure modal content fits properly */
@@ -1101,16 +1267,28 @@ a {
 
     /* Why Switch Section Adjustments */
     .switch-content {
-        flex-direction: column;
-        align-items: center;
+        gap: 30px;
     }
 
     .manual-list, .poinky-list {
-        width: 100%;
-        max-width: 400px;
+        min-width: 100%;
+        padding: 25px 20px;
     }
+
     .manual-list li, .poinky-list li {
-        font-size: 1em;
+        padding: 10px 12px;
+        margin-bottom: 15px;
+    }
+
+        .manual-list li i, .poinky-list li i {
+        width: 40px;
+        height: 40px;
+        padding: 8px;
+    }
+    
+    .why-switch-section::before,
+    .why-switch-section::after {
+        display: none; /* Hide decorative shapes on mobile */
     }
     
     /* Join Community Section Adjustments */
@@ -1169,39 +1347,24 @@ a {
     
     .auth-container {
         width: 100%;
-        min-height: 520px; /* Increased height */
+        min-height: 520px;
         border-radius: 20px;
     }
     
-    /* Fix form container layout */
+    /* Fix form container layout for mobile */
     .form-container {
         position: relative !important;
         width: 100% !important;
         height: auto;
+        transition: none !important; /* Remove transitions on mobile */
     }
     
     .sign-in,
     .sign-up {
         width: 100%;
         position: relative;
-    }
-    
-    /* Remove desktop transforms */
-    .auth-container .sign-in {
-        transform: translateX(0) !important;
-    }
-    
-    .auth-container .sign-up {
-        transform: translateX(0) !important;
-        opacity: 1 !important;
-    }
-    
-    .auth-container.active .sign-in {
-        transform: translateX(0) !important;
-    }
-    
-    .auth-container.active .sign-up {
-        transform: translateX(0) !important;
+        transform: none !important; /* Remove transforms on mobile */
+        opacity: 1 !important; /* Ensure forms are visible */
     }
     
     /* Stack forms vertically and show both */
@@ -1211,9 +1374,9 @@ a {
     }
     
     .sign-in {
-        padding-bottom: 25px; /* Reduced */
+        padding-bottom: 25px;
         border-bottom: 2px solid #f0f0f0;
-        margin-bottom: 25px; /* Reduced */
+        margin-bottom: 25px;
     }
     
     .sign-up {
@@ -1225,51 +1388,38 @@ a {
         display: none !important;
     }
     
-    .close-btn {
-        /* Don't force display: flex here - let JavaScript handle it */
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background: rgba(0, 0, 0, 0.7);
-        width: 35px;
-        height: 35px;
-        font-size: 20px;
-        z-index: 1001;
-        /* Let JavaScript control display property */
-    }
-    
     /* Form adjustments */
     .auth-container form {
-        padding: 25px 30px; /* Reduced top padding */
+        padding: 25px 30px;
         height: auto;
         min-height: 200px;
         justify-content: flex-start;
     }
     
     .auth-container input {
-        padding: 10px 12px; /* Reduced */
+        padding: 10px 12px;
         font-size: 14px;
         border-width: 1px;
-        margin: 5px 0; /* Reduced */
+        margin: 5px 0;
     }
     
     .auth-container button {
-        padding: 10px 30px; /* Reduced */
+        padding: 10px 30px;
         font-size: 14px;
         width: 100%;
-        margin-top: 10px; /* Reduced */
+        margin-top: 10px;
         margin-bottom: 5px;
     }
     
     /* Mobile toggle text */
     .auth-toggle-text {
-        margin-top: 12px; /* Reduced */
-        padding-top: 12px; /* Reduced */
+        margin-top: 12px;
+        padding-top: 12px;
         font-size: 14px;
     }
     
     .auth-toggle-text a {
-        padding: 6px 10px; /* Reduced */
+        padding: 6px 10px;
         display: inline-block;
     }
     
@@ -1364,65 +1514,56 @@ a {
     }
     
     .auth-container {
-        min-height: 480px; /* Adjusted */
+        min-height: 480px;
         border-radius: 15px;
     }
     
-    .close-btn {
-        /* Same as above - no forced display */
-        top: 8px;
-        right: 8px;
-        width: 30px;
-        height: 30px;
-        font-size: 18px;
-    }
-    
     .auth-container form {
-        padding: 20px; /* Reduced */
+        padding: 20px;
     }
     
     .auth-container h1 {
-        font-size: 1.4em; /* Smaller */
-        margin-bottom: 10px; /* Reduced */
+        font-size: 1.4em;
+        margin-bottom: 10px;
     }
     
     .auth-container p {
-        font-size: 12px; /* Smaller */
-        margin: 10px 0; /* Reduced */
+        font-size: 12px;
+        margin: 10px 0;
     }
     
     .auth-container input {
-        padding: 8px 12px; /* Reduced */
+        padding: 8px 12px;
         font-size: 13px;
-        margin: 4px 0; /* Reduced */
+        margin: 4px 0;
     }
     
     .auth-container button {
-        padding: 8px 20px; /* Reduced */
+        padding: 8px 20px;
         font-size: 12px;
         margin-top: 8px;
     }
     
     .modal .social-icons {
-        margin: 10px 0; /* Reduced */
+        margin: 10px 0;
     }
     
     .modal .social-icons a {
-        width: 32px; /* Smaller */
-        height: 32px; /* Smaller */
+        width: 32px;
+        height: 32px;
         margin: 0 2px;
     }
     
     /* Adjust form spacing for very small screens */
     .sign-in {
-        padding-bottom: 15px; /* Reduced */
-        margin-bottom: 15px; /* Reduced */
+        padding-bottom: 15px;
+        margin-bottom: 15px;
     }
     
     .auth-toggle-text {
-        margin-top: 10px; /* Reduced */
-        padding-top: 10px; /* Reduced */
-        font-size: 12px; /* Smaller */
+        margin-top: 10px;
+        padding-top: 10px;
+        font-size: 12px;
     }
     
     /* Ensure modal is centered properly */
