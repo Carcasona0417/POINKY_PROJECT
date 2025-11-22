@@ -24,7 +24,7 @@
             <div class="auth-buttons">
                 <button class="btn btn-signup triggerBtn" id="triggerModal">Sign Up</button>
             </div>
-            <div class="hamburger" onclick="toggleMenu()">
+            <div class="hamburger" id="hamburgerMenu">
                 <i class="fas fa-bars"></i>
             </div>
         </div>
@@ -49,6 +49,10 @@
                         <input type="email" placeholder="Email">
                         <input type="password" placeholder="Password">
                         <button>Sign Up</button>
+                        <!-- Mobile toggle text for Sign Up form -->
+                        <p class="auth-toggle-text">
+                            Already have an account? <a onclick="showSignIn()">Log In</a>
+                        </p>
                     </form>
                 </div>
                 <div class="form-container sign-in">
@@ -65,6 +69,10 @@
                         <input type="password" placeholder="Password" required>
                         <a href="#">Forget Your Password?</a>
                         <button>Log In</button>
+                        <!-- Mobile toggle text for Sign In form -->
+                        <p class="auth-toggle-text">
+                            Don't have an account? <a onclick="showSignUp()">Sign Up</a>
+                        </p>
                     </form>
                 </div>
                 <div class="toggle-container">
@@ -72,12 +80,10 @@
                         <div class="toggle-panel toggle-left">
                             <h1>Welcome Back!</h1>
                             <p>Enter your personal details to use all of site features</p>
-                            <button class="hidden" id="login">Log In</button>
                         </div>
                         <div class="toggle-panel toggle-right">
                             <h1>Hello, Users!</h1>
                             <p>Register with your personal details to use all of site features</p>
-                            <button class="hidden" id="register">Sign Up</button>
                         </div>
                     </div>
                 </div>
@@ -209,5 +215,6 @@
 
     <!-- Add modal JavaScript -->
     <script src="script.js"></script>
+    
 </body>
 </html>
