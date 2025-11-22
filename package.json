@@ -1,0 +1,31 @@
+{
+  "name": "poinky_project",
+  "version": "1.0.0",
+  "description": "TO DO LISTS:",
+  "type": "module",
+  "main": "Login-register.js",
+  "scripts": {
+    "dev": "nodemon BACKEND/app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Carcasona0417/POINKY_PROJECT.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  
+  "bugs": {
+    "url": "https://github.com/Carcasona0417/POINKY_PROJECT/issues"
+  },
+  "homepage": "https://github.com/Carcasona0417/POINKY_PROJECT#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "mysql2": "^3.15.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
