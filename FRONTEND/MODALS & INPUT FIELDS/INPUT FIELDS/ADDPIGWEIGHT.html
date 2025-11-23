@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Add Weight</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+    <!-- HOME SCREEN -->
+    <div class="home-screen">
+        <button id="OpenModal" class="btn-main-add">+ Add Weight</button>
+    </div>
+
+    <!-- ADD WEIGHT FORM MODAL -->
+    <div class="page-wrapper" id="ModalField">
+        <div class="dialog">
+            <button type="button" class="btn-close" id="CloseModal">×</button>
+
+            <h2 class="dialog-title">Add Weight</h2>
+
+            <!-- Date -->
+            <div class="form-group">
+                <div class="input-wrapper date-wrapper">
+                    <input id="pigDate" type="date" placeholder="dd/mm/yyyy">
+                    <span class="calendar-icon"></span>
+                    <label>Date</label>
+                </div>
+            </div>
+
+            <!-- Weight (uses weight-wrapper logic) -->
+            <div class="form-group">
+                <div class="input-wrapper weight-wrapper">
+                    <input type="number" step="0.01" placeholder="">
+                    <div class="unit-box">kg</div>
+                    <label>Weight</label>
+                </div>
+            </div>
+
+          
+            <!-- Upload Photo -->
+<div class="form-group">
+    <div class="input-wrapper upload-wrapper">
+        <input type="file" accept="image/*" class="file-input">
+        <label class="upload-label">Upload Photo</label>
+    </div>
+</div>
+
+
+
+
+            <!-- Buttons -->
+            <div class="dialog-footer">
+                <button type="button" class="btn btn-clear">Clear</button>
+                <button type="button" class="btn btn-save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUCCESS MODAL -->
+    <div class="modal-overlay" id="successModal">
+        <div class="success-modal">
+            <div class="success-circle">
+                <div class="success-check"></div>
+            </div>
+            <p class="success-text">Weight added successfully!</p>
+        </div>
+    </div>
+</body>
+</html>

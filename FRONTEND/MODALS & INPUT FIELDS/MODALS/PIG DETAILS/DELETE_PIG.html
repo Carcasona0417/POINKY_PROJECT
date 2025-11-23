@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Delete Pig Confirmation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            height: 100%; width: 100%;
+            font-family: 'Poppins', Arial, sans-serif;
+            background: #000;
+        }
+
+        /* --------- SCREEN --------- */
+        .home-screen {
+            height: 100vh; width: 100vw;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .btn-delete-main {
+            padding: 12px 28px;
+            border-radius: 999px;
+            border: none;
+            background: #ffffff;
+            color: #333;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+            transition: 0.2s ease;
+        }
+        .btn-delete-main:hover {
+            background: #ff4861;
+            color: #fff;
+            transform: translateY(-1px);
+            box-shadow: 0 14px 30px rgba(255,72,97,0.5);
+        }
+
+        /* --------- MODAL OVERLAY --------- */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.65);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .25s ease;
+            z-index: 999;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* --------- CONFIRMATION BOX --------- */
+        .confirm-box {
+            width: 420px; max-width: 90vw;
+            background: #fff;
+            padding: 32px 40px 28px;
+            border-radius: 8px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+            text-align: center;
+            transform: translateY(10px) scale(0.97);
+            opacity: 0;
+            transition: 0.25s ease;
+        }
+        .modal-overlay.show .confirm-box {
+            opacity: 1; transform: translateY(0) scale(1);
+        }
+
+        .confirm-text {
+            font-size: 16px;
+            color: #000000;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .confirm-sub {
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 24px;
+        }
+
+        .confirm-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 25px;
+            margin-top: 18px;
+        }
+
+        .confirm-btn {
+            min-width: 150px;
+            padding: 8px 20px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .confirm-btn.no {
+            background: #e74c3c;
+            color: #fff;
+        }
+        .confirm-btn.no:hover { background: #cf3f30; }
+
+        .confirm-btn.yes {
+            background: #2ea94f;
+            color: #fff;
+        }
+        .confirm-btn.yes:hover { background: #249142; }
+
+
+
+        /* --------- SUCCESS MODAL --------- */
+        .success-modal {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 40px 56px 30px;
+            text-align: center;
+            box-shadow: 0 18px 40px rgba(0,0,0,0.4);
+            transform: translateY(12px) scale(0.96);
+            opacity: 0;
+            transition: 0.25s ease;
+        }
+        .modal-overlay.show .success-modal {
+            opacity: 1; transform: translateY(0) scale(1);
+        }
+
+        .success-circle {
+            width: 140px; height: 140px;
+            border-radius: 50%;
+            background: #2ea94f;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 22px;
+            transform: scale(0.2); opacity: 0;
+        }
+        .modal-overlay.show .success-circle {
+            animation: popCircle .35s cubic-bezier(.2,.8,.2,1) forwards;
+            animation-delay: .3s;
+        }
+
+        .success-check {
+            width: 42px; height: 26px;
+            border-left: 4px solid #fff;
+            border-bottom: 4px solid #fff;
+            transform: rotate(-45deg) scale(0);
+            opacity: 0;
+        }
+        .modal-overlay.show .success-check {
+            animation: drawCheck .3s ease-out forwards;
+            animation-delay: .45s;
+        }
+
+        @keyframes popCircle {
+            0% { transform: scale(0.2); opacity: 0; }
+            70% { transform: scale(1.08); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes drawCheck {
+            0% { transform: rotate(-45deg) scale(0); opacity: 0; }
+            100% { transform: rotate(-45deg) scale(1); opacity: 1; }
+        }
+
+        .success-text {
+            margin-top: 4px;
+            font-size: 14px;
+            font-style: italic;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- PAGE WITH DELETE BUTTON -->
+    <div class="home-screen">
+        <button id="btnDeletePig" class="btn-delete-main">Delete Pig</button>
+    </div>
+
+    <!-- DELETE CONFIRMATION MODAL -->
+    <div class="modal-overlay" id="deletePigConfirmModal">
+        <div class="confirm-box">
+            <p class="confirm-text">Are you sure you want to permanently delete this pig?</p>
+            <p class="confirm-sub">This action cannot be undone.</p>
+
+            <div class="confirm-actions">
+                <button id="deletePigNo" class="confirm-btn no">No</button>
+                <button id="deletePigYes" class="confirm-btn yes">Yes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUCCESS MODAL -->
+    <div class="modal-overlay" id="deletePigSuccessModal">
+        <div class="success-modal">
+            <div class="success-circle">
+                <div class="success-check"></div>
+            </div>
+            <p class="success-text">Pig deleted successfully!</p>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const deleteBtn = document.getElementById('btnDeletePig');
+    const confirmModal = document.getElementById('deletePigConfirmModal');
+    const successModal = document.getElementById('deletePigSuccessModal');
+    const yesBtn = document.getElementById('deletePigYes');
+    const noBtn = document.getElementById('deletePigNo');
+
+    /* Open confirmation modal */
+    deleteBtn.addEventListener('click', () => {
+        confirmModal.classList.add('show');
+    });
+
+    /* NO button closes modal */
+    noBtn.addEventListener('click', () => {
+        confirmModal.classList.remove('show');
+    });
+
+    /* YES button → show success modal */
+    yesBtn.addEventListener('click', () => {
+        confirmModal.classList.remove('show');
+
+        successModal.classList.remove('show');
+        void successModal.offsetWidth; 
+        successModal.classList.add('show');
+
+        setTimeout(() => {
+            successModal.classList.remove('show');
+            // Place deletion redirect or table reload here
+            // window.location.reload();
+        }, 1600);
+    });
+
+    /* Close on outside click */
+    confirmModal.addEventListener('click', (e) => {
+        if (e.target === confirmModal) confirmModal.classList.remove('show');
+    });
+
+    successModal.addEventListener('click', (e) => {
+        if (e.target === successModal) successModal.classList.remove('show');
+    });
+
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Add Pig</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js"></script>
+
+</head>
+
+<body>
+    <!-- HOME SCREEN -->
+    <div class="home-screen">
+        <button id="OpenModal" class="btn-main-add">+ Add Pig</button>
+    </div>
+
+    <!-- ADD PIG FORM MODAL -->
+    <div class="page-wrapper" id="ModalField">
+        <div class="dialog">
+            <button type="button" class="btn-close" id="CloseModal">×</button>
+
+            <h2 class="dialog-title">Add Pig</h2>
+
+            <!-- Pig Name -->
+            <div class="form-group">
+                <div class="input-wrapper">
+                    <input type="text" placeholder="">
+                    <label>Pig Name / ID</label>
+                </div>
+            </div>
+
+            <!-- Breed -->
+            <div class="form-group">
+                <div class="input-wrapper">
+                    <select class="form-select">
+                        <option value=""></option>
+                        <option>Landrace</option>
+                        <option>Large White</option>
+                        <option>Duroc</option>
+                        <option>Pietrain</option>
+                        <option>Hampshire</option>
+                        <option>Berkshire</option>
+                        <option>Others</option>
+                    </select>
+
+                    <label>Breed</label>
+                </div>
+            </div>
+
+            <!-- Gender -->
+            <div class="form-group">
+                <div class="input-wrapper">
+                    <select class="form-select">
+                        <option value=""></option>
+                        <option>Male</option>
+                        <option>Female</option>
+                    </select>
+                    <label>Gender</label>
+                </div>
+            </div>
+
+            <!-- Date -->
+            <div class="form-group">
+                <div class="input-wrapper date-wrapper">
+                    <input id="pigDate" type="date" placeholder="dd/mm/yyyy">
+                    <span class="calendar-icon"></span>
+                    <label>Date</label>
+                </div>
+            </div>
+
+            <!-- Initial Weight -->
+            <div class="form-group">
+                <div class="input-wrapper weight-wrapper">
+                    <input type="number" placeholder="" style="padding-right:60px;">
+                    <label>Initial Weight</label>
+                    <div class="unit-box">kg</div>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="dialog-footer">
+                <button type="button" class="btn btn-clear">Clear</button>
+                <button type="button" class="btn btn-save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUCCESS MODAL -->
+    <div class="modal-overlay" id="successModal">
+        <div class="success-modal">
+            <div class="success-circle">
+                <div class="success-check"></div>
+            </div>
+            <p class="success-text">Pig added successfully!</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

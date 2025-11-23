@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Add Task</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js"></script>
+    
+</head>
+
+<body>
+    <!-- HOME SCREEN -->
+    <div class="home-screen">
+        <button id="OpenModal" class="btn-main-add">+ Add Task</button>
+    </div>
+
+    <!-- ADD TASK FORM MODAL -->
+    <div class="page-wrapper" id="ModalField">
+        <div class="dialog">
+            <button type="button" class="btn-close" id="CloseModal">×</button>
+
+            <h2 class="dialog-title">Add Task</h2>
+
+            <!-- Task / Title -->
+            <div class="form-group">
+                <div class="input-wrapper">
+                    <input type="text" placeholder="">
+                    <label>Task / Title</label>
+                </div>
+            </div>
+
+            <!-- Date -->
+            <div class="form-group">
+                <div class="input-wrapper date-wrapper">
+                    <!-- keep same ID so JS still works -->
+                    <input id="pigDate" type="date" placeholder="dd/mm/yyyy">
+                    <span class="calendar-icon"></span>
+                    <label>Date</label>
+                </div>
+            </div>
+
+            <!-- Farm -->
+            <div class="form-group">
+                <div class="input-wrapper">
+                    <select class="form-select">
+                        <option value=""></option>
+                        <option>Farm 1</option>
+                        <option>Farm 2</option>
+                        <option>Farm 3</option>
+                    </select>
+                    <label>Farm</label>
+                </div>
+            </div>
+
+            <!-- Pig Name -->
+            <div class="form-group">
+                <div class="input-wrapper">
+                    <select class="form-select">
+                        <option value=""></option>
+                        <option>Pig 001</option>
+                        <option>Pig 002</option>
+                        <option>Pig 003</option>
+                    </select>
+                    <label>Pig Name</label>
+                </div>
+            </div>
+
+            <!-- Additional Note (textarea) -->
+            <div class="form-group">
+                <div class="input-wrapper">
+                    <textarea rows="4" placeholder=""></textarea>
+                    <label>Additional Note</label>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="dialog-footer">
+                <button type="button" class="btn btn-clear">Clear</button>
+                <button type="button" class="btn btn-save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUCCESS MODAL -->
+    <div class="modal-overlay" id="successModal">
+        <div class="success-modal">
+            <div class="success-circle">
+                <div class="success-check"></div>
+            </div>
+            <p class="success-text">Task added successfully!</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

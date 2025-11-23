@@ -1,0 +1,508 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body, html {
+    height: 100%;
+    width: 100%;
+    font-family: 'Poppins', Arial, sans-serif;
+    background-color: #f2f2f2;
+}
+
+/* ---------- HOME SCREEN ---------- */
+.home-screen {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-main-add {
+    padding: 14px 26px;
+    border-radius: 999px;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    background: #ff4861;
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(255,72,97,0.35);
+    transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.btn-main-add:hover {
+    background: #e23f55;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(255,72,97,0.45);
+}
+
+/* ---------- ADD PIG MODAL (FORM) ---------- */
+.page-wrapper {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.65);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 900;
+}
+
+.page-wrapper.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.dialog {
+    background-color: #fff;
+    border-radius: 6px;
+    max-width: 420px;
+    width: 100%;
+    padding: 28px 32px 24px 32px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+    position: relative;
+}
+
+.dialog-title {
+    color: #ff4861;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 18px;
+}
+
+.btn-close {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 28px;
+    height: 28px;
+    background: #ff4861;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.btn-close:hover {
+    background: #d93b52;
+    box-shadow: 0 0 6px rgba(255,72,97,0.45);
+    transform: scale(1.05);
+}
+
+.form-group { margin-bottom: 20px; }
+
+.input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.input-wrapper input,
+.input-wrapper select
+ {
+    width: 100%;
+    height: 46px;
+    padding: 12px 14px;
+    padding-right: 60px;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+    background: #fff;
+    transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.input-wrapper textarea{
+        width: 100%;
+    height: 92px;
+    padding: 12px 14px;
+    padding-right: 60px;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+    background: #fff;
+    transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+
+
+/* FLOATING LABEL — TEXTAREA */
+.input-wrapper textarea:focus ~ label,
+.input-wrapper textarea.has-value ~ label {
+    top: -8px;
+    transform: translateY(-10%);
+    font-size: 12px;
+    color: #ff4861;
+}
+
+
+
+
+.input-wrapper input:focus,
+.input-wrapper select:focus,
+.input-wrapper textarea:focus {
+    border-color: #ff4861;
+    box-shadow: 0 0 0 1px rgba(255,72,97,0.15);
+}
+
+.input-wrapper label {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #777;
+    font-size: 12px;
+    pointer-events: none;
+    transition: .25s ease;
+    background: #fff;
+    padding: 0 4px;
+}
+
+/* FLOATING LABEL — TEXT & NUMBER */
+.input-wrapper input[type="text"]:focus ~ label,
+.input-wrapper input[type="text"]:not(:placeholder-shown) ~ label,
+.input-wrapper input[type="number"]:focus ~ label,
+.input-wrapper input[type="number"]:not(:placeholder-shown) ~ label {
+    top: -8px;
+    transform: translateY(-10%);
+    font-size: 12px;
+    color: #ff4861;
+}
+
+/* FLOATING LABEL — SELECT */
+.input-wrapper select.has-value ~ label,
+.input-wrapper select:focus ~ label {
+    top: -8px;
+    transform: translateY(-10%);
+    font-size: 12px;
+    color: #ff4861;
+}
+
+select.form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23666' stroke-width='1.3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 12px;
+}
+
+/* kg box */
+.unit-box {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 55px;
+    height: 100%;
+    background: #e9e9e9;
+    border-left: 1px solid #dcdcdc;
+    border-radius: 0 6px 6px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    font-size: 14px;
+    padding-right: 6px;
+    box-sizing: border-box;
+}
+
+.weight-wrapper.is-focused .unit-box {
+    background: #ffe5ea;
+    border-left-color: #ff4861;
+}
+
+/* Date field */
+.date-wrapper { position: relative; }
+
+.date-wrapper::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 55px;
+    height: 100%;
+    background: #e9e9e9;
+    border-left: 1px solid #dcdcdc;
+    border-radius: 0 6px 6px 0;
+    pointer-events: none;
+    transition: .2s ease;
+}
+
+.calendar-icon {
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    background-size: 18px;
+    background-repeat: no-repeat;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
+    z-index: 2;
+}
+
+.date-wrapper input[type="date"] {
+    color: transparent;
+    caret-color: transparent;
+}
+
+.date-wrapper.has-value input[type="date"] {
+    color: #000;
+    caret-color: auto;
+}
+
+.date-wrapper.is-focused label,
+.date-wrapper.has-value label {
+    top: -8px;
+    transform: translateY(-10%);
+    font-size: 12px;
+    color: #ff4861;
+}
+
+.date-wrapper.is-focused input {
+    border-color: #ff4861;
+    box-shadow: 0 0 0 1px rgba(255,72,97,0.15);
+}
+
+.date-wrapper.is-focused::after {
+    background: #ffe5ea;
+    border-left-color: #ff4861;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator { display: none; }
+input[type="date"] { -moz-appearance: textfield; }
+
+/* Footer buttons */
+.dialog-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+}
+
+.btn-clear { background: #e5e5e5; color: #444; }
+.btn-save  { background: #2ea94f; color: #fff; }
+
+.btn-clear:hover { background: #d7d7d7; }
+.btn-save:hover  { background: #249142; }
+
+/* ---------- SUCCESS MODAL ---------- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 999;
+}
+
+.modal-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.success-modal {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 40px 56px 30px;
+    box-shadow: 0 18px 40px rgba(0,0,0,0.4);
+    text-align: center;
+    transform: translateY(12px) scale(0.96);
+    opacity: 0;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.modal-overlay.show .success-modal {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.success-circle {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    margin: 0 auto 22px;
+    background: #2ea94f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: scale(0.2);
+    opacity: 0;
+}
+
+.modal-overlay.show .success-circle {
+    animation: popCircle 0.35s cubic-bezier(.2,.8,.2,1) forwards;
+    animation-delay: 0.3s;
+}
+
+.success-check {
+    width: 42px;
+    height: 26px;
+    border-left: 4px solid #ffffff;
+    border-bottom: 4px solid #ffffff;
+    transform: rotate(-45deg) scale(0);
+    transform-origin: center;
+    opacity: 0;
+}
+
+.modal-overlay.show .success-check {
+    animation: drawCheck 0.3s ease-out forwards;
+    animation-delay: 0.45s;
+}
+
+@keyframes popCircle {
+    0%   { transform: scale(0.2); opacity: 0; }
+    70%  { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes drawCheck {
+    0%   { transform: rotate(-45deg) scale(0); opacity: 0; }
+    100% { transform: rotate(-45deg) scale(1); opacity: 1; }
+}
+
+.success-text {
+    margin-top: 4px;
+    font-size: 14px;
+    font-style: italic;
+    color: #555;
+}
+
+
+
+
+
+
+
+/* UPLOAD PHOTO STATIC LABEL — INSIDE BORDER */
+.upload-wrapper {
+    position: relative;
+}
+
+.upload-wrapper .upload-label {
+    position: absolute;
+    left: 14px;
+    top: 10px; /* inside border */
+    font-size: 12px;
+    color: #777;
+    background: #fff;
+    padding: 0 4px;
+    pointer-events: none;
+    transition: .2s ease;
+}
+
+/* File input spacing to avoid overlapping label */
+.upload-wrapper input[type="file"] {
+    padding-top: 22px; /* pushes text down */
+    padding-left: 14px;
+    height: 46px;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* Focus → label turns pink and border turns pink */
+.upload-wrapper:focus-within .upload-label {
+    color: #ff4861;
+}
+
+.upload-wrapper input[type="file"]:focus {
+    border-color: #ff4861;
+    box-shadow: 0 0 0 1px rgba(255,72,97,0.15);
+}
+
+
+
+/*DUE DATE*/
+
+/* DATE PICKER BASE */
+.date-wrapper {
+    position: relative;
+}
+
+/* Right side grey box */
+.date-wrapper::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 55px;
+    height: 100%;
+    background: #e9e9e9;
+    border-left: 1px solid #dcdcdc;
+    border-radius: 0 6px 6px 0;
+    pointer-events: none;
+    transition: .2s ease;
+}
+
+/* Calendar icon */
+.calendar-icon {
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    background-size: 18px;
+    background-repeat: no-repeat;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
+    z-index: 2;
+}
+
+/* Hide native icon */
+input[type="date"]::-webkit-calendar-picker-indicator { display: none; }
+input[type="date"] { -moz-appearance: textfield; }
+
+/* Date value hidden until selected */
+.date-wrapper input[type="date"] {
+    color: transparent;
+    caret-color: transparent;
+}
+
+.date-wrapper.has-value input[type="date"] {
+    color: #000;
+    caret-color: auto;
+}
+
+/* Label floating animation */
+.date-wrapper.is-focused label,
+.date-wrapper.has-value label {
+    top: -8px;
+    transform: translateY(-10%);
+    font-size: 12px;
+    color: #ff4861;
+}
+
+/* Border highlight when focused */
+.date-wrapper.is-focused input {
+    border-color: #ff4861;
+    box-shadow: 0 0 0 1px rgba(255,72,97,0.15);
+}
+
+/* Right box turns pink when focused */
+.date-wrapper.is-focused::after {
+    background: #ffe5ea;
+    border-left-color: #ff4861;
+}
+
+
+
+
+
