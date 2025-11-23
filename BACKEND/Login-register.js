@@ -36,9 +36,9 @@ export async function createUser(userID, username, email, password) {
     return result;
 }
 
-export async function getUserByCredentials(email, password) {
+export async function getUserByCredentials(email) {
 
-    const [rows] = await pool.query('SELECT * FROM user WHERE Email = ? AND Password = ?', [email, password]);
+    const [rows] = await pool.query('SELECT * FROM user WHERE Email = ?', [email]);
     return rows;
 }
 

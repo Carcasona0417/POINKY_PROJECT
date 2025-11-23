@@ -311,9 +311,12 @@ if (loginForm) {
         const data = await response.json();
 
         if (data.success) {
+
+            // Modernized alert for successful login
             alert(data.message); 
-            
-            closeModal();
+            window.location.replace("Dashboard.html");
+
+            //closeModal();
         } else {
             alert(data.message); 
         }
@@ -344,6 +347,7 @@ if (registerForm) {
         const data = await response.json();
 
         if (data.success) {
+            // Modernized alert for successful registration
             alert('Registration successful! You can now log in.');
             showSignIn();
         }

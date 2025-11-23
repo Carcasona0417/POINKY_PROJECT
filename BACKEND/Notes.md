@@ -21,15 +21,23 @@
 - Done With the logic for the Sign up and successful message in the register page, also it will redirect to    login page
 - Preventing SQL done I added parameters on the logical
 - also added cors to prevent user from entering a specific url it will block the user
+- done with the password hashed when creating account password also installed bcrypt
+- done with connecting the login to the dashboard
+- done with the backend logic for statistics
+
+
 
 # CHANGES 
 - I change the API instead of /login-register I change it into /login for login and /register for register
 because it's the url of each pages
 
+
 # WHAT IS NEED TO BE CHANGE
 - Change the alert into a modern success message
 - After login Redirect the user to the dashboard
 
-# WHAT IS NEED TO BE ADDED
+# TO DO LISTS
 - OTP for forget password using SMTP
-- Make the password hashed when creating account password (needs to install bcrypt)
+- Merge the backend logic for statistics into the frontend
+- Notification should be able to fetch data from the reminders
+

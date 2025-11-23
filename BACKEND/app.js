@@ -1,23 +1,33 @@
 import express from 'express';
 import cors from 'cors';
+import bcrypt from 'bcrypt';
 
 import {createUser, getUserByCredentials} from './Login-register.js';
+import { getTotalFarms,getTotalPigs,getUpcomingReminders, getMonthExpenses,getMonthlyExpenses } from './Dashboard.js';
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
+// LOGIN POST REQIEST
 app.post('/login', async (req, res, next) => {
     try {
         const { email, password } = req.body;
-        const users = await getUserByCredentials(email, password);
+        const users = await getUserByCredentials(email);
 
         if (!users || users.length === 0) {
             return res.status(401).send({ success: false, message: 'Invalid email or password.' });
         }
 
         const user = users[0];
+
+        const passwordMatch = await bcrypt.compare(password, user.Password);
+        
+        if (!passwordMatch) {
+            return res.status(401).send({ success: false, message: 'Invalid email or password.' });
+        }
+
         return res.send({
             success: true,
             message: `Login successful! Welcome ${user.Username}.`,
@@ -28,10 +38,17 @@ app.post('/login', async (req, res, next) => {
     }
 });
 
+// REGISTER POST REQUEST
 app.post('/register', async (req, res, next) => {
     try {
         const { username, email, password } = req.body;
-        const result = await createUser(null, username, email, password);
+
+        const passwordHash = await bcrypt.hash(password, 10);
+        const result = await createUser(null, username, email, passwordHash);
+
+        //const result = await createUser(null, username, email, password); -- RISKY INTEGRATION --
+       
+
         return res.send({
             success: true,
             message: 'Registration successful!',
@@ -41,6 +58,57 @@ app.post('/register', async (req, res, next) => {
         next(err);
     }
 });
+
+// TOTAL FARMS ROUTE
+app.get('/dashboard/total-farms', async (req, res, next) => {
+    try {
+        const rows = await getTotalFarms();
+        res.send({ totalFarms: rows[0].totalFarms });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// TOTAL PIGS ROUTE
+app.get('/dashboard/total-pigs', async (req, res, next) => {
+    try {
+        const rows = await getTotalPigs();
+        res.send({ totalPigs: rows[0].totalPigs });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// TOTAL EXPENSES THIS MONTH
+app.get('/dashboard/month-expenses', async (req, res, next) => {
+    try {
+        const rows = await getMonthExpenses();
+        res.send({ monthExpenses: rows[0].monthExpenses });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// TOTAL UPCOMING REMINDERS ROUTE
+app.get('/dashboard/upcoming-reminders', async (req, res, next) => {
+    try {
+        const rows = await getUpcomingReminders();
+        res.send({ upcomingReminders: rows[0].upcomingReminders });
+    } catch (err) {
+        next(err);
+    }
+});
+        
+// MONTHLY EXPENSES FOR BAR CHART
+app.get('/dashboard/monthly-expenses', async (req, res, next) => {
+    try {
+        const rows = await getMonthlyExpenses();
+        res.send({ monthlyExpenses: rows });
+    } catch (err) {
+        next(err);
+    }
+});
+
 
 app.use((error, req, res, next) => {
     console.error(error && error.stack ? error.stack : error);

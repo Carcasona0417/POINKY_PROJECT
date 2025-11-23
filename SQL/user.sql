@@ -5,10 +5,10 @@ CREATE TABLE user (
     UserID VARCHAR(10) PRIMARY KEY,
     Username VARCHAR(100),
     Email VARCHAR(100),
-    PasswordHash VARCHAR(255)
+    Password VARCHAR(255)
 );
 
-INSERT INTO user (UserID, Username, Email, PasswordHash)
+INSERT INTO user (UserID, Username, Email, Password)
 VALUES ('U001','John Doe','john@example.com','123456');
 
 SELECT * FROM user;
