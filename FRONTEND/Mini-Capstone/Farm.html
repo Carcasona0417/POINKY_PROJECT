@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poinky - View Pigs</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="Farm.css">
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="brand">
+            <img src="Dash Icons/ICON.png" alt="Poinky Logo" class="brand-logo">
+            <span class="brand-name">Poinky</span>
+        </div>
+
+        <nav class="menu">
+            <ul class="menu-list">
+                <li class="menu-item">
+                    <a href="dashboard.html" class="menu-link">
+                        <i class="fa-solid fa-house menu-icon"></i>
+                        <span class="menu-text">Dashboard</span>
+                    </a>
+                </li>
+                <li class="menu-item active">
+                    <a href="farm.html" class="menu-link">
+                        <i class="fas fa-warehouse menu-icon"></i>
+                        <span class="menu-text">Farm</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="expenses.html" class="menu-link">
+                        <i class="fas fa-file-invoice-dollar menu-icon"></i>
+                        <span class="menu-text">Expenses & Reports</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="reminders.html" class="menu-link">
+                        <i class="fa-solid fa-bell menu-icon"></i>
+                        <span class="menu-text">Reminders</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="header-bg">
+            <div class="top-bar">
+                <div class="user-actions">
+                    <button class="notification-btn" id="notificationBtn" aria-label="Notifications">
+                        <i class="fa-regular fa-bell notification-icon"></i>
+                        <span class="notification-badge">1</span>
+                    </button>
+                    <button class="user-profile-btn" aria-label="User Profile">
+                        <i class="fa-solid fa-circle-user user-icon"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="header-content">
+                <h1 class="page-title">
+                    <img src="Dash Icons/WPig.png" alt="Pig Icon" class="page-icon">
+                    View Pigs
+                </h1>
+                <div class="search-container">
+                    <input type="search" placeholder="Search pigs by name, ID, or status..." class="search-input" id="searchInput">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                </div>
+            </div>
+        </div>
+
+        <main class="data-container">
+            
+            <div class="tabs-header" role="tablist">
+                <button class="tab active" role="tab" aria-selected="true" data-farm="1">Farm 1</button>
+                <button class="tab" role="tab" aria-selected="false" data-farm="2">Farm 2</button>
+                <button class="tab" role="tab" aria-selected="false" data-farm="3">Farm 3</button>
+                <button class="tab-add" aria-label="Add New Farm">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+
+            <div class="table-content-box">
+                <div class="content-header">
+                    <div class="title-section">
+                        <h2 class="section-title">Active Pigs (<span id="activePigsCount">0</span>)</h2>
+                        <p class="section-subtitle">Manage and monitor your pig inventory</p>
+                    </div>
+                    <button class="btn-add-pig" id="addPigBtn">
+                        <i class="fa-solid fa-plus"></i> 
+                        <span>Add Pig</span>
+                    </button>
+                </div>
+
+                <div class="actions-bar">
+                    <div class="bulk-actions">
+                        <div class="bulk-select">
+                            <input type="checkbox" id="selectAll" class="select-all-checkbox">
+                            <label for="selectAll" class="select-all-label">Select All</label>
+                        </div>
+                        <div class="dropdown" id="statusDropdown">
+                            <button class="dropdown-toggle">
+                                <span>Change Status</span>
+                                <i class="fa-solid fa-chevron-down dropdown-icon"></i>
+                            </button>
+                            <div class="dropdown-menu">
+                                <button class="dropdown-item" data-status="growing">Growing</button>
+                                <button class="dropdown-item" data-status="tosale">To Sale</button>
+                                <button class="dropdown-item" data-status="sold">Sold</button>
+                                <button class="dropdown-item" data-status="deceased">Deceased</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="status-filters" role="tablist">
+                        <button class="filter-item active" data-filter="all" role="tab">
+                            All <span class="filter-count">0</span>
+                        </button>
+                        <button class="filter-item" data-filter="growing" role="tab">
+                            Growing <span class="filter-count">0</span>
+                        </button>
+                        <button class="filter-item" data-filter="tosale" role="tab">
+                            To Sale <span class="filter-count">0</span>
+                        </button>
+                        <button class="filter-item" data-filter="sold" role="tab">
+                            Sold <span class="filter-count">0</span>
+                        </button>
+                        <button class="filter-item" data-filter="deceased" role="tab">
+                            Deceased <span class="filter-count">0</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="pigs-table" id="pigsTable">
+                        <thead>
+                            <tr>
+                                <th class="col-checkbox"></th>
+                                <th class="col-name">Pig Name/ID</th>
+                                <th class="col-age">Age</th>
+                                <th class="col-weight">Weight</th>
+                                <th class="col-gender">Gender</th>
+                                <th class="col-status">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pigsTableBody">
+                            <!-- Pig rows will be populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="table-footer">
+                    <div class="pagination-info">
+                        Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> pigs
+                    </div>
+                    <div class="pagination-controls">
+                        <button class="pagination-btn prev-btn" disabled>
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <span class="pagination-page">Page 1</span>
+                        <button class="pagination-btn next-btn" disabled>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Pig Modal -->
+    <div class="modal" id="addPigModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Pig</h3>
+                <button class="modal-close" id="closePigModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addPigForm" class="pig-form">
+                    <div class="form-group">
+                        <label>Pig Name/ID</label>
+                        <input type="text" id="pigName" placeholder="Enter pig name or ID" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Breed</label>
+                        <select id="pigBreed" required>
+                            <option value="">Select Breed</option>
+                            <option value="Berkshire">Berkshire</option>
+                            <option value="Duroc">Duroc</option>
+                            <option value="Hampshire">Hampshire</option>
+                            <option value="Chester White">Chester White</option>
+                            <option value="Landrace">Landrace</option>
+                            <option value="Large White">Large White</option>
+                            <option value="Large Black">Large Black</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Gender</label>
+                        <select id="pigGender" required>
+                            <option value="">Select Gender</option>
+                            <option value="female">Female</option>
+                            <option value="male">Male</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Age</label>
+                        <select id="pigAge" required>
+                            <option value="">Select Age</option>
+                            <option value="1">1 month</option>
+                            <option value="2">2 months</option>
+                            <option value="3">3 months</option>
+                            <option value="4">4 months</option>
+                            <option value="5">5 months</option>
+                            <option value="6">6 months</option>
+                            <option value="7">7 months</option>
+                            <option value="8">8 months</option>
+                            <option value="9">9 months</option>
+                            <option value="10">10 months</option>
+                            <option value="11">11 months</option>
+                            <option value="12">12 months</option>
+                            <option value="13">13 months</option>
+                            <option value="14">14 months</option>
+                            <option value="15">15 months</option>
+                            <option value="16">16 months</option>
+                            <option value="17">17 months</option>
+                            <option value="18">18 months</option>
+                            <option value="19">19 months</option>
+                            <option value="20">20 months</option>
+                            <option value="21">21 months</option>
+                            <option value="22">22 months</option>
+                            <option value="23">23 months</option>
+                            <option value="24">24 months</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="pigDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Initial Weight</label>
+                        <div class="weight-input-container">
+                            <input type="number" id="pigWeight" placeholder="Enter weight" step="0.1" min="0" required>
+                            <span class="weight-unit">kg</span>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-clear" id="clearPigForm">Clear</button>
+                        <button type="submit" class="btn-save">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Modal -->
+    <div class="notification-modal" id="notificationModal">
+        <div class="notification-modal-content">
+            <div class="notification-header">
+                <h3>Notifications</h3>
+                <button class="notification-close" id="closeNotificationModal">&times;</button>
+            </div>
+            <div class="notification-list">
+                <!-- Notifications will be populated via JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script src="Farm.js"></script>
+</body>
+</html>
