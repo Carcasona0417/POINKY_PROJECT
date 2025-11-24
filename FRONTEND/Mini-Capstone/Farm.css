@@ -1208,6 +1208,18 @@ body {
     transform: translateY(-50%);
 }
 
+/* --- FIX FOR SWEETALERT BEHIND MODAL --- */
+.swal2-container {
+    /* Target the SweetAlert container itself to ensure it's on top */
+    z-index: 9999999 !important; 
+}
+
+/* CSS to force SweetAlert to the top layer */
+.swal2-high-zindex {
+    /* Set this higher than any modal's z-index (e.g., higher than 2000) */
+    z-index: 9999999 !important; 
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .sidebar {
