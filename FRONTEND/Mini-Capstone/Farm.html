@@ -145,8 +145,7 @@
                             </tr>
                         </thead>
                         <tbody id="pigsTableBody">
-                            <!-- Pig rows will be populated dynamically -->
-                        </tbody>
+                            </tbody>
                     </table>
                 </div>
 
@@ -168,91 +167,73 @@
         </main>
     </div>
 
-    <!-- Add Pig Modal -->
-    <div class="modal" id="addPigModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Add Pig</h3>
-                <button class="modal-close" id="closePigModal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="addPigForm" class="pig-form">
-                    <div class="form-group">
-                        <label>Pig Name/ID</label>
-                        <input type="text" id="pigName" placeholder="Enter pig name or ID" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Breed</label>
-                        <select id="pigBreed" required>
-                            <option value="">Select Breed</option>
-                            <option value="Berkshire">Berkshire</option>
+    <div id="addPigModal" class="modal">
+        <div class="modal-content add-pig-modal-content">
+            <button class="close-button" id="closeAddPigModal">&times;</button>
+            <h2 class="modal-title add-pig-title">Add Pig</h2>
+            <form id="addPigForm">
+                <div class="form-group">
+                    <input type="text" id="pigName" name="pigName" placeholder="Pig Name / ID" required>
+                </div>
+                
+                <div class="form-group">
+                    <div class="select-wrapper">
+                        <select id="pigBreed" name="pigBreed" required>
+                            <option value="" disabled selected hidden>Breed</option> 
                             <option value="Duroc">Duroc</option>
-                            <option value="Hampshire">Hampshire</option>
-                            <option value="Chester White">Chester White</option>
+                            <option value="Yorkshire">Yorkshire</option>
                             <option value="Landrace">Landrace</option>
-                            <option value="Large White">Large White</option>
-                            <option value="Large Black">Large Black</option>
+                            <option value="Hampshire">Hampshire</option>
+                            <option value="Berkshire">Berkshire</option>
+                            <option value="Other">Other</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>Gender</label>
-                        <select id="pigGender" required>
-                            <option value="">Select Gender</option>
-                            <option value="female">Female</option>
+                </div>
+                
+                <div class="form-group">
+                    <div class="select-wrapper">
+                        <select id="pigGender" name="pigGender" required>
+                            <option value="" disabled selected hidden>Gender</option>
                             <option value="male">Male</option>
+                            <option value="female">Female</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>Age</label>
-                        <select id="pigAge" required>
-                            <option value="">Select Age</option>
-                            <option value="1">1 month</option>
-                            <option value="2">2 months</option>
-                            <option value="3">3 months</option>
-                            <option value="4">4 months</option>
-                            <option value="5">5 months</option>
-                            <option value="6">6 months</option>
-                            <option value="7">7 months</option>
-                            <option value="8">8 months</option>
-                            <option value="9">9 months</option>
-                            <option value="10">10 months</option>
-                            <option value="11">11 months</option>
-                            <option value="12">12 months</option>
-                            <option value="13">13 months</option>
-                            <option value="14">14 months</option>
-                            <option value="15">15 months</option>
-                            <option value="16">16 months</option>
-                            <option value="17">17 months</option>
-                            <option value="18">18 months</option>
-                            <option value="19">19 months</option>
-                            <option value="20">20 months</option>
-                            <option value="21">21 months</option>
-                            <option value="22">22 months</option>
-                            <option value="23">23 months</option>
-                            <option value="24">24 months</option>
-                        </select>
+                </div>
+
+                <div class="form-group">
+                    <input type="number" id="pigAge" name="pigAge" placeholder="Age (Months)" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <div class="input-with-icon">
+                        <input type="date" id="pigDate" name="pigDate" placeholder="Date" required>
                     </div>
-                    <div class="form-group">
-                        <label>Date</label>
-                        <input type="date" id="pigDate" required>
+                </div>
+                
+                <div class="form-group">
+                    <div class="input-with-suffix">
+                        <input type="number" id="pigWeight" placeholder="Initial Weight" name="pigWeight" min="0" step="0.1" required>
+                        <span class="suffix">kg</span> 
                     </div>
-                    <div class="form-group">
-                        <label>Initial Weight</label>
-                        <div class="weight-input-container">
-                            <input type="number" id="pigWeight" placeholder="Enter weight" step="0.1" min="0" required>
-                            <span class="weight-unit">kg</span>
-                        </div>
-                    </div>
-                    <div class="form-actions">
-                        <button type="button" class="btn-clear" id="clearPigForm">Clear</button>
-                        <button type="submit" class="btn-save">Save</button>
-                    </div>
-                </form>
-            </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-clear" id="clearAddPigForm">Clear</button>
+                    <button type="submit" class="btn btn-save">Save</button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <!-- Notification Modal -->
+    <div id="successModal" class="modal">
+        <div class="modal-content success-modal-content">
+            <div class="success-circle">
+                <i class="fas fa-check"></i>
+            </div>
+            <p class="success-message">Pig added successfully!</p>
+        </div>
+    </div>
+
     <div class="notification-modal" id="notificationModal">
         <div class="notification-modal-content">
             <div class="notification-header">
@@ -260,8 +241,7 @@
                 <button class="notification-close" id="closeNotificationModal">&times;</button>
             </div>
             <div class="notification-list">
-                <!-- Notifications will be populated via JavaScript -->
-            </div>
+                </div>
         </div>
     </div>
 
@@ -361,78 +341,78 @@
     </div>
 
     <div class="modal" id="addWeightModal" style="z-index: 3000;">
-    <div class="modal-content weight-modal-content">
-        <div class="weight-modal-header">
-            <h3>Add Weight</h3>
-            <button class="modal-close-red" id="closeWeightModal">&times;</button>
+        <div class="modal-content weight-modal-content">
+            <div class="weight-modal-header">
+                <h3>Add Weight</h3>
+                <button class="modal-close-red" id="closeWeightModal">&times;</button>
+            </div>
+            
+            <form id="addWeightForm">
+                <div class="weight-form-group">
+                    <div class="input-wrapper">
+                        <input type="date" id="newWeightDate" required>
+                    </div>
+                </div>
+
+                <div class="weight-form-group">
+                    <div class="weight-input-wrapper">
+                        <input type="number" id="newWeightValue" placeholder="Weight" step="0.1" required>
+                        <span class="weight-suffix">kg</span>
+                    </div>
+                </div>
+
+                <div class="weight-form-group">
+                    <div class="file-input-wrapper">
+                        <label for="newWeightImg" class="file-label">
+                            <span id="fileNameDisplay">Upload Image</span>
+                            <i class="fa-solid fa-arrow-up-from-bracket"></i>
+                        </label>
+                        <input type="file" id="newWeightImg" accept="image/*" style="display: none;">
+                    </div>
+                </div>
+
+                <div class="weight-modal-actions">
+                    <button type="button" class="btn-gray" id="clearWeightForm">Clear</button>
+                    <button type="submit" class="btn-green">Save</button>
+                </div>
+            </form>
         </div>
-        
-        <form id="addWeightForm">
-            <div class="weight-form-group">
-                <div class="input-wrapper">
-                    <input type="date" id="newWeightDate" required>
-                </div>
-            </div>
-
-            <div class="weight-form-group">
-                <div class="weight-input-wrapper">
-                    <input type="number" id="newWeightValue" placeholder="Weight" step="0.1" required>
-                    <span class="weight-suffix">kg</span>
-                </div>
-            </div>
-
-            <div class="weight-form-group">
-                <div class="file-input-wrapper">
-                    <label for="newWeightImg" class="file-label">
-                        <span id="fileNameDisplay">Upload Image</span>
-                        <i class="fa-solid fa-arrow-up-from-bracket"></i>
-                    </label>
-                    <input type="file" id="newWeightImg" accept="image/*" style="display: none;">
-                </div>
-            </div>
-
-            <div class="weight-modal-actions">
-                <button type="button" class="btn-gray" id="clearWeightForm">Clear</button>
-                <button type="submit" class="btn-green">Save</button>
-            </div>
-        </form>
     </div>
-</div>
 
-<div id="editWeightModal" class="modal">
-    <div class="modal-content weight-modal-content">
-        <div class="weight-modal-header">
-            <h3>Edit Record</h3> <button class="modal-close-red" id="closeEditWeightModal"><i class="fas fa-times"></i></button>
+    <div id="editWeightModal" class="modal">
+        <div class="modal-content weight-modal-content">
+            <div class="weight-modal-header">
+                <h3>Edit Record</h3> <button class="modal-close-red" id="closeEditWeightModal"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <form id="editWeightForm">
+                <div class="weight-form-group">
+                    <div class="input-wrapper">
+                        <input type="date" id="editWeightDate" placeholder="Date" required></div>
+                </div>
+
+                <div class="weight-form-group">
+                    <div class="weight-input-wrapper">
+                        <input type="number" id="editWeightValue" placeholder="Weight" step="0.1" required>
+                        <span class="weight-suffix">kg</span>
+                    </div>
+                </div>
+
+                <div class="weight-form-group">
+                    <div class="file-input-wrapper">
+                        <label for="editWeightImg" class="file-label">
+                            <span id="editFileNameDisplay">Upload Image</span>
+                            <i class="fa-solid fa-arrow-up-from-bracket"></i> </label>
+                        <input type="file" id="editWeightImg" accept="image/*" style="display: none;">
+                    </div>
+                </div>
+
+                <div class="weight-modal-actions">
+                    <button type="button" class="btn-gray" id="btnCancelEditWeight">Cancel</button> <button type="submit" class="btn-green">Save</button>
+                </div>
+            </form>
         </div>
-        
-        <form id="editWeightForm">
-            <div class="weight-form-group">
-                <div class="input-wrapper">
-                    <input type="date" id="editWeightDate" placeholder="Date" required></div>
-            </div>
-
-            <div class="weight-form-group">
-                <div class="weight-input-wrapper">
-                    <input type="number" id="editWeightValue" placeholder="Weight" step="0.1" required>
-                    <span class="weight-suffix">kg</span>
-                </div>
-            </div>
-
-            <div class="weight-form-group">
-                <div class="file-input-wrapper">
-                    <label for="editWeightImg" class="file-label">
-                        <span id="editFileNameDisplay">Upload Image</span>
-                        <i class="fa-solid fa-arrow-up-from-bracket"></i> </label>
-                    <input type="file" id="editWeightImg" accept="image/*" style="display: none;">
-                </div>
-            </div>
-
-            <div class="weight-modal-actions">
-                <button type="button" class="btn-gray" id="btnCancelEditWeight">Cancel</button> <button type="submit" class="btn-green">Save</button>
-            </div>
-        </form>
     </div>
-</div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="Farm.js"></script>
