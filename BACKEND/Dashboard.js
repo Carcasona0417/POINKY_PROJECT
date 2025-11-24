@@ -42,20 +42,38 @@ export async function getUpcomingReminders() {
 }
 
 // function for Monthly Expenses for bar chart
-export async function getMonthlyExpenses() {
-    const [rows] = await pool.query(`
-        SELECT MONTH(Date) AS month, SUM(Amount) AS total 
-        FROM expenses 
-        WHERE YEAR(Date) = YEAR(CURRENT_DATE())
+export async function getChartData() {
+    const [income_rows] = await pool.query(`
+        SELECT MONTH(Date) AS month, SUM(Amount) AS total_income
+        FROM expenses
+        WHERE Category = 'Sold'
         GROUP BY MONTH(Date)
-        ORDER BY MONTH(Date)
     `);
-        const monthlyExpenses = Array.from({ length: 12 }, (_, i) => ({ month: i + 1, total: 0 }));
 
-        rows.forEach(row => {
-            monthlyExpenses[row.month - 1].total = row.total;
+    const [farm_expense_rows] = await pool.query(`
+        SELECT MONTH(Date) AS month, SUM(Amount) AS farm_expenses
+        FROM expenses
+        WHERE Category != 'Sold' AND Category != 'Feed'
+        GROUP BY MONTH(Date)
+    `);
+
+    const [feed_expense_rows] = await pool.query(`
+        SELECT MONTH(Date) AS month, SUM(Amount) AS feed_expenses
+        FROM expenses
+        WHERE Category = 'Feed'
+        GROUP BY MONTH(Date)
+    `);
+
+    // merge into one array of 12 months
+    const result = [];
+    for (let m = 1; m <= 12; m++) {
+        result.push({
+            month: m,
+            income: (income_rows.find(r => r.month === m)?.total_income) || 0,
+            farm_expenses: (farm_expense_rows.find(r => r.month === m)?.farm_expenses) || 0,
+            feed_expenses: (feed_expense_rows.find(r => r.month === m)?.feed_expenses) || 0
         });
-        
-    return monthlyExpenses;
+    }
 
+    return result;
 }

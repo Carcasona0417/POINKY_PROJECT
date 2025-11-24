@@ -23,21 +23,22 @@
 - also added cors to prevent user from entering a specific url it will block the user
 - done with the password hashed when creating account password also installed bcrypt
 - done with connecting the login to the dashboard
-- done with the backend logic for statistics
-
-
+- done with the backend logic for statistics count
+- done with merging the logic for statisctics count
+- done with the backend logic for Chart
+- done with merging the logic for chart
 
 # CHANGES 
 - I change the API instead of /login-register I change it into /login for login and /register for register
 because it's the url of each pages
-
+- password length from 50 to 255 to integrate bcrypt
 
 # WHAT IS NEED TO BE CHANGE
 - Change the alert into a modern success message
-- After login Redirect the user to the dashboard
 
 # TO DO LISTS
 - OTP for forget password using SMTP
-- Merge the backend logic for statistics into the frontend
 - Notification should be able to fetch data from the reminders
+- add a logic where if the status of the pig is sold it will automatically change the category in the database into income
+
 

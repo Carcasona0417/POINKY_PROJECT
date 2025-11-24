@@ -1,142 +1,180 @@
 document.addEventListener('DOMContentLoaded', function() {
-    
-    // 1. Setup the Chart Context
+
+    // 1️⃣ Setup the Chart Context
     const ctx = document.getElementById('chart').getContext('2d');
-    
-    // 2. Define Data
-    const data = {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-        datasets: [
-            {
-                label: 'Income',
-                data: [18500, 19200, 21000, 19800, 22500, 24000, 23200, 24500, 26800, 25200, 23800, 26000],
-                backgroundColor: '#5dd05d',
-                hoverBackgroundColor: '#7dde7d',
-                barPercentage: 0.65,
-                categoryPercentage: 0.8,
-                borderRadius: 4
-            },
-            {
-                label: 'Farm Expenses',
-                data: [8200, 7800, 8500, 9200, 8800, 9500, 9100, 9800, 10200, 8900, 8700, 9400],
-                backgroundColor: '#ffd700',
-                hoverBackgroundColor: '#ffe44d',
-                barPercentage: 0.65,
-                categoryPercentage: 0.8,
-                borderRadius: 4
-            },
-            {
-                label: 'Feed Expenses',
-                data: [6800, 7200, 7500, 7100, 7800, 8200, 7900, 8500, 12500, 7600, 7300, 8100],
-                backgroundColor: '#8b2436',
-                hoverBackgroundColor: '#a52c42',
-                barPercentage: 0.65,
-                categoryPercentage: 0.8,
-                borderRadius: 4
-            }
-        ]
-    };
 
-    // 3. Custom Plugin for Background Area
-    const customChartBackground = {
-        id: 'customChartBackground',
-        beforeDraw: (chart) => {
-            const {ctx, chartArea: {left, top, width, height}} = chart;
-            ctx.save();
-            
-            // Create gradient
-            const gradient = ctx.createLinearGradient(0, 0, 0, height);
-            gradient.addColorStop(0, 'rgba(255, 245, 245, 0.8)');
-            gradient.addColorStop(1, 'rgba(255, 240, 245, 0.4)');
-            
-            // Fill background (Using standard fillRect for maximum compatibility)
-            ctx.fillStyle = gradient;
-            ctx.fillRect(left, top, width, height);
-            
-            // Draw grid lines manually if needed, or let Scales handle it
-            ctx.restore();
+    // 2️⃣ Fetch Dashboard Counts
+    async function fetchDashboardData() {
+        try {
+            const [farmsRes, pigsRes, expensesRes, remindersRes] = await Promise.all([
+                fetch('http://localhost:8080/total-farms', { method: 'POST' }),
+                fetch('http://localhost:8080/total-pigs', { method: 'POST' }),
+                fetch('http://localhost:8080/month-expenses', { method: 'POST' }),
+                fetch('http://localhost:8080/upcoming-reminders', { method: 'POST' })
+            ]);
+
+            const farmsData = await farmsRes.json();
+            const pigsData = await pigsRes.json();
+            const expensesData = await expensesRes.json();
+            const remindersData = await remindersRes.json();
+
+            document.querySelector('.stat-box:nth-child(1) span').textContent = farmsData.totalFarms;
+            document.querySelector('.stat-box:nth-child(2) span').textContent = pigsData.totalPigs;
+            document.querySelector('.stat-box:nth-child(3) span').textContent = '₱' + parseFloat(expensesData.monthExpenses || 0).toLocaleString();
+            document.getElementById('upcomingReminders').textContent = remindersData.upcomingReminders;
+
+        } catch (error) {
+            console.error('Error fetching dashboard data:', error);
         }
-    };
+    }
+    fetchDashboardData();
 
-    // 4. Chart Configuration
-    const config = {
-        type: 'bar',
-        data: data,
-        plugins: [customChartBackground],
-        options: {
-            responsive: true,
-            maintainAspectRatio: false, // Important for fitting container
-            plugins: {
-                legend: { display: false }, // Using custom HTML legend
-                tooltip: {
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    titleColor: '#333',
-                    bodyColor: '#666',
-                    borderColor: 'rgba(255, 107, 129, 0.3)',
-                    borderWidth: 1,
-                    padding: 12,
-                    callbacks: {
-                        label: function(context) {
-                            return `${context.dataset.label}: ₱${context.parsed.y.toLocaleString()}`;
+    // 3️⃣ Fetch Chart Data
+    async function fetchChartData() {
+        try {
+            const res = await fetch('http://localhost:8080/getChartData', { method: 'POST' });
+            const result = await res.json();
+            const chartData = result.chartData;
+
+            // Map backend data to arrays
+            const incomeData = Array(12).fill(0);
+            const farmExpenseData = Array(12).fill(0);
+            const feedExpenseData = Array(12).fill(0);
+
+            chartData.forEach(d => {
+                const monthIndex = d.month - 1; // month 1 = index 0
+                incomeData[monthIndex] = d.income || 0;
+                farmExpenseData[monthIndex] = d.farm_expenses || 0;
+                feedExpenseData[monthIndex] = d.feed_expenses || 0;
+            });
+
+            // Chart.js Data
+            const data = {
+                labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+                datasets: [
+                    {
+                        label: 'Income',
+                        data: incomeData,
+                        backgroundColor: '#5dd05d',
+                        hoverBackgroundColor: '#7dde7d',
+                        barPercentage: 0.65,
+                        categoryPercentage: 0.8,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Farm Expenses',
+                        data: farmExpenseData,
+                        backgroundColor: '#ffd700',
+                        hoverBackgroundColor: '#ffe44d',
+                        barPercentage: 0.65,
+                        categoryPercentage: 0.8,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Feed Expenses',
+                        data: feedExpenseData,
+                        backgroundColor: '#8b2436',
+                        hoverBackgroundColor: '#a52c42',
+                        barPercentage: 0.65,
+                        categoryPercentage: 0.8,
+                        borderRadius: 4
+                    }
+                ]
+            };
+
+            // Custom Chart Background Plugin
+            const customChartBackground = {
+                id: 'customChartBackground',
+                beforeDraw: (chart) => {
+                    const {ctx, chartArea: {left, top, width, height}} = chart;
+                    ctx.save();
+                    const gradient = ctx.createLinearGradient(0, 0, 0, height);
+                    gradient.addColorStop(0, 'rgba(255, 245, 245, 0.8)');
+                    gradient.addColorStop(1, 'rgba(255, 240, 245, 0.4)');
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(left, top, width, height);
+                    ctx.restore();
+                }
+            };
+
+            // Chart Configuration
+            const config = {
+                type: 'bar',
+                data: data,
+                plugins: [customChartBackground],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            titleColor: '#333',
+                            bodyColor: '#666',
+                            borderColor: 'rgba(255, 107, 129, 0.3)',
+                            borderWidth: 1,
+                            padding: 12,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ₱${context.parsed.y.toLocaleString()}`;
+                                }
+                            }
                         }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            border: { display: false },
+                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            ticks: {
+                                color: '#888',
+                                font: { family: 'Poppins' },
+                                callback: (value) => '₱' + value.toLocaleString()
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#666',
+                                font: { family: 'Poppins', weight: '500' }
+                            }
+                        }
+                    },
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            const datasetIndex = elements[0].datasetIndex;
+                            const index = elements[0].index;
+                            const label = data.datasets[datasetIndex].label;
+                            const value = data.datasets[datasetIndex].data[index];
+                            const month = data.labels[index];
+                            showDetailPopup(label, month, value);
+                        }
+                    },
+                    onHover: (event, chartElement) => {
+                        event.native.target.style.cursor = chartElement.length ? 'pointer' : 'default';
                     }
                 }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    border: { display: false },
-                    grid: { color: 'rgba(0,0,0,0.05)' },
-                    ticks: {
-                        color: '#888',
-                        font: { family: 'Poppins' },
-                        callback: (value) => '₱' + value.toLocaleString()
-                    }
-                },
-                x: {
-                    grid: { display: false },
-                    ticks: {
-                        color: '#666',
-                        font: { family: 'Poppins', weight: '500' }
-                    }
-                }
-            },
-            // Click Event for Details Popup
-            onClick: (e, elements) => {
-                if (elements.length > 0) {
-                    const datasetIndex = elements[0].datasetIndex;
-                    const index = elements[0].index;
-                    const label = data.datasets[datasetIndex].label;
-                    const value = data.datasets[datasetIndex].data[index];
-                    const month = data.labels[index];
-                    
-                    showDetailPopup(label, month, value);
-                }
-            },
-            onHover: (event, chartElement) => {
-                event.native.target.style.cursor = chartElement.length ? 'pointer' : 'default';
-            }
+            };
+
+            // Render Chart
+            new Chart(ctx, config);
+
+        } catch (error) {
+            console.error('Error fetching chart data:', error);
         }
-    };
+    }
 
-    // 5. Render Chart
-    new Chart(ctx, config);
+    fetchChartData();
 
-    // Helper: Show Popup Details
+    // 4️⃣ Show Popup Details
     function showDetailPopup(category, month, value) {
-        // Remove existing popup if any
         const existing = document.getElementById('chart-details-popup');
         if (existing) existing.remove();
 
         const popup = document.createElement('div');
         popup.id = 'chart-details-popup';
-        
-        // Colors map
-        const colors = {
-            'Income': '#5dd05d',
-            'Farm Expenses': '#ffd700',
-            'Feed Expenses': '#8b2436'
-        };
+
+        const colors = { 'Income': '#5dd05d', 'Farm Expenses': '#ffd700', 'Feed Expenses': '#8b2436' };
 
         popup.style.cssText = `
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -145,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function() {
             border: 2px solid var(--primary-pink, #ff6b81);
             text-align: center; min-width: 280px; animation: fadeIn 0.3s;
         `;
-        
+
         popup.innerHTML = `
             <h3 style="color: ${colors[category]}; margin-bottom: 5px;">${category}</h3>
             <p style="color: #888; margin-bottom: 10px; font-size: 14px;">${month}</p>
@@ -159,15 +197,15 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
 
         document.body.appendChild(popup);
-        
-        // Add style for animation
+
         const style = document.createElement('style');
-        style.innerHTML = `@keyframes fadeIn { from { opacity: 0; transform: translate(-50%, -45%); } to { opacity: 1; transform: translate(-50%, -50%); } }`;
+        style.innerHTML = `
+            @keyframes fadeIn { from { opacity: 0; transform: translate(-50%, -45%); } to { opacity: 1; transform: translate(-50%, -50%); } }
+        `;
         document.head.appendChild(style);
 
         document.getElementById('closePopup').onclick = () => popup.remove();
-        
-        // Close on background click
+
         document.addEventListener('click', function closeFn(e) {
             if (e.target !== popup && !popup.contains(e.target) && e.target.tagName !== 'CANVAS') {
                 popup.remove();
@@ -175,6 +213,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, true);
     }
+
 
     // ========== SIMPLE SAMPLE DATA CHART ==========
     
@@ -541,7 +580,7 @@ document.addEventListener('DOMContentLoaded', function() {
         datasets: [
             {
                 label: 'Income',
-                data: [18500, 19200, 21000, 19800, 22500, 24000, 23200, 24500, 26800, 25200, 23800, 26000],
+                data: incomeData,
                 backgroundColor: '#5dd05d',
                 hoverBackgroundColor: '#7dde7d',
                 barPercentage: 0.65,
@@ -550,7 +589,7 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             {
                 label: 'Farm Expenses',
-                data: [8200, 7800, 8500, 9200, 8800, 9500, 9100, 9800, 10200, 8900, 8700, 9400],
+                data: farmExpenseData,
                 backgroundColor: '#ffd700',
                 hoverBackgroundColor: '#ffe44d',
                 barPercentage: 0.65,
@@ -559,7 +598,7 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             {
                 label: 'Feed Expenses',
-                data: [6800, 7200, 7500, 7100, 7800, 8200, 7900, 8500, 12500, 7600, 7300, 8100],
+                data: feedExpenseData,
                 backgroundColor: '#8b2436',
                 hoverBackgroundColor: '#a52c42',
                 barPercentage: 0.65,

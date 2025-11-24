@@ -3,7 +3,7 @@ import cors from 'cors';
 import bcrypt from 'bcrypt';
 
 import {createUser, getUserByCredentials} from './Login-register.js';
-import { getTotalFarms,getTotalPigs,getUpcomingReminders, getMonthExpenses,getMonthlyExpenses } from './Dashboard.js';
+import { getTotalFarms,getTotalPigs,getUpcomingReminders, getMonthExpenses, getChartData } from './Dashboard.js';
 
 const app = express();
 
@@ -60,17 +60,17 @@ app.post('/register', async (req, res, next) => {
 });
 
 // TOTAL FARMS ROUTE
-app.get('/dashboard/total-farms', async (req, res, next) => {
+app.post('/total-farms', async (req, res, next) => {
     try {
         const rows = await getTotalFarms();
-        res.send({ totalFarms: rows[0].totalFarms });
+        return res.send({ totalFarms: rows[0].totalFarms });
     } catch (err) {
         next(err);
     }
 });
 
 // TOTAL PIGS ROUTE
-app.get('/dashboard/total-pigs', async (req, res, next) => {
+app.post('/total-pigs', async (req, res, next) => {
     try {
         const rows = await getTotalPigs();
         res.send({ totalPigs: rows[0].totalPigs });
@@ -80,7 +80,7 @@ app.get('/dashboard/total-pigs', async (req, res, next) => {
 });
 
 // TOTAL EXPENSES THIS MONTH
-app.get('/dashboard/month-expenses', async (req, res, next) => {
+app.post('/month-expenses', async (req, res, next) => {
     try {
         const rows = await getMonthExpenses();
         res.send({ monthExpenses: rows[0].monthExpenses });
@@ -90,7 +90,7 @@ app.get('/dashboard/month-expenses', async (req, res, next) => {
 });
 
 // TOTAL UPCOMING REMINDERS ROUTE
-app.get('/dashboard/upcoming-reminders', async (req, res, next) => {
+app.post('/upcoming-reminders', async (req, res, next) => {
     try {
         const rows = await getUpcomingReminders();
         res.send({ upcomingReminders: rows[0].upcomingReminders });
@@ -100,13 +100,15 @@ app.get('/dashboard/upcoming-reminders', async (req, res, next) => {
 });
         
 // MONTHLY EXPENSES FOR BAR CHART
-app.get('/dashboard/monthly-expenses', async (req, res, next) => {
+app.post('/getChartData', async (req, res, next) => {
     try {
-        const rows = await getMonthlyExpenses();
-        res.send({ monthlyExpenses: rows });
+        const rows = await getChartData();
+        res.send({ chartData: rows});
+
     } catch (err) {
         next(err);
     }
+
 });
 
 
