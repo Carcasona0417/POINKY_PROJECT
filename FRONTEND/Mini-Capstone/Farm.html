@@ -399,30 +399,37 @@
     </div>
 </div>
 
-    <div id="editWeightModal" class="modal add-weight-modal">
-    <div class="modal-content">
-        <span class="close" id="closeEditWeightModal">&times;</span>
-        <h3>Edit Weight Record</h3> <form id="editWeightForm">
-            <div class="form-group">
-                <label for="editWeightDate">Date</label>
-                <input type="date" id="editWeightDate" required>
-                <i class="fas fa-calendar-alt calendar-icon"></i>
+<div id="editWeightModal" class="modal">
+    <div class="modal-content weight-modal-content">
+        <div class="weight-modal-header">
+            <h3>Edit Record</h3> <button class="modal-close-red" id="closeEditWeightModal"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <form id="editWeightForm">
+            <div class="weight-form-group">
+                <div class="input-wrapper">
+                    <input type="date" id="editWeightDate" placeholder="Date" required></div>
             </div>
-            <div class="form-group input-with-unit">
-                <label for="editWeightValue">Weight</label>
-                <input type="number" id="editWeightValue" step="0.1" required>
-                <span>kg</span>
+
+            <div class="weight-form-group">
+                <div class="weight-input-wrapper">
+                    <input type="number" id="editWeightValue" placeholder="Weight" step="0.1" required>
+                    <span class="weight-suffix">kg</span>
+                </div>
             </div>
-            <div class="form-group upload-group">
-                <label for="editWeightImg" class="upload-btn">
-                    <span id="editFileNameDisplay">Upload Image</span>
-                    <i class="fas fa-upload upload-icon"></i>
-                </label>
-                <input type="file" id="editWeightImg" accept="image/*" style="display: none;">
+
+            <div class="weight-form-group">
+                <div class="file-input-wrapper">
+                    <label for="editWeightImg" class="file-label">
+                        <span id="editFileNameDisplay">Upload Image</span>
+                        <i class="fa-solid fa-arrow-up-from-bracket"></i> </label>
+                    <input type="file" id="editWeightImg" accept="image/*" style="display: none;">
+                </div>
             </div>
-            <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" id="clearEditWeightForm">Clear</button>
-                <button type="submit" class="btn btn-primary">Save Changes</button> </div>
+
+            <div class="weight-modal-actions">
+                <button type="button" class="btn-gray" id="btnCancelEditWeight">Cancel</button> <button type="submit" class="btn-green">Save</button>
+            </div>
         </form>
     </div>
 </div>
