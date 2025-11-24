@@ -322,7 +322,6 @@
                                 <i class="fa-solid fa-syringe"></i>
                             </button>
                         </div>
-                        <span class="edit-link">Edit</span>
                     </div>
 
                     <div class="tab-content active" id="tab-weight">
@@ -400,6 +399,35 @@
     </div>
 </div>
 
+    <div id="editWeightModal" class="modal add-weight-modal">
+    <div class="modal-content">
+        <span class="close" id="closeEditWeightModal">&times;</span>
+        <h3>Edit Weight Record</h3> <form id="editWeightForm">
+            <div class="form-group">
+                <label for="editWeightDate">Date</label>
+                <input type="date" id="editWeightDate" required>
+                <i class="fas fa-calendar-alt calendar-icon"></i>
+            </div>
+            <div class="form-group input-with-unit">
+                <label for="editWeightValue">Weight</label>
+                <input type="number" id="editWeightValue" step="0.1" required>
+                <span>kg</span>
+            </div>
+            <div class="form-group upload-group">
+                <label for="editWeightImg" class="upload-btn">
+                    <span id="editFileNameDisplay">Upload Image</span>
+                    <i class="fas fa-upload upload-icon"></i>
+                </label>
+                <input type="file" id="editWeightImg" accept="image/*" style="display: none;">
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="clearEditWeightForm">Clear</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button> </div>
+        </form>
+    </div>
+</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="Farm.js"></script>
 </body>
 </html>
