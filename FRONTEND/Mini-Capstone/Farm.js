@@ -495,26 +495,61 @@ document.addEventListener('DOMContentLoaded', function() {
     if (addPigForm) {
         addPigForm.addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            // --- 1. Collect Data ---
             const pigData = {
                 name: document.getElementById('pigName').value.trim(),
                 breed: document.getElementById('pigBreed').value,
                 gender: document.getElementById('pigGender').value,
-                age: document.getElementById('pigAge').value,
+                age: document.getElementById('pigAge').value, 
                 date: document.getElementById('pigDate').value,
                 initialWeight: document.getElementById('pigWeight').value
             };
 
+            // --- 2. Check for Required Fields ---
+            // If ALL fields are filled out, execute the save logic.
             if (Object.values(pigData).every(val => val !== '' && val !== null)) {
-                addNewPig(pigData);
-                closeAllModals();
+                
+                // --- 3. CRITICAL: Save the pig data ---
+                addNewPig(pigData); // <-- This saves the pig to the 'farms' array
+                
+                // --- 4. SUCCESS UI Sequence ---
+                closeAllModals(); 
+                openSuccessModal(); // <-- This opens the success pop-up
+
+                // Reset the form and set the date
                 this.reset();
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('pigDate').value = today;
+
+                // Automatically close success modal after a few seconds
+                setTimeout(() => {
+                    closeAllModals(); 
+                }, 2000); 
+
             } else {
+                // This runs if any field is empty
                 alert('Please fill out all fields.');
             }
         });
     }
+
+    function openSuccessModal() {
+        const successModal = document.getElementById('successModal');
+        if (successModal) {
+            successModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    const clearAddPigFormBtn = document.getElementById('clearAddPigForm');
+        if (clearAddPigFormBtn) {
+            clearAddPigFormBtn.addEventListener('click', function() {
+                addPigForm.reset();
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('pigDate').value = today; // Reset date to today
+            });
+        }
 
     // Add Weight Form (UPDATED to use getNewestWeight for consistency)
     if(addWeightForm) {
