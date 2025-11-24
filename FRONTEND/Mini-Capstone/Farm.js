@@ -200,36 +200,39 @@ document.addEventListener('DOMContentLoaded', function() {
         loadFarmData(currentFarmId);
     }
 
-    function createPigRow(pig) {
-        const row = document.createElement('tr');
-        row.className = `pig-row ${pig.status === 'sold' || pig.status === 'deceased' ? 'inactive' : ''}`;
-        row.setAttribute('data-id', pig.id);
-        row.setAttribute('data-status', pig.status);
+function createPigRow(pig) {
+    const row = document.createElement('tr');
+    row.className = `pig-row ${pig.status === 'sold' || pig.status === 'deceased' ? 'inactive' : ''}`;
+    row.setAttribute('data-id', pig.id);
+    row.setAttribute('data-status', pig.status);
 
-        const isInactive = pig.status === 'sold' || pig.status === 'deceased';
+    const isInactive = pig.status === 'sold' || pig.status === 'deceased';
+    // Determine the class and the onclick attribute based on the status
+    const badgeClass = isInactive ? 'pig-id-badge' : 'pig-id-badge clickable-badge';
+    const onClickAttribute = isInactive ? '' : `onclick="openPigDetails(${pig.id})"`;
 
-        row.innerHTML = `
-            <td class="col-checkbox">
-                <input type="checkbox" class="pig-checkbox" data-pig-id="${pig.id}" ${isInactive ? 'disabled' : ''}>
-            </td>
-            <td class="col-name">
-                <span class="pig-id-badge clickable-badge" onclick="openPigDetails(${pig.id})">
-                    ${pig.shortId}
-                </span>
-            </td>
-            <td class="col-age">${pig.age}</td>
-            <td class="col-weight">${pig.weight}</td>
-            <td class="col-gender">
-                <i class="fa-solid fa-${pig.gender === 'female' ? 'venus' : 'mars'} gender-icon ${pig.gender}"></i>
-                ${pig.gender === 'female' ? 'Female' : 'Male'}
-            </td>
-            <td class="col-status">
-                <span class="status-badge status-${pig.status}">${formatStatusText(pig.status)}</span>
-            </td>
-        `;
+    row.innerHTML = `
+        <td class="col-checkbox">
+            <input type="checkbox" class="pig-checkbox" data-pig-id="${pig.id}" ${isInactive ? 'disabled' : ''}>
+        </td>
+        <td class="col-name">
+            <span class="${badgeClass}" ${onClickAttribute}>
+                ${pig.shortId}
+            </span>
+        </td>
+        <td class="col-age">${pig.age}</td>
+        <td class="col-weight">${pig.weight}</td>
+        <td class="col-gender">
+            <i class="fa-solid fa-${pig.gender === 'female' ? 'venus' : 'mars'} gender-icon ${pig.gender}"></i>
+            ${pig.gender === 'female' ? 'Female' : 'Male'}
+        </td>
+        <td class="col-status">
+            <span class="status-badge status-${pig.status}">${formatStatusText(pig.status)}</span>
+        </td>
+    `;
 
-        return row;
-    }
+    return row;
+}
 
     function loadFarmData(farmId) {
         const currentFarm = getCurrentFarm();
