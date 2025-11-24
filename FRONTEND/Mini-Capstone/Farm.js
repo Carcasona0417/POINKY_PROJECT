@@ -24,8 +24,27 @@ document.addEventListener('DOMContentLoaded', function() {
     const addPigModal = document.getElementById('addPigModal');
     const notificationModal = document.getElementById('notificationModal');
     const addPigForm = document.getElementById('addPigForm');
+    const detailsModal = document.getElementById('pigDetailsModal'); 
+    const addWeightModal = document.getElementById('addWeightModal'); 
+    const addWeightForm = document.getElementById('addWeightForm');
+    const newWeightImgInput = document.getElementById('newWeightImg');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+    const btnOpenAddWeight = document.querySelector('.btn-add-record'); 
+    const closeWeightModalBtn = document.getElementById('closeWeightModal');
 
-    // Farm data storage - Start with empty arrays
+    // Edit Weight Modal elements
+    const editWeightModal = document.getElementById('editWeightModal');
+    const editWeightForm = document.getElementById('editWeightForm');
+    const editWeightImgInput = document.getElementById('editWeightImg');
+    const editFileNameDisplay = document.getElementById('editFileNameDisplay');
+    const closeEditWeightModalBtn = document.getElementById('closeEditWeightModal');
+
+    // State Variables
+    let currentDetailPigId = null;
+    let currentEditWeightRecordIndex = null;
+
+
+    // Farm data storage - Start with initial data structure
     let farms = [
         { id: 1, name: 'Farm 1', pigs: [] },
         { id: 2, name: 'Farm 2', pigs: [] },
@@ -36,151 +55,20 @@ document.addEventListener('DOMContentLoaded', function() {
     let nextFarmId = 4;
     let nextPigId = 1;
 
-    // --- Farm Management ---
-    tabAdd.addEventListener('click', function() {
-        addNewFarm();
-    });
+    // Helper: Get the current farm object
+    const getCurrentFarm = () => farms.find(farm => farm.id === currentFarmId);
 
-    function addNewFarm() {
-        const newFarm = {
-            id: nextFarmId,
-            name: `Farm ${nextFarmId}`,
-            pigs: []
+    // --- Helper & Modal Management ---
+
+    function formatStatusText(status) {
+        const statusMap = {
+            'growing': 'Growing',
+            'tosale': 'To Sale',
+            'sold': 'Sold',
+            'deceased': 'Deceased'
         };
-        
-        farms.push(newFarm);
-        
-        // Create new tab
-        const newTab = document.createElement('button');
-        newTab.className = 'tab';
-        newTab.setAttribute('role', 'tab');
-        newTab.setAttribute('aria-selected', 'false');
-        newTab.setAttribute('data-farm', newFarm.id);
-        newTab.textContent = newFarm.name;
-        
-        // Insert before the add button
-        tabsContainer.insertBefore(newTab, tabAdd);
-        
-        // Add click event to new tab
-        newTab.addEventListener('click', function() {
-            switchToFarm(newFarm.id);
-        });
-        
-        // Switch to the new farm
-        switchToFarm(newFarm.id);
-        
-        nextFarmId++;
-        console.log(`Added new farm: ${newFarm.name}`);
+        return statusMap[status] || status;
     }
-
-    function switchToFarm(farmId) {
-        // Update tabs
-        tabs.forEach(tab => tab.classList.remove('active'));
-        const currentTab = document.querySelector(`.tab[data-farm="${farmId}"]`);
-        if (currentTab) {
-            currentTab.classList.add('active');
-        }
-        
-        currentFarmId = farmId;
-        loadFarmData(farmId);
-    }
-
-    // --- Pig Management ---
-    function openAddPigModal() {
-        if (addPigModal) {
-            addPigModal.style.display = 'block';
-            document.body.style.overflow = 'hidden';
-            
-            // Set current date as default
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('pigDate').value = today;
-            
-            document.getElementById('pigName').focus();
-        }
-    }
-
-    function addNewPig(pigData) {
-        const currentFarm = farms.find(farm => farm.id === currentFarmId);
-        if (!currentFarm) return;
-
-        const newPig = {
-            id: nextPigId,
-            ...pigData,
-            shortId: pigData.name.substring(0, 3),
-            age: `${pigData.age} mo.`,
-            weight: `${pigData.initialWeight}kg`,
-            status: 'growing'
-        };
-
-        currentFarm.pigs.push(newPig);
-        nextPigId++;
-
-        // Refresh the table
-        loadFarmData(currentFarmId);
-        
-        console.log(`Added new pig: ${pigData.name} to ${currentFarm.name}`);
-    }
-
-    // --- Form Handling ---
-    if (addPigForm) {
-        addPigForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const pigData = {
-                name: document.getElementById('pigName').value.trim(),
-                breed: document.getElementById('pigBreed').value,
-                gender: document.getElementById('pigGender').value,
-                age: document.getElementById('pigAge').value,
-                date: document.getElementById('pigDate').value,
-                initialWeight: document.getElementById('pigWeight').value
-            };
-            
-            if (pigData.name && pigData.breed && pigData.gender && pigData.age && pigData.date && pigData.initialWeight) {
-                addNewPig(pigData);
-                closeAllModals();
-                this.reset();
-                
-                // Reset date to today
-                const today = new Date().toISOString().split('T')[0];
-                document.getElementById('pigDate').value = today;
-            }
-        });
-    }
-
-    // Clear form button
-    document.getElementById('clearPigForm')?.addEventListener('click', function() {
-        document.getElementById('addPigForm').reset();
-        // Reset date to today after clear
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('pigDate').value = today;
-    });
-
-    // --- Modal Management ---
-    if (addPigBtn) {
-        addPigBtn.addEventListener('click', openAddPigModal);
-    }
-
-    if (notificationBtn) {
-        notificationBtn.addEventListener('click', function() {
-            openNotificationModal();
-        });
-    }
-
-    // Close modals
-    document.addEventListener('click', function(e) {
-        if (e.target.id === 'closePigModal' || e.target.id === 'closeNotificationModal') {
-            closeAllModals();
-        }
-        
-        if (e.target.classList.contains('modal') || e.target.classList.contains('notification-modal')) {
-            closeAllModals();
-        }
-    });
-
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeAllModals();
-        }
-    });
 
     function closeAllModals() {
         const modals = document.querySelectorAll('.modal, .notification-modal');
@@ -196,8 +84,531 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.style.overflow = 'hidden';
         }
     }
+    
+    // --- Farm Management ---
 
-    // --- Existing Table Functionality ---
+    function addNewFarm() {
+        const newFarm = {
+            id: nextFarmId,
+            name: `Farm ${nextFarmId}`,
+            pigs: []
+        };
+        
+        farms.push(newFarm);
+        
+        const newTab = document.createElement('button');
+        newTab.className = 'tab';
+        newTab.setAttribute('role', 'tab');
+        newTab.setAttribute('aria-selected', 'false');
+        newTab.setAttribute('data-farm', newFarm.id);
+        newTab.textContent = newFarm.name;
+        
+        tabsContainer.insertBefore(newTab, tabAdd);
+        
+        newTab.addEventListener('click', function() {
+            switchToFarm(newFarm.id);
+        });
+        
+        switchToFarm(newFarm.id);
+        
+        nextFarmId++;
+    }
+
+    function switchToFarm(farmId) {
+        tabs.forEach(tab => tab.classList.remove('active'));
+        const currentTab = document.querySelector(`.tab[data-farm="${farmId}"]`);
+        if (currentTab) {
+            currentTab.classList.add('active');
+        }
+        
+        currentFarmId = farmId;
+        loadFarmData(farmId);
+    }
+
+    // --- Pig Management ---
+    
+    function openAddPigModal() {
+        if (addPigModal) {
+            addPigModal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('pigDate').value = today;
+            
+            document.getElementById('pigName').focus();
+        }
+    }
+
+    function addNewPig(pigData) {
+        const currentFarm = getCurrentFarm();
+        if (!currentFarm) return;
+
+        const initialWeight = parseFloat(pigData.initialWeight);
+
+        const newPig = {
+            id: nextPigId,
+            ...pigData,
+            shortId: pigData.name.substring(0, 3).toUpperCase(),
+            age: `${pigData.age} mo.`,
+            weight: `${initialWeight}kg`,
+            status: 'growing',
+            weightHistory: [{ 
+                date: pigData.date, 
+                weight: initialWeight, 
+                img: 'Dash Icons/WPig.png' 
+            }],
+            medicalRecords: [], 
+            statusHistory: [{ 
+                date: pigData.date,
+                status: 'growing',
+                notes: 'Initial registration.'
+            }] 
+        };
+
+        currentFarm.pigs.push(newPig);
+        nextPigId++;
+
+        loadFarmData(currentFarmId);
+    }
+
+    function createPigRow(pig) {
+        const row = document.createElement('tr');
+        row.className = `pig-row ${pig.status === 'sold' || pig.status === 'deceased' ? 'inactive' : ''}`;
+        row.setAttribute('data-id', pig.id);
+        row.setAttribute('data-status', pig.status);
+
+        const isInactive = pig.status === 'sold' || pig.status === 'deceased';
+        
+        row.innerHTML = `
+            <td class="col-checkbox">
+                <input type="checkbox" class="pig-checkbox" data-pig-id="${pig.id}" ${isInactive ? 'disabled' : ''}>
+            </td>
+            <td class="col-name">
+                <span class="pig-id-badge clickable-badge" onclick="openPigDetails(${pig.id})">
+                    ${pig.shortId}
+                </span>
+            </td>
+            <td class="col-age">${pig.age}</td>
+            <td class="col-weight">${pig.weight}</td>
+            <td class="col-gender">
+                <i class="fa-solid fa-${pig.gender === 'female' ? 'venus' : 'mars'} gender-icon ${pig.gender}"></i>
+                ${pig.gender === 'female' ? 'Female' : 'Male'}
+            </td>
+            <td class="col-status">
+                <span class="status-badge status-${pig.status}">${formatStatusText(pig.status)}</span>
+            </td>
+        `;
+
+        return row;
+    }
+
+    function loadFarmData(farmId) {
+        const currentFarm = getCurrentFarm();
+        if (!currentFarm) return;
+
+        pigsTableBody.innerHTML = '';
+
+        if (currentFarm.pigs.length === 0) {
+            pigsTableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="empty-farm">
+                        <div class="empty-farm-message">No pigs added yet.</div>
+                    </td>
+                </tr>
+            `;
+        } else {
+            currentFarm.pigs.forEach(pig => {
+                const row = createPigRow(pig);
+                pigsTableBody.appendChild(row);
+            });
+        }
+
+        pigCheckboxes = document.querySelectorAll('.pig-checkbox');
+        pigRows = document.querySelectorAll('.pig-row');
+        setupSelectAllCheckbox(selectAllCheckbox, pigCheckboxes);
+        setupSelectAllCheckbox(tableSelectAllCheckbox, pigCheckboxes);
+        updatePigCounts();
+        updateFilterCounts();
+    }
+
+
+    // --- 🐷 Pig Details & Weight Management Functions ---
+
+    // Expose to window for inline HTML calls (like from createPigRow)
+    window.openPigDetails = function(pigId) {
+        const pig = getCurrentFarm()?.pigs.find(p => p.id === pigId);
+        
+        if (!pig) return;
+        currentDetailPigId = pigId; 
+
+        document.getElementById('detailName').textContent = pig.name;
+        document.getElementById('detailBreed').textContent = pig.breed;
+        document.getElementById('detailGender').textContent = pig.gender.charAt(0).toUpperCase() + pig.gender.slice(1);
+        document.getElementById('detailDate').textContent = pig.date; 
+        document.getElementById('detailInitialWeight').textContent = (pig.weightHistory[0]?.weight || '0') + ' kg';
+        document.getElementById('detailCurrentWeight').textContent = pig.weight;
+        document.getElementById('detailStatus').textContent = formatStatusText(pig.status);
+
+        // Reset and set active tab to Weight
+        document.querySelectorAll('.detail-tab').forEach(tab => tab.classList.remove('active'));
+        document.querySelector(`.detail-tab[data-tab="weight"]`)?.classList.add('active');
+
+        updateDetailsTabContent(pig, 'weight');
+        
+        detailsModal.style.display = 'flex'; 
+        document.body.style.overflow = 'hidden';
+    };
+
+    function updateDetailsTabContent(pig, tabId) {
+        document.querySelectorAll('.details-main .tab-content').forEach(c => c.style.display = 'none');
+        
+        const content = document.getElementById(`tab-${tabId}`);
+        if (!content) return;
+        
+        content.style.display = 'block';
+
+        if (tabId === 'weight') {
+            const tbody = document.getElementById('weightRecordsBody');
+            tbody.innerHTML = ''; 
+
+            if (pig.weightHistory && pig.weightHistory.length > 0) {
+                const reversedHistory = pig.weightHistory.slice().reverse();
+                const totalRecords = pig.weightHistory.length;
+
+                reversedHistory.forEach((rec, revIndex) => { 
+                    const originalIndex = totalRecords - 1 - revIndex; 
+                    const tr = document.createElement('tr');
+                    
+                    const dateObj = new Date(rec.date);
+                    const dateString = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    
+                    let actionIconHTML = '';
+                    
+                    // Only the newest record (last index in original array) can be edited.
+                    if (originalIndex === totalRecords - 1) {
+                        actionIconHTML = `<i class="fas fa-edit action-icon edit-icon" data-record-index="${originalIndex}"></i>`; 
+                    } else {
+                        // All older records can only be deleted.
+                        actionIconHTML = `<i class="fas fa-trash-alt action-icon delete-icon" data-record-index="${originalIndex}"></i>`; 
+                    }
+
+                    tr.innerHTML = `
+                        <td>${dateString}</td>
+                        <td>${rec.weight} kg</td>
+                        <td class="record-actions">
+                            <img src="${rec.img}" class="pig-thumb" alt="pig">
+                            ${actionIconHTML}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Attach event listeners to the new icons
+                tbody.querySelectorAll('.edit-icon').forEach(icon => {
+                    icon.addEventListener('click', function() {
+                        const index = parseInt(this.dataset.recordIndex);
+                        openEditWeightModal(index);
+                    });
+                });
+                tbody.querySelectorAll('.delete-icon').forEach(icon => {
+                    icon.addEventListener('click', function() {
+                        const index = parseInt(this.dataset.recordIndex);
+                        deleteWeightRecord(index);
+                    });
+                });
+
+            } else {
+                tbody.innerHTML = '<tr><td colspan="3">No weight records found.</td></tr>';
+            }
+        } 
+        
+        if (tabId === 'weight') {
+            btnOpenAddWeight.textContent = 'Add Weight Record';
+            btnOpenAddWeight.onclick = openAddWeightModal;
+            btnOpenAddWeight.style.display = 'inline-block';
+        } else {
+            btnOpenAddWeight.style.display = 'none'; 
+        }
+    }
+
+    // --- Add Weight Modal Logic ---
+    function openAddWeightModal() {
+        if (!currentDetailPigId) return;
+        detailsModal.style.display = 'none';
+        addWeightModal.style.display = 'flex';
+        
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('newWeightDate').value = today;
+
+        fileNameDisplay.textContent = 'Upload Image';
+        fileNameDisplay.style.color = 'var(--text-light)';
+        fileNameDisplay.style.fontStyle = 'italic';
+        document.getElementById('newWeightImg').value = ''; 
+    }
+
+    // --- Edit Weight Modal Logic ---
+    function openEditWeightModal(recordIndex) {
+        if (!currentDetailPigId) return;
+
+        const pig = getCurrentFarm()?.pigs.find(p => p.id === currentDetailPigId);
+        
+        if (!pig || !pig.weightHistory || recordIndex >= pig.weightHistory.length) return;
+
+        currentEditWeightRecordIndex = recordIndex; 
+        const recordToEdit = pig.weightHistory[recordIndex];
+
+        // Populate the form with existing data
+        document.getElementById('editWeightDate').value = recordToEdit.date;
+        document.getElementById('editWeightValue').value = recordToEdit.weight;
+        
+        // Handle image display
+        const isDefaultImage = recordToEdit.img.includes('Dash Icons/WPig.png');
+        editFileNameDisplay.textContent = isDefaultImage ? 'Upload Image' : 'Current Image'; 
+        editFileNameDisplay.style.color = isDefaultImage ? 'var(--text-light)' : '#333';
+        editFileNameDisplay.style.fontStyle = isDefaultImage ? 'italic' : 'normal';
+        editWeightImgInput.value = ''; 
+
+        detailsModal.style.display = 'none';
+        editWeightModal.style.display = 'flex';
+    }
+
+    // --- 🗑️ DELETE WEIGHT RECORD LOGIC (with SweetAlert fix) ---
+    function deleteWeightRecord(recordIndex) {
+        if (!currentDetailPigId) return;
+
+        const pig = getCurrentFarm()?.pigs.find(p => p.id === currentDetailPigId);
+        
+        if (!pig || !pig.weightHistory || recordIndex >= pig.weightHistory.length) return;
+
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this record!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!',
+            // FIX: Uses custom class for high z-index to show SweetAlert over the Modal
+            customClass: {
+                popup: 'swal2-high-zindex'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // 1. Remove the record from the array
+                pig.weightHistory.splice(recordIndex, 1);
+
+                // 2. Determine the new current weight
+                const wasMostRecent = recordIndex === pig.weightHistory.length; 
+                
+                if (wasMostRecent) { 
+                    const newestRecord = pig.weightHistory[pig.weightHistory.length - 1];
+                    if (newestRecord) {
+                        pig.weight = `${newestRecord.weight}kg`;
+                    } else {
+                        pig.weight = '0kg';
+                    }
+                }
+
+                // 3. Refresh UI
+                updateDetailsTabContent(pig, 'weight');
+                loadFarmData(currentFarmId); 
+
+                Swal.fire(
+                    'Deleted!',
+                    'The weight record has been removed.',
+                    'success'
+                );
+            }
+        });
+    }
+
+    // --- Form Handlers ---
+
+    // Add Pig Form
+    if (addPigForm) {
+        addPigForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const pigData = {
+                name: document.getElementById('pigName').value.trim(),
+                breed: document.getElementById('pigBreed').value,
+                gender: document.getElementById('pigGender').value,
+                age: document.getElementById('pigAge').value,
+                date: document.getElementById('pigDate').value,
+                initialWeight: document.getElementById('pigWeight').value
+            };
+            
+            if (Object.values(pigData).every(val => val !== '' && val !== null)) {
+                addNewPig(pigData);
+                closeAllModals();
+                this.reset();
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('pigDate').value = today;
+            } else {
+                alert('Please fill out all fields.');
+            }
+        });
+    }
+
+    // Add Weight Form
+    if(addWeightForm) {
+        addWeightForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const dateVal = document.getElementById('newWeightDate').value;
+            const weightVal = document.getElementById('newWeightValue').value;
+            
+            if (!dateVal || !weightVal) {
+                alert('Please enter a date and weight.');
+                return;
+            }
+
+            const currentFarm = getCurrentFarm();
+            const pig = currentFarm.pigs.find(p => p.id === currentDetailPigId);
+            if (pig) {
+                const newRecord = {
+                    date: dateVal,
+                    weight: parseFloat(weightVal),
+                    img: newWeightImgInput.files && newWeightImgInput.files[0] ? URL.createObjectURL(newWeightImgInput.files[0]) : 'Dash Icons/WPig.png'
+                };
+                
+                pig.weightHistory.push(newRecord);
+                pig.weight = `${weightVal}kg`; 
+
+                addWeightModal.style.display = 'none';
+                detailsModal.style.display = 'flex';
+                updateDetailsTabContent(pig, 'weight'); 
+                loadFarmData(currentFarmId);
+
+                addWeightForm.reset();
+            } else {
+                 alert('Error: Pig not found.');
+                 addWeightModal.style.display = 'none';
+            }
+        });
+    }
+
+    // Edit Weight Form
+    if (editWeightForm) {
+        editWeightForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const dateVal = document.getElementById('editWeightDate').value;
+            const weightVal = document.getElementById('editWeightValue').value;
+
+            if (!dateVal || !weightVal) {
+                alert('Please enter a date and weight.');
+                return;
+            }
+
+            const pig = getCurrentFarm()?.pigs.find(p => p.id === currentDetailPigId);
+
+            if (pig && currentEditWeightRecordIndex !== null) {
+                const editedRecord = pig.weightHistory[currentEditWeightRecordIndex];
+                editedRecord.date = dateVal;
+                editedRecord.weight = parseFloat(weightVal);
+                
+                if (editWeightImgInput.files && editWeightImgInput.files[0]) {
+                    editedRecord.img = URL.createObjectURL(editWeightImgInput.files[0]);
+                }
+
+                // If the edited record is the most recent, update the pig's current weight
+                if (currentEditWeightRecordIndex === pig.weightHistory.length - 1) {
+                    pig.weight = `${weightVal}kg`;
+                }
+
+                editWeightModal.style.display = 'none';
+                detailsModal.style.display = 'flex';
+                updateDetailsTabContent(pig, 'weight'); 
+                loadFarmData(currentFarmId); 
+                this.reset();
+            } else {
+                alert('Error: Could not save changes.');
+            }
+            currentEditWeightRecordIndex = null; 
+        });
+    }
+
+    // --- Event Listeners for UI interaction (Modals, Tabs, Filters) ---
+
+    // Modal Close Listeners
+    document.addEventListener('click', function(e) {
+        if (e.target.id.startsWith('close') || 
+            e.target.classList.contains('modal') || 
+            e.target.classList.contains('notification-modal')) { 
+            closeAllModals();
+        }
+    });
+
+    if(closeWeightModalBtn) {
+        closeWeightModalBtn.addEventListener('click', function() {
+            addWeightModal.style.display = 'none';
+            detailsModal.style.display = 'flex'; 
+        });
+    }
+    
+    if (closeEditWeightModalBtn) {
+        closeEditWeightModalBtn.addEventListener('click', function() {
+            editWeightModal.style.display = 'none';
+            detailsModal.style.display = 'flex'; 
+        });
+    }
+
+    // File Input change listeners
+    if(newWeightImgInput) {
+        newWeightImgInput.addEventListener('change', function() {
+            if(this.files && this.files.length > 0) {
+                fileNameDisplay.textContent = this.files[0].name;
+                fileNameDisplay.style.color = '#333';
+                fileNameDisplay.style.fontStyle = 'normal';
+            } else {
+                fileNameDisplay.textContent = 'Upload Image';
+                fileNameDisplay.style.color = 'var(--text-light)';
+                fileNameDisplay.style.fontStyle = 'italic';
+            }
+        });
+    }
+    if (editWeightImgInput) {
+        editWeightImgInput.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+                editFileNameDisplay.textContent = this.files[0].name;
+                editFileNameDisplay.style.color = '#333';
+                editFileNameDisplay.style.fontStyle = 'normal';
+            } else {
+                editFileNameDisplay.textContent = 'Upload Image';
+                editFileNameDisplay.style.color = 'var(--text-light)';
+                editFileNameDisplay.style.fontStyle = 'italic';
+            }
+        });
+    }
+
+    // Main UI Buttons
+    if (tabAdd) tabAdd.addEventListener('click', addNewFarm);
+    if (addPigBtn) addPigBtn.addEventListener('click', openAddPigModal);
+    if (notificationBtn) notificationBtn.addEventListener('click', openNotificationModal);
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeAllModals();
+        }
+    });
+
+    // Details Modal Tab Switching
+    const detailTabs = document.querySelectorAll('.detail-tab');
+    detailTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            detailTabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            const tabId = this.getAttribute('data-tab');
+            const pig = getCurrentFarm()?.pigs.find(p => p.id === currentDetailPigId);
+            if(pig) {
+                updateDetailsTabContent(pig, tabId);
+            }
+        });
+    });
+    
+    // --- Table Filtering & Selection (remains the same) ---
+    
     function setupSelectAllCheckbox(masterCheckbox, checkboxes) {
         if (!masterCheckbox) return;
 
@@ -217,159 +628,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 const enabledCheckboxes = Array.from(checkboxes).filter(cb => !cb.disabled);
                 const allChecked = enabledCheckboxes.length > 0 && 
-                                 enabledCheckboxes.every(cb => cb.checked);
+                                enabledCheckboxes.every(cb => cb.checked);
                 if (allChecked) {
                     masterCheckbox.checked = true;
                 }
             });
         });
     }
-
-    function loadFarmData(farmId) {
-        const currentFarm = farms.find(farm => farm.id === farmId);
-        if (!currentFarm) return;
-
-        // Clear existing table rows
-        pigsTableBody.innerHTML = '';
-
-        if (currentFarm.pigs.length === 0) {
-            // Show empty state
-            pigsTableBody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="empty-farm">
-                        <div class="empty-farm-message">No pigs added yet.</div>
-                    </td>
-                </tr>
-            `;
-        } else {
-            // Populate with pigs
-            currentFarm.pigs.forEach(pig => {
-                const row = createPigRow(pig);
-                pigsTableBody.appendChild(row);
-            });
-        }
-
-        // Update checkboxes and counts
-        pigCheckboxes = document.querySelectorAll('.pig-checkbox');
-        pigRows = document.querySelectorAll('.pig-row');
-        setupSelectAllCheckbox(selectAllCheckbox, pigCheckboxes);
-        setupSelectAllCheckbox(tableSelectAllCheckbox, pigCheckboxes);
-        updatePigCounts();
-        updateFilterCounts();
-        
-        console.log(`Loaded data for ${currentFarm.name}`);
-    }
-
-    // --- UPDATED: Create Pig Row (Badge Only & Clickable) ---
-    function createPigRow(pig) {
-        const row = document.createElement('tr');
-        row.className = `pig-row ${pig.status === 'sold' || pig.status === 'deceased' ? 'inactive' : ''}`;
-        row.setAttribute('data-id', pig.id);
-        row.setAttribute('data-status', pig.status);
-
-        const isInactive = pig.status === 'sold' || pig.status === 'deceased';
-        
-        row.innerHTML = `
-            <td class="col-checkbox">
-                <input type="checkbox" class="pig-checkbox" data-pig-id="${pig.id}" ${isInactive ? 'disabled' : ''}>
-            </td>
-            <td class="col-name">
-                <span class="pig-id-badge clickable-badge" onclick="window.openPigDetails(${pig.id})">
-                    ${pig.shortId}
-                </span>
-            </td>
-            <td class="col-age">${pig.age}</td>
-            <td class="col-weight">${pig.weight}</td>
-            <td class="col-gender">
-                <i class="fa-solid fa-${pig.gender === 'female' ? 'venus' : 'mars'} gender-icon ${pig.gender}"></i>
-                ${pig.gender === 'female' ? 'Female' : 'Male'}
-            </td>
-            <td class="col-status">
-                <span class="status-badge status-${pig.status}">${formatStatusText(pig.status)}</span>
-            </td>
-        `;
-
-        return row;
-    }
-
-    // --- NEW FEATURE: Pig Details Modal Logic ---
-    
-    // Expose this function to window so the onclick in HTML can find it
-    window.openPigDetails = function(pigId) {
-        const currentFarm = farms.find(farm => farm.id === currentFarmId);
-        const pig = currentFarm.pigs.find(p => p.id === pigId);
-        
-        if (!pig) return;
-
-        // 1. Populate Left Side (Pig Info)
-        document.getElementById('detailName').textContent = pig.name;
-        document.getElementById('detailBreed').textContent = pig.breed;
-        document.getElementById('detailGender').textContent = pig.gender.charAt(0).toUpperCase() + pig.gender.slice(1);
-        document.getElementById('detailDate').textContent = pig.date; // Date acquired
-        document.getElementById('detailInitialWeight').textContent = pig.initialWeight + ' kg'; // Assuming saved as number
-        document.getElementById('detailCurrentWeight').textContent = pig.weight; // Assuming saved as string "XXkg"
-        document.getElementById('detailStatus').textContent = formatStatusText(pig.status);
-
-        // 2. Populate Right Side (Weight Records - Dummy Data for Demo)
-        const tbody = document.getElementById('weightRecordsBody');
-        tbody.innerHTML = ''; // Clear previous
-
-        // Generate dummy history based on current weight
-        // In a real app, this would come from pig.weightHistory array
-        const currentW = parseFloat(pig.weight) || 0;
-        const history = [
-            { date: 'Today', weight: currentW, img: 'Dash Icons/WPig.png' },
-            { date: '2 weeks ago', weight: (currentW * 0.9).toFixed(1), img: 'Dash Icons/WPig.png' },
-            { date: '1 month ago', weight: (currentW * 0.8).toFixed(1), img: 'Dash Icons/WPig.png' }
-        ];
-
-        history.forEach(rec => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${rec.date}</td>
-                <td>${rec.weight} kg</td>
-                <td><img src="${rec.img}" class="pig-thumb" alt="pig"></td>
-            `;
-            tbody.appendChild(tr);
-        });
-
-        // 3. Show Modal
-        const modal = document.getElementById('pigDetailsModal');
-        modal.style.display = 'flex'; // Using flex to center
-        document.body.style.overflow = 'hidden';
-    };
-
-    // Close Details Modal Logic
-    const closeDetailsBtn = document.getElementById('closeDetailsModal');
-    const detailsModal = document.getElementById('pigDetailsModal');
-
-    if(closeDetailsBtn) {
-        closeDetailsBtn.addEventListener('click', function() {
-            detailsModal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        });
-    }
-
-    // Tab Switching Logic inside Details Modal
-    const detailTabs = document.querySelectorAll('.detail-tab');
-    detailTabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            // Remove active class from all tabs
-            detailTabs.forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.details-main .tab-content').forEach(c => c.style.display = 'none');
-
-            // Add active to clicked tab
-            this.classList.add('active');
-            
-            // Show corresponding content
-            const tabId = this.getAttribute('data-tab');
-            const content = document.getElementById(`tab-${tabId}`);
-            if(content) {
-                content.style.display = 'block';
-                if(tabId === 'weight') content.style.display = 'block'; // Ensure block
-            }
-        });
-    });
 
     function filterPigs(filterType) {
         const rows = document.querySelectorAll('.pig-row');
@@ -386,32 +651,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         updateDisplayCounts(visibleCount);
     }
-
-    function searchPigs(searchTerm) {
-        const rows = document.querySelectorAll('.pig-row');
-        let visibleCount = 0;
-
-        rows.forEach(row => {
-            const pigName = row.querySelector('.pig-fullname')?.textContent.toLowerCase() || '';
-            const pigId = row.querySelector('.pig-id-badge')?.textContent.toLowerCase() || '';
-            const pigStatus = row.dataset.status;
-            
-            const matchesSearch = !searchTerm || 
-                                pigName.includes(searchTerm) || 
-                                pigId.includes(searchTerm) ||
-                                pigStatus.includes(searchTerm);
-
-            if (matchesSearch) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
-            }
-        });
-
-        updateDisplayCounts(visibleCount);
-    }
-
+    
     function changeSelectedPigsStatus(newStatus) {
         const selectedPigs = Array.from(pigCheckboxes)
             .filter(cb => cb.checked && !cb.disabled)
@@ -422,7 +662,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const currentFarm = farms.find(farm => farm.id === currentFarmId);
+        const currentFarm = getCurrentFarm();
         if (!currentFarm) return;
 
         selectedPigs.forEach(pigId => {
@@ -436,7 +676,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updatePigCounts() {
-        const currentFarm = farms.find(farm => farm.id === currentFarmId);
+        const currentFarm = getCurrentFarm();
         if (!currentFarm) return;
 
         const activePigs = currentFarm.pigs.filter(pig => 
@@ -451,7 +691,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateFilterCounts() {
-        const currentFarm = farms.find(farm => farm.id === currentFarmId);
+        const currentFarm = getCurrentFarm();
         if (!currentFarm) return;
 
         const counts = {
@@ -462,7 +702,6 @@ document.addEventListener('DOMContentLoaded', function() {
             deceased: currentFarm.pigs.filter(p => p.status === 'deceased').length
         };
 
-        // Update filter counts
         filterItems.forEach(item => {
             const filterType = item.dataset.filter;
             const countSpan = item.querySelector('.filter-count');
@@ -475,18 +714,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateDisplayCounts(visibleCount) {
         if (showingCount) showingCount.textContent = visibleCount;
     }
-
-    function formatStatusText(status) {
-        const statusMap = {
-            'growing': 'Growing',
-            'tosale': 'To Sale',
-            'sold': 'Sold',
-            'deceased': 'Deceased'
-        };
-        return statusMap[status] || status;
-    }
-
-    // Initialize event listeners for tabs and filters
+    
+    // Attach event listeners for tabs, filters, dropdowns, and search
     tabs.forEach(tab => {
         tab.addEventListener('click', function() {
             const farmId = parseInt(this.dataset.farm);
@@ -539,118 +768,38 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    function searchPigs(searchTerm) {
+        const rows = document.querySelectorAll('.pig-row');
+        let visibleCount = 0;
 
+        rows.forEach(row => {
+            const pigName = row.querySelector('.col-name')?.textContent.toLowerCase() || '';
+            const pigId = row.querySelector('.pig-id-badge')?.textContent.toLowerCase() || '';
+            const pigStatus = row.dataset.status;
+            
+            const matchesSearch = !searchTerm || 
+                                 pigName.includes(searchTerm) || 
+                                 pigId.includes(searchTerm) ||
+                                 pigStatus.includes(searchTerm);
+
+            if (matchesSearch) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        updateDisplayCounts(visibleCount);
+    }
+    
     // --- Initialize the application ---
     function init() {
         // Load initial farm data
         loadFarmData(currentFarmId);
-        console.log('Pig Management System initialized');
     }
 
     // Start the application
     init();
 });
-
-// --- ADD WEIGHT MODAL LOGIC ---
-
-    const addWeightModal = document.getElementById('addWeightModal');
-    const btnOpenAddWeight = document.querySelector('.btn-add-record'); // Target the button in Details Modal
-    const closeWeightModalBtn = document.getElementById('closeWeightModal');
-    const addWeightForm = document.getElementById('addWeightForm');
-    const newWeightImgInput = document.getElementById('newWeightImg');
-    const fileNameDisplay = document.getElementById('fileNameDisplay');
-
-    // Open "Add Weight" Modal
-    if(btnOpenAddWeight) {
-        btnOpenAddWeight.addEventListener('click', function() {
-            addWeightModal.style.display = 'flex';
-            
-            // Set default date to today
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('newWeightDate').value = today;
-        });
-    }
-
-    // Close Modal
-    if(closeWeightModalBtn) {
-        closeWeightModalBtn.addEventListener('click', function() {
-            addWeightModal.style.display = 'none';
-        });
-    }
-
-    // Update File Name when image selected
-    if(newWeightImgInput) {
-        newWeightImgInput.addEventListener('change', function() {
-            if(this.files && this.files.length > 0) {
-                fileNameDisplay.textContent = this.files[0].name;
-                fileNameDisplay.style.color = '#333';
-                fileNameDisplay.style.fontStyle = 'normal';
-            } else {
-                fileNameDisplay.textContent = 'Upload Image';
-            }
-        });
-    }
-
-    // Clear Form
-    document.getElementById('clearWeightForm')?.addEventListener('click', function() {
-        addWeightForm.reset();
-        fileNameDisplay.textContent = 'Upload Image';
-        // Reset date
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('newWeightDate').value = today;
-    });
-
-    // Save Weight Record
-    if(addWeightForm) {
-        addWeightForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            // 1. Get Values
-            const dateVal = document.getElementById('newWeightDate').value;
-            const weightVal = document.getElementById('newWeightValue').value;
-            
-            // Format Date (e.g., "2025-09-10" -> "Sept 10")
-            const dateObj = new Date(dateVal);
-            const dateString = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-            // 2. Add to Table (Prepend to show newest first)
-            const tbody = document.getElementById('weightRecordsBody');
-            const newRow = document.createElement('tr');
-            
-            // Determine image source (placeholder or uploaded file preview)
-            let imgSrc = 'Dash Icons/WPig.png'; // Default
-            if(newWeightImgInput.files && newWeightImgInput.files[0]) {
-                imgSrc = URL.createObjectURL(newWeightImgInput.files[0]);
-            }
-
-            newRow.innerHTML = `
-                <td>${dateString}</td>
-                <td>${weightVal} kg</td>
-                <td><img src="${imgSrc}" class="pig-thumb" alt="pig"></td>
-            `;
-
-            // Insert at the top of the table
-            if(tbody.firstChild) {
-                tbody.insertBefore(newRow, tbody.firstChild);
-            } else {
-                tbody.appendChild(newRow);
-            }
-
-            // 3. Update "Current Weight" in the Side Panel
-            const currentWeightDisplay = document.getElementById('detailCurrentWeight');
-            if(currentWeightDisplay) {
-                currentWeightDisplay.textContent = weightVal + ' kg';
-                
-                // Add a quick animation to show it updated
-                currentWeightDisplay.style.color = '#4CAF50';
-                setTimeout(() => {
-                    currentWeightDisplay.style.color = ''; // Revert to CSS color
-                }, 1000);
-            }
-            
-            // 4. Close Modal and Reset
-            addWeightModal.style.display = 'none';
-            addWeightForm.reset();
-            fileNameDisplay.textContent = 'Upload Image';
-        });
-    }

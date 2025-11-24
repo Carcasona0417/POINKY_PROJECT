@@ -100,7 +100,7 @@ body {
 
 /* Header with Background */
 .header-bg {
-    background-image: linear-gradient(var(--header-overlay), var(--header-overlay)), url('https://images.unsplash.com/photo-1604898852398-018626649673?q=80&w=2070&auto=format&fit=crop');
+    background-image: url('Background Images/BG.png');
     background-size: cover;
     background-position: center;
     height: 280px;
@@ -108,6 +108,20 @@ body {
     color: white;
     display: flex;
     flex-direction: column;
+}
+
+/* Moving background pattern */
+.header-bg::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+    animation: float 20s infinite linear;
+}
+
+@keyframes float {
+    0% { transform: translateX(0) translateY(0); }
+    100% { transform: translateX(-100px) translateY(-100px); }
 }
 
 .top-bar {
@@ -1158,6 +1172,40 @@ body {
 
 .btn-green:hover {
     background-color: #43A047;
+}
+
+/* Edit */
+/* Styles for action icons in tables */
+.action-icon {
+    cursor: pointer;
+    margin-left: 10px;
+    font-size: 1.1em;
+    transition: color 0.2s ease-in-out;
+}
+
+.action-icon.edit-icon {
+    color: var(--primary-color); /* Green for edit */
+}
+
+.action-icon.delete-icon {
+    color: var(--danger-color); /* Red for delete */
+}
+
+.action-icon:hover {
+    filter: brightness(1.2); /* Slightly brighter on hover */
+}
+
+/* Make sure the records table allows space for the icons */
+.records-table td {
+    position: relative;
+    padding-right: 40px; /* Give space for icons */
+}
+
+.records-table td .action-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 /* Responsive adjustments */
