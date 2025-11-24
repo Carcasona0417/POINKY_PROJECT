@@ -803,6 +803,363 @@ body {
     overflow-y: auto;
 }
 
+/* --- Pig Details Modal Styles --- */
+.details-modal-content {
+    max-width: 900px; /* Wider modal */
+    width: 95%;
+    padding: 0; /* Reset padding for custom layout */
+    background: transparent; /* Transparent because we have two cards */
+    box-shadow: none;
+    border-radius: 0;
+}
+
+.modal-close-corner {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background: #FF6B6B;
+    color: white;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.details-layout {
+    display: flex;
+    gap: 20px;
+    height: 550px;
+}
+
+/* Left Sidebar (Pink Card) */
+.details-sidebar {
+    width: 35%;
+    background-color: #FFE4E8; /* Light pink background */
+    border-radius: 10px;
+    padding: 25px;
+    color: #555;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.details-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    color: #F08080;
+    margin-bottom: 10px;
+}
+
+.details-icon-wrapper {
+    background: white;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.details-pig-icon {
+    width: 50px;
+    height: 50px;
+}
+
+.details-menu-icon {
+    margin-left: auto;
+    cursor: pointer;
+}
+
+.info-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid #E0B0B0;
+    padding-bottom: 5px;
+}
+
+.info-group label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #333;
+}
+
+.info-value {
+    font-weight: 600;
+    color: #F08080;
+    text-align: right;
+}
+
+.highlight-weight {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+/* Right Content (White Card) */
+.details-main {
+    width: 65%;
+    background: white;
+    border-radius: 10px;
+    padding: 25px;
+    border: 1px solid #F08080;
+    display: flex;
+    flex-direction: column;
+}
+
+.details-tabs {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.tab-icons {
+    display: flex;
+    gap: 10px;
+}
+
+.detail-tab {
+    width: 45px;
+    height: 40px;
+    border: none;
+    background-color: #FFF0F0;
+    color: #F08080;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.3s;
+}
+
+.detail-tab.active {
+    background-color: #F08080;
+    color: white;
+    box-shadow: 0 4px 10px rgba(240, 128, 128, 0.3);
+}
+
+.edit-link {
+    color: #D32F2F;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.tab-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.tab-header-row h4 {
+    color: #F08080;
+    font-size: 18px;
+}
+
+.btn-add-record {
+    background-color: #E55050;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Records Table */
+.records-table-container {
+    border: 1px solid #333;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.records-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.records-table th {
+    background-color: #FFA0A0; /* Darker pink header */
+    color: #333;
+    padding: 12px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.records-table td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+    color: #444;
+    font-weight: 500;
+}
+
+.pig-thumb {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+/* --- Clickable Badge Styles --- */
+.clickable-badge {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    border: 1px solid transparent;
+}
+
+.clickable-badge:hover {
+    transform: scale(1.1);
+    background-color: #ff9eb5; /* Slightly darker pink on hover */
+    box-shadow: 0 2px 8px rgba(240, 128, 128, 0.4);
+    border-color: #F08080;
+}
+
+/* Optional: Adjust the column width since the name is gone */
+.col-name {
+    width: 100px; /* Prevents the column from being too wide */
+}
+
+/* --- Add Weight Modal Specific Styles --- */
+.weight-modal-content {
+    width: 350px; /* Smaller, compact modal */
+    padding: 25px;
+    border-radius: 12px;
+}
+
+.weight-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.weight-modal-header h3 {
+    color: #F08080;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.modal-close-red {
+    background-color: #EF5350;
+    color: white;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.weight-form-group {
+    margin-bottom: 15px;
+}
+
+/* Input Styling to match screenshot */
+.input-wrapper input,
+.weight-input-wrapper input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: 'Poppins', sans-serif;
+    color: #555;
+    outline: none;
+}
+
+/* The "kg" suffix box style */
+.weight-input-wrapper {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.weight-input-wrapper input {
+    border: none;
+    flex-grow: 1;
+}
+
+.weight-suffix {
+    background-color: #E0E0E0;
+    color: #666;
+    padding: 0 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-style: italic;
+    font-size: 14px;
+    border-left: 1px solid #ccc;
+}
+
+/* File Upload Styling */
+.file-input-wrapper {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.file-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #888;
+    font-size: 14px;
+    font-style: italic;
+    cursor: pointer;
+    width: 100%;
+}
+
+/* Buttons */
+.weight-modal-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 25px;
+    gap: 15px;
+}
+
+.btn-gray {
+    background-color: #E0E0E0;
+    color: #444;
+    border: none;
+    padding: 10px 0;
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 40%;
+    font-family: 'Poppins', sans-serif;
+}
+
+.btn-green {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 0;
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 40%;
+    font-family: 'Poppins', sans-serif;
+}
+
+.btn-green:hover {
+    background-color: #43A047;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .sidebar {
@@ -846,6 +1203,16 @@ body {
     .notification-modal-content {
         width: 95%;
         max-height: 90vh;
+    }
+
+    .details-layout {
+        flex-direction: column;
+        height: auto;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    .details-sidebar, .details-main {
+        width: 100%;
     }
 }
 

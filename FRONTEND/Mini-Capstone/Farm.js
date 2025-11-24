@@ -260,6 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log(`Loaded data for ${currentFarm.name}`);
     }
 
+    // --- UPDATED: Create Pig Row (Badge Only & Clickable) ---
     function createPigRow(pig) {
         const row = document.createElement('tr');
         row.className = `pig-row ${pig.status === 'sold' || pig.status === 'deceased' ? 'inactive' : ''}`;
@@ -273,8 +274,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <input type="checkbox" class="pig-checkbox" data-pig-id="${pig.id}" ${isInactive ? 'disabled' : ''}>
             </td>
             <td class="col-name">
-                <span class="pig-id-badge">${pig.shortId}</span>
-                <span class="pig-fullname">${pig.name}</span>
+                <span class="pig-id-badge clickable-badge" onclick="window.openPigDetails(${pig.id})">
+                    ${pig.shortId}
+                </span>
             </td>
             <td class="col-age">${pig.age}</td>
             <td class="col-weight">${pig.weight}</td>
@@ -289,6 +291,85 @@ document.addEventListener('DOMContentLoaded', function() {
 
         return row;
     }
+
+    // --- NEW FEATURE: Pig Details Modal Logic ---
+    
+    // Expose this function to window so the onclick in HTML can find it
+    window.openPigDetails = function(pigId) {
+        const currentFarm = farms.find(farm => farm.id === currentFarmId);
+        const pig = currentFarm.pigs.find(p => p.id === pigId);
+        
+        if (!pig) return;
+
+        // 1. Populate Left Side (Pig Info)
+        document.getElementById('detailName').textContent = pig.name;
+        document.getElementById('detailBreed').textContent = pig.breed;
+        document.getElementById('detailGender').textContent = pig.gender.charAt(0).toUpperCase() + pig.gender.slice(1);
+        document.getElementById('detailDate').textContent = pig.date; // Date acquired
+        document.getElementById('detailInitialWeight').textContent = pig.initialWeight + ' kg'; // Assuming saved as number
+        document.getElementById('detailCurrentWeight').textContent = pig.weight; // Assuming saved as string "XXkg"
+        document.getElementById('detailStatus').textContent = formatStatusText(pig.status);
+
+        // 2. Populate Right Side (Weight Records - Dummy Data for Demo)
+        const tbody = document.getElementById('weightRecordsBody');
+        tbody.innerHTML = ''; // Clear previous
+
+        // Generate dummy history based on current weight
+        // In a real app, this would come from pig.weightHistory array
+        const currentW = parseFloat(pig.weight) || 0;
+        const history = [
+            { date: 'Today', weight: currentW, img: 'Dash Icons/WPig.png' },
+            { date: '2 weeks ago', weight: (currentW * 0.9).toFixed(1), img: 'Dash Icons/WPig.png' },
+            { date: '1 month ago', weight: (currentW * 0.8).toFixed(1), img: 'Dash Icons/WPig.png' }
+        ];
+
+        history.forEach(rec => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${rec.date}</td>
+                <td>${rec.weight} kg</td>
+                <td><img src="${rec.img}" class="pig-thumb" alt="pig"></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // 3. Show Modal
+        const modal = document.getElementById('pigDetailsModal');
+        modal.style.display = 'flex'; // Using flex to center
+        document.body.style.overflow = 'hidden';
+    };
+
+    // Close Details Modal Logic
+    const closeDetailsBtn = document.getElementById('closeDetailsModal');
+    const detailsModal = document.getElementById('pigDetailsModal');
+
+    if(closeDetailsBtn) {
+        closeDetailsBtn.addEventListener('click', function() {
+            detailsModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+    }
+
+    // Tab Switching Logic inside Details Modal
+    const detailTabs = document.querySelectorAll('.detail-tab');
+    detailTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Remove active class from all tabs
+            detailTabs.forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.details-main .tab-content').forEach(c => c.style.display = 'none');
+
+            // Add active to clicked tab
+            this.classList.add('active');
+            
+            // Show corresponding content
+            const tabId = this.getAttribute('data-tab');
+            const content = document.getElementById(`tab-${tabId}`);
+            if(content) {
+                content.style.display = 'block';
+                if(tabId === 'weight') content.style.display = 'block'; // Ensure block
+            }
+        });
+    });
 
     function filterPigs(filterType) {
         const rows = document.querySelectorAll('.pig-row');
@@ -469,3 +550,107 @@ document.addEventListener('DOMContentLoaded', function() {
     // Start the application
     init();
 });
+
+// --- ADD WEIGHT MODAL LOGIC ---
+
+    const addWeightModal = document.getElementById('addWeightModal');
+    const btnOpenAddWeight = document.querySelector('.btn-add-record'); // Target the button in Details Modal
+    const closeWeightModalBtn = document.getElementById('closeWeightModal');
+    const addWeightForm = document.getElementById('addWeightForm');
+    const newWeightImgInput = document.getElementById('newWeightImg');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+
+    // Open "Add Weight" Modal
+    if(btnOpenAddWeight) {
+        btnOpenAddWeight.addEventListener('click', function() {
+            addWeightModal.style.display = 'flex';
+            
+            // Set default date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('newWeightDate').value = today;
+        });
+    }
+
+    // Close Modal
+    if(closeWeightModalBtn) {
+        closeWeightModalBtn.addEventListener('click', function() {
+            addWeightModal.style.display = 'none';
+        });
+    }
+
+    // Update File Name when image selected
+    if(newWeightImgInput) {
+        newWeightImgInput.addEventListener('change', function() {
+            if(this.files && this.files.length > 0) {
+                fileNameDisplay.textContent = this.files[0].name;
+                fileNameDisplay.style.color = '#333';
+                fileNameDisplay.style.fontStyle = 'normal';
+            } else {
+                fileNameDisplay.textContent = 'Upload Image';
+            }
+        });
+    }
+
+    // Clear Form
+    document.getElementById('clearWeightForm')?.addEventListener('click', function() {
+        addWeightForm.reset();
+        fileNameDisplay.textContent = 'Upload Image';
+        // Reset date
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('newWeightDate').value = today;
+    });
+
+    // Save Weight Record
+    if(addWeightForm) {
+        addWeightForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // 1. Get Values
+            const dateVal = document.getElementById('newWeightDate').value;
+            const weightVal = document.getElementById('newWeightValue').value;
+            
+            // Format Date (e.g., "2025-09-10" -> "Sept 10")
+            const dateObj = new Date(dateVal);
+            const dateString = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+            // 2. Add to Table (Prepend to show newest first)
+            const tbody = document.getElementById('weightRecordsBody');
+            const newRow = document.createElement('tr');
+            
+            // Determine image source (placeholder or uploaded file preview)
+            let imgSrc = 'Dash Icons/WPig.png'; // Default
+            if(newWeightImgInput.files && newWeightImgInput.files[0]) {
+                imgSrc = URL.createObjectURL(newWeightImgInput.files[0]);
+            }
+
+            newRow.innerHTML = `
+                <td>${dateString}</td>
+                <td>${weightVal} kg</td>
+                <td><img src="${imgSrc}" class="pig-thumb" alt="pig"></td>
+            `;
+
+            // Insert at the top of the table
+            if(tbody.firstChild) {
+                tbody.insertBefore(newRow, tbody.firstChild);
+            } else {
+                tbody.appendChild(newRow);
+            }
+
+            // 3. Update "Current Weight" in the Side Panel
+            const currentWeightDisplay = document.getElementById('detailCurrentWeight');
+            if(currentWeightDisplay) {
+                currentWeightDisplay.textContent = weightVal + ' kg';
+                
+                // Add a quick animation to show it updated
+                currentWeightDisplay.style.color = '#4CAF50';
+                setTimeout(() => {
+                    currentWeightDisplay.style.color = ''; // Revert to CSS color
+                }, 1000);
+            }
+            
+            // 4. Close Modal and Reset
+            addWeightModal.style.display = 'none';
+            addWeightForm.reset();
+            fileNameDisplay.textContent = 'Upload Image';
+        });
+    }
