@@ -32,6 +32,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnOpenAddWeight = document.querySelector('.btn-add-record');
     const closeWeightModalBtn = document.getElementById('closeWeightModal');
 
+    // NEW SALE MODAL ELEMENTS
+    const priceInputModal = document.getElementById('priceInputModal');
+    const priceInputForm = document.getElementById('priceInputForm');
+    const pigPricePerKgInput = document.getElementById('pigPricePerKg');
+    const soldConfirmationModal = document.getElementById('soldConfirmationModal');
+    const finalSoldPriceDisplay = document.getElementById('finalSoldPriceDisplay');
+    const confirmFinalSaleBtn = document.getElementById('confirmFinalSale');
+
+    // NEW State Variables
+    let currentPigForSaleId = null;
+    let currentPigForSaleTotal = 0;
+
     // Edit Weight Modal elements
     const editWeightModal = document.getElementById('editWeightModal');
     const editWeightForm = document.getElementById('editWeightForm');
@@ -463,7 +475,7 @@ function createPigRow(pig) {
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
+            cancelButtonColor: '#4CAF50',
             confirmButtonText: 'Yes, delete it!',
             // FIX: Uses custom class for high z-index to show SweetAlert over the Modal
             customClass: {
@@ -777,28 +789,267 @@ function createPigRow(pig) {
         updateDisplayCounts(visibleCount);
     }
 
-    function changeSelectedPigsStatus(newStatus) {
-        const selectedPigs = Array.from(pigCheckboxes)
-            .filter(cb => cb.checked && !cb.disabled)
-            .map(cb => cb.dataset.pigId);
+// =========================================================================
+// ✅ MODIFIED: Status Change Logic (Handles 'growing', 'tosale', 'sold', and 'deceased' FLOW)
+// =========================================================================
 
-        if (selectedPigs.length === 0) {
-            alert('Please select at least one pig to change status.');
+function changeSelectedPigsStatus(newStatus) {
+    const selectedPigs = Array.from(pigCheckboxes)
+        .filter(checkbox => checkbox.checked)
+        .map(checkbox => parseInt(checkbox.dataset.pigId));
+    
+    // --- 1. Initial Selection Check ---
+    if (selectedPigs.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'No Selection',
+            text: 'Please select at least one pig to change the status.',
+            showConfirmButton: false,
+            timer: 2000
+        });
+        return;
+    }
+
+    // --- 2. Helper function to EXECUTE the status change ---
+// Helper function for non-sale status changes
+// Helper function for non-sale status changes
+const executeStatusChange = (pigsToUpdate, status) => {
+    const currentFarm = getCurrentFarm();
+    let changedCount = 0;
+
+    pigsToUpdate.forEach(pigId => {
+        const pig = currentFarm.pigs.find(p => p.id === pigId);
+        
+        // Ensure we don't double-process the status
+        if (pig && pig.status !== status && status !== 'sold') { 
+            pig.status = status;
+            pig.statusHistory.push({
+                date: new Date().toISOString().split('T')[0],
+                status: status,
+                notes: `Status changed to ${formatStatusText(status)} via bulk action.`
+            });
+            changedCount++;
+        }
+    });
+
+    if (changedCount > 0) {
+        // 1. Update the data
+        loadFarmData(currentFarmId);
+        
+        // 2. Display the standard success message for all non-sale updates
+        
+        // Define the success message text
+        let successText = `${changedCount} pig(s) successfully changed to ${formatStatusText(status)}.`;
+        
+        // Customize the title text for Deceased status (if desired)
+        let successTitle = (status === 'deceased') ? 'Pig Status Finalized!' : 'Status Updated!';
+
+        Swal.fire({
+            icon: 'success', // ⭐ STANDARD GREEN CHECK MARK ICON ⭐
+            title: successTitle,
+            text: successText,
+            showConfirmButton: false,
+            timer: 2000
+        });
+    }
+};
+
+    // --- 3. Confirmation Logic Setup ---
+    let titleText = '';
+    let isConfirmed = false;
+
+    if (newStatus === 'growing') {
+        titleText = `Are you sure you want to mark ${selectedPigs.length} pig(s) as "Growing"?`;
+        isConfirmed = true;
+    } else if (newStatus === 'tosale') {
+        titleText = `Are you sure you want to mark ${selectedPigs.length} pig(s) as "To Sale"?`;
+        isConfirmed = true;
+    } else if (newStatus === 'deceased') {
+        // ⭐ NEW DECEASED CONFIRMATION LOGIC ⭐
+        titleText = `Mark ${selectedPigs.length} pig(s) as Deceased?`;
+        isConfirmed = true;
+        // The detailed "You won't be able to undo this later" message will go inside the Swal.fire call below
+    }
+    
+    // --- 4. SPECIAL HANDLING FOR 'SOLD' (Single-Pig Flow) ---
+    if (newStatus === 'sold') {
+        // ... (existing SOLD logic remains the same) ...
+        if (selectedPigs.length > 1) {
+             Swal.fire({
+                 icon: 'info',
+                 title: 'One Pig at a Time',
+                 text: 'The detailed sale process requires you to enter a price per kg for each pig individually. Please select only one pig to proceed with the sale.',
+             });
+             pigCheckboxes.forEach(checkbox => checkbox.checked = false);
+             selectAllCheckbox.checked = false;
+             tableSelectAllCheckbox.checked = false;
+             return; 
+        }
+        if (selectedPigs.length === 1) {
+            openPriceInputModal(selectedPigs[0]);
+            pigCheckboxes.forEach(checkbox => checkbox.checked = false);
+            selectAllCheckbox.checked = false;
+            tableSelectAllCheckbox.checked = false;
             return;
         }
+    }
 
-        const currentFarm = getCurrentFarm();
-        if (!currentFarm) return;
-
-        selectedPigs.forEach(pigId => {
-            const pig = currentFarm.pigs.find(p => p.id == pigId);
-            if (pig) {
-                pig.status = newStatus;
+    // --- 5. Execute Confirmed/Default Status Changes ---
+    if (isConfirmed) {
+        Swal.fire({
+            title: titleText,
+            // Custom text for deceased status
+            html: newStatus === 'deceased' ? titleText + '<br><small style="color:#888;">You won\'t be able to undo this later.</small>' : titleText,
+            icon: newStatus === 'deceased' ? 'warning' : 'question', // Use warning icon for deceased
+            showCancelButton: true,
+            confirmButtonColor: '#4CAF50',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, Proceed',
+            cancelButtonText: 'No'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                executeStatusChange(selectedPigs, newStatus);
             }
+             // Final Cleanup (checkboxes) is handled below or by the user action
+        });
+    } 
+    // The final 'else' block which used to execute 'deceased' without confirmation is now gone!
+
+    // Final Cleanup (only necessary if the function hasn't already returned)
+    pigCheckboxes.forEach(checkbox => checkbox.checked = false);
+    selectAllCheckbox.checked = false;
+    tableSelectAllCheckbox.checked = false;
+}//end of pig status
+
+
+// =========================================================================
+// 🐖 SALE PROCESS FUNCTIONS (4-STEP FLOW)
+// =========================================================================
+
+function getPigWeightInKg(pigId) {
+    const pig = getPigById(pigId);
+    if (!pig) return 0;
+    
+    // Uses the existing helper to get the latest weight
+    return getNewestWeight(pig.weightHistory); 
+}
+
+// Step 1: Open the Price Input Modal (image_0d395e.png)
+function openPriceInputModal(pigId) {
+    currentPigForSaleId = pigId;
+    priceInputModal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    pigPricePerKgInput.value = ''; // Ensure input is clear
+}
+
+// Step 2: Confirmation based on price per kg (SweetAlert/image_0d393f.png)
+function showPriceConfirmation(pricePerKg) {
+    const pigWeight = getPigWeightInKg(currentPigForSaleId);
+    if (pigWeight <= 0) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Pig has no recorded weight. Sale cannot be processed.',
+        });
+        closeAllModals();
+        return;
+    }
+
+    currentPigForSaleTotal = pigWeight * pricePerKg; // Calculate total price
+    
+    // SweetAlert Confirmation (Text matches image_0d393f.png style)
+    Swal.fire({
+        title: 'Please confirm:',
+        html: `You're setting the price at ₱**${pricePerKg.toFixed(2)}** per kilogram for this pig.<br><br>Do you want to proceed?`,
+        icon: undefined, 
+        showCancelButton: true,
+        confirmButtonColor: '#2ECC71', 
+        cancelButtonColor: '#E74C3C', 
+        confirmButtonText: 'Yes',
+        cancelButtonText: 'No',
+        // ADD THIS NEW LINE:
+        customClass: {
+            popup: 'swal2-confirm-price' // Apply a custom class to the SweetAlert popup
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Proceed to Step 3
+            showSoldConfirmationModal();
+        } else {
+            // Cancel sale process
+            closeAllModals();
+        }
+    });
+}
+
+// Step 3: Final Sold Confirmation Modal (image_0d3920.png)
+function showSoldConfirmationModal() {
+    priceInputModal.style.display = 'none'; 
+    finalSoldPriceDisplay.value = `₱${currentPigForSaleTotal.toFixed(2)}`;
+    soldConfirmationModal.style.display = 'flex';
+}
+
+// Step 4: Finalize Sale and Update Status
+function finalizeSale(totalPrice) {
+    const pig = getPigById(currentPigForSaleId);
+    if (pig) {
+        pig.status = 'sold';
+        // Update the main table column with the final price
+        pig.weight = `Sold: ₱${totalPrice.toFixed(2)}`; 
+        pig.statusHistory.push({
+            date: new Date().toISOString().split('T')[0],
+            status: 'sold',
+            notes: `Sold for ₱${totalPrice.toFixed(2)} at ₱${pigPricePerKgInput.value} per kg.`
+        });
+        
+        loadFarmData(currentFarmId);
+        closeAllModals();
+
+        // Success Alert
+        Swal.fire({
+            icon: 'success',
+            title: 'Sale Confirmed!',
+            text: `${pig.name} (ID: ${pig.shortId}) was successfully marked as sold for ₱${totalPrice.toFixed(2)}.`,
+            showConfirmButton: false,
+            timer: 3000
         });
 
-        loadFarmData(currentFarmId);
+        // --- Price Input Modal Listeners (Step 1 -> Step 2) ---
+        if (priceInputForm) {
+            priceInputForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const pricePerKg = parseFloat(pigPricePerKgInput.value);
+                if (pricePerKg > 0) {
+                    priceInputModal.style.display = 'none';
+                    showPriceConfirmation(pricePerKg); // Go to Step 2
+                } else {
+                    Swal.fire({ icon: 'warning', title: 'Invalid Price', text: 'Please enter a valid price.' });
+                }
+            });
+        }
+        document.getElementById('clearPriceInput')?.addEventListener('click', function() {
+            pigPricePerKgInput.value = '';
+        });
+        document.getElementById('closePriceInputModal')?.addEventListener('click', closeAllModals);
+
+
+        // --- Sold Confirmation Modal Listeners (Step 3 -> Step 4) ---
+        document.getElementById('cancelSoldConfirmation')?.addEventListener('click', closeAllModals);
+        document.getElementById('closeSoldConfirmationModal')?.addEventListener('click', closeAllModals);
+
+        if (confirmFinalSaleBtn) {
+            confirmFinalSaleBtn.addEventListener('click', function() {
+                if (currentPigForSaleId && currentPigForSaleTotal > 0) {
+                    finalizeSale(currentPigForSaleTotal); // Go to Step 4
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Error', text: 'Sale calculation error. Please try again.' });
+                    closeAllModals();
+                }
+            });
+        }
     }
+}
+
 
     function updatePigCounts() {
         const currentFarm = getCurrentFarm();
