@@ -27,6 +27,7 @@
 - done with merging the logic for statisctics count
 - done with the backend logic for Chart
 - done with merging the logic for chart
+- done with the OTP for forget password using SMTP (nodemailer.js)
 
 # CHANGES 
 - I change the API instead of /login-register I change it into /login for login and /register for register
@@ -38,9 +39,9 @@ because it's the url of each pages
 - Breakdown the farm expenses
 
 # TO DO LISTS
-- OTP for forget password using SMTP
 - Notification should be able to fetch data from the reminders
 - add a logic where if the status of the pig is sold it will automatically change the category in the database into income
 - Integrate backend logic for Farm 
-- Merge the logic to the front end
+- Merge the logic for to the front end
 - add logic for the following expenses: medical expenses, transportation expenses, and other expenses.
+- Merge the logic for forget password to the front end

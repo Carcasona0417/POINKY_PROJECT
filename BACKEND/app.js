@@ -1,11 +1,13 @@
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcrypt';
+import nodemailer from 'nodemailer';
 
 import {createUser, getUserByCredentials} from './Login-register.js';
 import { getTotalFarms,getTotalPigs,getUpcomingReminders, getMonthExpenses, getChartData } from './Dashboard.js';
 
 const app = express();
+
 
 app.use(cors());
 app.use(express.json());
@@ -57,6 +59,34 @@ app.post('/register', async (req, res, next) => {
         next(err);
     }
 });
+
+// OTP sending
+app.get("/send-otp", async (req, res) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "oskarjene08@gmail.com",
+        pass: "dtez egni aqnt qaub"
+      }
+    });
+
+    const otp = Math.floor(100000 + Math.random() * 900000);
+
+    await transporter.sendMail({
+      to: "ojcarcasona8@gmail.com",
+      subject: "Notification",
+      html: `<p>Your OTP is: <b>${otp}</b></p>`
+    });
+
+    res.send({ success: true, otp });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error sending email");
+  }
+});
+
 
 // TOTAL FARMS ROUTE
 app.post('/total-farms', async (req, res, next) => {

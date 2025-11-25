@@ -41,4 +41,14 @@ export async function getUserByCredentials(email) {
     const [rows] = await pool.query('SELECT * FROM user WHERE Email = ?', [email]);
     return rows;
 }
+// OTP Send Email function
 
+// function for password reset using OTP
+export async function updateUserPassword(email, newPassword) {
+    const [result] = await pool.query(`
+        UPDATE user 
+        SET Password = ? 
+        WHERE Email = ?`,
+        [newPassword, email]);
+    return result;
+}
