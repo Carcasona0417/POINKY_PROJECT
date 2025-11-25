@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Reset Flow</title>
+    <link rel="stylesheet" href="Forgot.css"> 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+
+    <div class="flow-container">
+
+        <div class="card active-step" id="step-email-input">
+            <div class="card-header">
+                <div class="icon-container">
+                    <img src="Icons/Icon.png" alt="Logo" class="icon">
+                </div>
+            </div>
+            <div class="card-body">
+                <h1 class="title">Forgot Password?</h1>
+                <p class="instruction-message">Please enter your email address to reset your password.</p>
+                <form id="form-email">
+                    <div class="input-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" placeholder="example@email.com" required>
+                    </div>
+                    <button type="submit" class="primary-button">Send Reset Link</button>
+                </form>
+                <p class="login-link">Go back to <a href="#">Login</a></p>
+            </div>
+        </div>
+
+        <div class="card hidden-step" id="step-verify-code">
+            <div class="card-header">
+                <div class="icon-container">
+                    <img src="Icons/Icon.png" alt="Logo" class="icon">
+                </div>
+            </div>
+            <div class="card-body">
+                <h1 class="title">Verify Code</h1>
+                <p class="instruction-message">Enter the 4-digit verification code sent to your email.</p>
+                <form id="form-code">
+                    <div class="input-group code-input-group">
+                        <input type="text" maxlength="1" class="code-box" data-index="0" required>
+                        <input type="text" maxlength="1" class="code-box" data-index="1" required>
+                        <input type="text" maxlength="1" class="code-box" data-index="2" required>
+                        <input type="text" maxlength="1" class="code-box" data-index="3" required>
+                    </div>
+                    <button type="submit" class="primary-button">Verify</button>
+                </form>
+                <p class="resend-link">Didn't receive code? <a href="#" id="resend-code">Resend</a></p>
+            </div>
+        </div>
+
+        <div class="card hidden-step" id="step-new-password">
+            <div class="card-header">
+                <div class="icon-container">
+                    <img src="Icons/Icon.png" alt="Logo" class="icon">
+                </div>
+            </div>
+            <div class="card-body">
+                <h1 class="title">Create New Password</h1>
+                <p class="instruction-message">Set a strong new password for your account.</p>
+                <form id="form-new-password">
+                    <div class="input-group">
+                        <label for="new-password">New Password</label>
+                        <input type="password" id="new-password" name="new-password" placeholder="••••••••" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="confirm-password">Confirm Password</label>
+                        <input type="password" id="confirm-password" name="confirm-password" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="primary-button">Update Password</button>
+                </form>
+                <p class="login-link">Back to <a href="#">Login</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="Forgot.js"></script> </body>
+</html>
