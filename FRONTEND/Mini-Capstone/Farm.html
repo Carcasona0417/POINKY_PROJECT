@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="AddWeightModal.css">
     <link rel="stylesheet" href="SuccessModal.css">
     <link rel="stylesheet" href="StatusModal.css">
+    <link rel="stylesheet" href="SoldModal.css">
 </head>
 <body>
 
@@ -425,32 +426,39 @@
         <span class="close swal-close-icon" id="closePriceInputModal">
             <i class="fas fa-times"></i>
         </span>
-            <h3>Enter price of your pig</h3>
+        
+        <div class="modal-header-sales">
+             <h3>Enter price of your pig</h3>
+        </div>
+        
         <form id="priceInputForm">
             <div class="input-with-icon">
                 <span class="currency-symbol">₱</span>
-                <input type="number" id="pigPricePerKg" placeholder="Price" step="0.01" required class="swal-input input-no-padding-left">
+                <input type="number" id="priceInput" placeholder="Price" step="0.01" required class="swal-input input-no-padding-left">
             </div>
             <div class="modal-actions-inline">
-                <button type="button" class="swal-button swal-button-secondary" id="clearPriceInput">Clear</button>
-                <button type="submit" class="swal-button swal-button-primary">Calculate</button>
+                <button type="button" class="swal-button swal-button-secondary clear-btn-gray" id="clearPriceInput">Clear</button>
+                <button type="submit" class="swal-button swal-button-primary" id="calculatePrice">Calculate</button>
             </div>
         </form>
     </div>
 </div>
 
 <div id="soldConfirmationModal" class="modal-stat swal-mimic-modal" style="display: none;">
-    <div class="modal-content small-modal">
+    <div class="modal-content-stat small-modal">
         <span class="close swal-close-icon" id="closeSoldConfirmationModal">
             <i class="fas fa-times"></i>
         </span>
-        <div class="modal-header">
+        
+        <div class="modal-header-total-price">
             <h3 class="swal-title-red">Total Price</h3>
         </div>
+        
         <input type="text" id="finalSoldPriceDisplay" placeholder="Sold to price" readonly class="swal-input">
+        
         <div class="modal-actions-inline">
-            <button type="button" class="swal-button swal-button-secondary red-cancel-btn" id="cancelSoldConfirmation">Cancel</button>
-            <button type="button" class="swal-button swal-button-primary" id="confirmFinalSale">Confirm</button>
+            <button type="button" class="swal-button swal-button-secondary red-cancel-btn" id="cancelSoldPrice">Cancel</button>
+            <button type="button" class="swal-button swal-button-primary" id="confirmSoldPrice">Confirm</button>
         </div>
     </div>
 </div>
