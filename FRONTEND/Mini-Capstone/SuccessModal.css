@@ -1,0 +1,37 @@
+/* --- Success Modal Specific Styles (matching Image 2) --- */
+.modal-content.success-modal-content {
+    width: 100%;
+    max-width: 350px;
+    padding: 40px 20px;
+    border-radius: 15px;
+    background-color: white;
+    text-align: center;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.success-circle {
+    width: 100px;
+    height: 100px;
+    background-color: #4CAF50; /* Green color */
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 25px;
+}
+
+.success-circle i {
+    color: white;
+    font-size: 50px;
+}
+
+.success-message {
+    font-size: 22px;
+    font-style: italic;
+    color: #555;
+    font-weight: 500;
+}

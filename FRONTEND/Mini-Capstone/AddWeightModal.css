@@ -1,0 +1,176 @@
+/* --- Add Weight Modal Specific Styles --- */
+.weight-modal-content {
+    width: 350px; /* Smaller, compact modal */
+    padding: 25px;
+    border-radius: 12px;
+}
+
+.weight-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.weight-modal-header h3 {
+    color: #F08080;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.modal-close-red {
+    background-color: #EF5350;
+    color: white;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.weight-form-group {
+    margin-bottom: 15px;
+}
+
+/* Input Styling to match screenshot */
+.input-wrapper input,
+.weight-input-wrapper input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: 'Poppins', sans-serif;
+    color: #555;
+    outline: none;
+}
+
+/* The "kg" suffix box style */
+.weight-input-wrapper {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.weight-input-wrapper input {
+    border: none;
+    flex-grow: 1;
+}
+
+.weight-suffix {
+    background-color: #E0E0E0;
+    color: #666;
+    padding: 0 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-style: italic;
+    font-size: 14px;
+    border-left: 1px solid #ccc;
+}
+
+/* File Upload Styling */
+.file-input-wrapper {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.file-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #888;
+    font-size: 14px;
+    font-style: italic;
+    cursor: pointer;
+    width: 100%;
+}
+
+/* Buttons */
+.weight-modal-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 25px;
+    gap: 15px;
+}
+
+.btn-gray {
+    background-color: #E0E0E0;
+    color: #444;
+    border: none;
+    padding: 10px 0;
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 40%;
+    font-family: 'Poppins', sans-serif;
+}
+
+.btn-green {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 0;
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 40%;
+    font-family: 'Poppins', sans-serif;
+}
+
+.btn-green:hover {
+    background-color: #43A047;
+}
+
+/* Edit */
+/* Styles for action icons in tables */
+.action-icon {
+    cursor: pointer;
+    margin-left: 10px;
+    font-size: 1.1em;
+    transition: color 0.2s ease-in-out;
+}
+
+.action-icon.edit-icon {
+    color: var(--primary-color); /* Green for edit */
+}
+
+.action-icon.delete-icon {
+    color: var(--danger-color); /* Red for delete */
+}
+
+.action-icon:hover {
+    filter: brightness(1.2); /* Slightly brighter on hover */
+}
+
+/* Make sure the records table allows space for the icons */
+.records-table td {
+    position: relative;
+    padding-right: 40px; /* Give space for icons */
+}
+
+.records-table td .action-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* --- FIX FOR SWEETALERT BEHIND MODAL --- */
+.swal2-container {
+    /* Target the SweetAlert container itself to ensure it's on top */
+    z-index: 9999999 !important; 
+}
+
+/* CSS to force SweetAlert to the top layer */
+.swal2-high-zindex {
+    /* Set this higher than any modal's z-index (e.g., higher than 2000) */
+    z-index: 9999999 !important; 
+}
