@@ -14,6 +14,8 @@
     <link rel="stylesheet" href="SuccessModal.css">
     <link rel="stylesheet" href="StatusModal.css">
     <link rel="stylesheet" href="SoldModal.css">
+    <link rel="stylesheet" href="DetailsEditModal.css">
+
 </head>
 <body>
 
@@ -263,8 +265,20 @@
                             <img src="Dash Icons/Pig.png" alt="Pig" class="details-pig-icon">
                         </div>
                         <h3>Details</h3>
-                        <i class="fa-solid fa-ellipsis details-menu-icon"></i>
-                    </div>
+                        
+                        <div class="pig-actions-container">
+                            <i class="fas fa-ellipsis-v action-menu-icon" id="pigDetailsMenuIcon"></i>
+                                
+                            <div class="action-menu-dropdown" id="pigActionMenu">
+                                <button id="editPigDetailsBtn">
+                                    <i class="fas fa-edit"></i> Edit Details
+                                </button>
+                                <button id="deletePigBtn" class="delete-btn">
+                                    <i class="fas fa-trash-alt"></i> Delete Pig
+                                </button>
+                            </div>
+                        </div>
+                        </div>
 
                     <div class="info-group">
                         <label>Pig Name/ID:</label>
@@ -462,6 +476,53 @@
         </div>
     </div>
 </div>
+
+
+    <div id="editPigDetailsModal" class="modal-stat" style="display: none;">
+        <div class="modal-content-stat">
+            <span class="close swal-close-icon" id="closeEditPigDetailsModal">
+                <i class="fas fa-times"></i>
+            </span>
+            <div class="modal-header-sales">
+                <h3 class="swal-title-red">Edit Pig Details</h3>
+                <p id="editPigShortIdDisplay" style="font-weight: 500;"></p>
+            </div>
+            
+            <form id="editPigDetailsForm">
+                <div class="input-group-details">
+                    <label for="editPigName">Pig Name/ID</label>
+                    <input type="text" id="editPigName" required>
+                </div>
+                <div class="input-group-details">
+                    <label for="editPigBreed">Breed</label>
+                    <select id="editPigBreed" required>
+                        <option value="Duroc">Duroc</option>
+                        <option value="Landrace">Landrace</option>
+                        <option value="Yorkshire">Yorkshire</option>
+                        <option value="Hampshire">Hampshire</option>
+                        <option value="Mix">Mixed Breed</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="input-group-details">
+                    <label for="editPigGender">Gender</label>
+                    <select id="editPigGender" required>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                </div>
+                <div class="input-group-details">
+                    <label for="editPigDate">Date Acquired</label>
+                    <input type="date" id="editPigDate" required>
+                </div>
+                
+                <div class="modal-actions-inline modal-actions-edit">
+                    <button type="button" class="swal-button swal-button-secondary clear-btn-gray" id="cancelEditPigDetails">Cancel</button>
+                    <button type="submit" class="swal-button swal-button-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="Farm.js"></script>

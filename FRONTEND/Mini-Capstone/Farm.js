@@ -58,6 +58,23 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentDetailPigId = null;
     let currentEditWeightRecordIndex = null;
 
+    // 🆕 New Pig Details Action Menu Elements
+    const pigDetailsMenuIcon = document.getElementById('pigDetailsMenuIcon');
+    const pigActionMenu = document.getElementById('pigActionMenu');
+    const editPigDetailsBtn = document.getElementById('editPigDetailsBtn');
+    const deletePigBtn = document.getElementById('deletePigBtn');
+    
+    // 🆕 New Edit Pig Details Modal Elements
+    const editPigDetailsModal = document.getElementById('editPigDetailsModal');
+    const closeEditPigDetailsModal = document.getElementById('closeEditPigDetailsModal');
+    const cancelEditPigDetails = document.getElementById('cancelEditPigDetails');
+    const editPigDetailsForm = document.getElementById('editPigDetailsForm');
+    const editPigNameInput = document.getElementById('editPigName');
+    const editPigBreedInput = document.getElementById('editPigBreed');
+    const editPigGenderInput = document.getElementById('editPigGender');
+    const editPigDateInput = document.getElementById('editPigDate');
+    const editPigShortIdDisplay = document.getElementById('editPigShortIdDisplay');
+
 
     // Farm data storage - Start with initial data structure
     let farms = [
@@ -443,6 +460,114 @@ function createPigRow(pig) {
         }, { date: '1970-01-01', weight: 0 });
     }
 
+    // =========================================================================
+    // 🆕 PIG DETAILS EDIT/DELETE FUNCTIONS
+    // =========================================================================
+
+    function openEditPigDetailsModal() {
+        if (!currentDetailPigId) return;
+
+        const pig = getCurrentFarm()?.pigs.find(p => p.id === currentDetailPigId);
+        if (!pig) return;
+
+        // 1. Populate the form fields with the current pig data
+        editPigNameInput.value = pig.name;
+        editPigBreedInput.value = pig.breed;
+        editPigGenderInput.value = pig.gender;
+        editPigDateInput.value = pig.date; // Date Acquired
+        editPigShortIdDisplay.textContent = `Editing: ${pig.shortId} (${pig.name})`;
+
+        // 2. Open the new modal
+        detailsModal.style.display = 'none';
+        editPigDetailsModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function handleEditPigDetailsSubmit() {
+        if (!currentDetailPigId) return;
+        const pig = getCurrentFarm()?.pigs.find(p => p.id === currentDetailPigId);
+        if (!pig) return;
+
+        const newName = editPigNameInput.value.trim();
+
+        // 1. Check for duplicate name against all OTHER pigs
+        const isDuplicate = getCurrentFarm().pigs.some(p => 
+            p.id !== currentDetailPigId && p.name.toLowerCase() === newName.toLowerCase()
+        );
+
+        if (isDuplicate) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Invalid Name',
+                text: 'A pig with this name already exists in this farm.',
+                showConfirmButton: true
+            });
+            return;
+        }
+
+        // 2. Update the pig object
+        pig.name = newName;
+        pig.breed = editPigBreedInput.value;
+        pig.gender = editPigGenderInput.value;
+        pig.date = editPigDateInput.value;
+        
+        // Re-generate derived fields
+        pig.shortId = pig.name.substring(0, 3).toUpperCase();
+        
+        // 3. Close modal and refresh UI
+        editPigDetailsModal.style.display = 'none';
+        loadFarmData(currentFarmId);
+        
+        // Re-open the details modal with the new info
+        window.openPigDetails(pig.id); 
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Details Updated!',
+            text: `${pig.name}'s details have been successfully saved.`,
+            showConfirmButton: false,
+            timer: 2000
+        });
+    }
+
+    function deletePig(pigId) {
+        if (!pigId) return;
+
+        Swal.fire({
+            title: 'Delete Pig?',
+            text: "You are about to permanently remove this pig record. This cannot be undone!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#4CAF50',
+            confirmButtonText: 'Yes, Delete It',
+            customClass: {
+                popup: 'swal2-high-zindex'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const currentFarm = getCurrentFarm();
+                if (currentFarm) {
+                    // Find the index of the pig to remove
+                    const pigIndex = currentFarm.pigs.findIndex(p => p.id === pigId);
+                    
+                    if (pigIndex > -1) {
+                        currentFarm.pigs.splice(pigIndex, 1); // Remove pig from the array
+
+                        closeAllModals(); // Close the details modal
+                        loadFarmData(currentFarmId); // Refresh the table
+
+                        Swal.fire('Deleted!', 'The pig record has been successfully removed.', 'success');
+                    }
+                }
+            }
+        });
+    }
+
+    // =========================================================================
+    // END PIG DETAILS EDIT/DELETE FUNCTIONS
+    // =========================================================================
+
 
     // --- Add Weight Modal Logic (UNCHANGED) ---
     function openAddWeightModal() {
@@ -694,7 +819,7 @@ function createPigRow(pig) {
         });
     }
 
-    // --- Event Listeners for UI interaction (Modals, Tabs, Filters) (UNCHANGED) ---
+    // --- Event Listeners for UI interaction (Modals, Tabs, Filters) (UPDATED) ---
 
     // Modal Close Listeners (Updated to be less aggressive and rely on specific handlers where possible)
     document.addEventListener('click', function(e) {
@@ -717,6 +842,64 @@ function createPigRow(pig) {
             detailsModal.style.display = 'flex';
         });
     }
+
+    // --- 🆕 Pig Details Action Menu & Edit Modal Listeners ---
+    if (pigDetailsMenuIcon) {
+        pigDetailsMenuIcon.addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevents click on icon from closing the menu immediately
+            // IMPORTANT: Ensure pigActionMenu is NOT null before toggling class
+            if (pigActionMenu) {
+                pigActionMenu.classList.toggle('active');
+            }
+        });
+
+        // Close menu when clicking anywhere else
+        document.addEventListener('click', function() {
+            if (pigActionMenu) {
+                pigActionMenu.classList.remove('active');
+            }
+        });
+    }
+
+    // Wire up Menu Buttons
+    if (editPigDetailsBtn) {
+        editPigDetailsBtn.addEventListener('click', function() {
+            if (pigActionMenu) pigActionMenu.classList.remove('active');
+            openEditPigDetailsModal(); // Open the new Edit Details Modal
+        });
+    }
+
+    if (deletePigBtn) {
+        deletePigBtn.addEventListener('click', function() {
+            if (pigActionMenu) pigActionMenu.classList.remove('active');
+            deletePig(currentDetailPigId); // Trigger the delete function
+        });
+    }
+
+    // Edit Pig Details Cancel/Close Listeners (defined earlier)
+    if (closeEditPigDetailsModal) {
+        closeEditPigDetailsModal.addEventListener('click', function() {
+            editPigDetailsModal.style.display = 'none';
+            detailsModal.style.display = 'flex'; // Go back to the details modal
+        });
+    }
+
+    if (cancelEditPigDetails) {
+        cancelEditPigDetails.addEventListener('click', function() {
+            editPigDetailsModal.style.display = 'none';
+            detailsModal.style.display = 'flex'; // Go back to the details modal
+        });
+    }
+    
+    // Edit Pig Details Form Submission (defined earlier)
+    if (editPigDetailsForm) {
+        editPigDetailsForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleEditPigDetailsSubmit(); 
+        });
+    }
+    // --- END Pig Details Action Menu & Edit Modal Listeners ---
+
 
     // File Input change listeners
     if(newWeightImgInput) {
