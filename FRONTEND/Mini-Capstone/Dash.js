@@ -747,3 +747,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }, true);
     }
 });
+
+// Add analytics for other expenses breakdown farm expenses: medical, transportation, others
