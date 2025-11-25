@@ -10,7 +10,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// LOGIN POST REQIEST
+// LOGIN POST REQUEST
 app.post('/login', async (req, res, next) => {
     try {
         const { email, password } = req.body;
@@ -48,7 +48,6 @@ app.post('/register', async (req, res, next) => {
 
         //const result = await createUser(null, username, email, password); -- RISKY INTEGRATION --
        
-
         return res.send({
             success: true,
             message: 'Registration successful!',

@@ -50,13 +50,14 @@ export async function getChartData() {
         GROUP BY MONTH(Date)
     `);
 
+    // breakdown farm expeses
     const [farm_expense_rows] = await pool.query(`
         SELECT MONTH(Date) AS month, SUM(Amount) AS farm_expenses
         FROM expenses
         WHERE Category != 'Sold' AND Category != 'Feed'
         GROUP BY MONTH(Date)
     `);
-
+    
     const [feed_expense_rows] = await pool.query(`
         SELECT MONTH(Date) AS month, SUM(Amount) AS feed_expenses
         FROM expenses

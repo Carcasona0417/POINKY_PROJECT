@@ -35,10 +35,12 @@ because it's the url of each pages
 
 # WHAT IS NEED TO BE CHANGE
 - Change the alert into a modern success message
+- Breakdown the farm expenses
 
 # TO DO LISTS
 - OTP for forget password using SMTP
 - Notification should be able to fetch data from the reminders
 - add a logic where if the status of the pig is sold it will automatically change the category in the database into income
-
-
+- Integrate backend logic for Farm 
+- Merge the logic to the front end
+- add logic for the following expenses: medical expenses, transportation expenses, and other expenses.
