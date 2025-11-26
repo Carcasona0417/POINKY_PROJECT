@@ -14,7 +14,7 @@
     padding: 0;
     box-sizing: border-box;
 }
-
+ 
 body {
     font-family: 'Poppins', sans-serif;
     background-color: var(--bg-light);
@@ -132,7 +132,7 @@ body {
     align-items: center;
     padding: 0 25px;
     z-index: 1000;                   /* stays above content */
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1); /* optional nice shadow */
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1); 
 }
 
 
@@ -267,7 +267,7 @@ body {
     font-size: 14px;
 }
 
-.btn-add-exp {
+.btn-add-rem {
     background-color: #E74A5A;
     color: white;
     border: none;
@@ -282,7 +282,7 @@ body {
     transition: background 0.3s;
 }
 
-.btn-add-exp:hover {
+.btn-add-rem:hover {
     background-color: #BE4040;
 }
 
@@ -295,19 +295,19 @@ body {
     box-sizing: border-box; 
 }
 
-.exp-table th:first-child { border-top-left-radius: 0; }
-.exp-table th:last-child  { border-top-right-radius: 0; }
+.rem-table th:first-child { border-top-left-radius: 0; }
+.rem-table th:last-child  { border-top-right-radius: 0; }
 
 
 
-.exp-table {
+.rem-table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
     min-width: 800px;
 }
 
-.exp-table th {
+.rem-table th {
     background-color: #FFA2AB;
     color: #413F3F;
     font-weight: 600;
@@ -316,10 +316,10 @@ body {
     border-bottom: 2px solid #FFB6C1;
 }
 
-.exp-table th:first-child { border-top-left-radius: 10px; }
-.exp-table th:last-child { border-top-right-radius: 10px; }
+.rem-table th:first-child { border-top-left-radius: 10px; }
+.rem-table th:last-child { border-top-right-radius: 10px; }
 
-.exp-table td {
+.rem-table td {
     padding: 15px;
     border-bottom: 1px solid #eee;
     color: var(--text-dark);
@@ -372,7 +372,7 @@ body {
     padding: 0 10px;
 }
 
-/* Modal (Add Expense / Add Reminder – base overlay) */
+/* Modal (Add Reminder / Add Reminder – base overlay) */
 .modal {
     display: none;
     position: fixed;
@@ -424,4 +424,35 @@ body {
     .table-content-box {
         padding: 20px;
     }
+}
+
+
+
+
+
+
+#addRem {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(5px);
+    display: none;  /* hidden by default */
+    justify-content: center;
+    align-items: center;
+    z-index: 2000 !important;  /* HIGHER THAN TOP BAR */
+}
+
+#addRem.show {
+    display: flex;
+}
+
+#addRem .dialog {
+    position: relative;
+    background: #fff;
+    border-radius: 12px;
+    padding: 30px;
+    z-index: 2100;
 }

@@ -6,8 +6,8 @@
     <title>Poinky - Upcoming Task</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="rem.css">
-    <link rel="stylesheet" href="modalstyles.css">
+    <link rel="stylesheet" href="stylesheets/rem.css">
+    <link rel="stylesheet" href="stylesheets/modalstyles.css">
 </head>
 <body>
  
@@ -30,7 +30,7 @@
                         <i class="fas fa-warehouse menu-icon"></i>
                         <span class="menu-text">Farm</span>
                     </a>
-                </li>
+                </li> 
                 <li class="menu-item">
                     <a href="expenses.html" class="menu-link">
                         <i class="fas fa-file-invoice-dollar menu-icon"></i>
@@ -63,7 +63,7 @@
             <div class="header-content">
                 <h1 class="page-title">
                     <img src="Dash Icons/WPig.png" alt="Pig Icon" class="page-icon">
-                    View Pigs
+                    Upcoming Tasks
                 </h1>
                 <div class="search-container">
                     <input type="search" placeholder="Search pigs by name, ID, or status..." class="search-input" id="searchInput">
@@ -76,20 +76,20 @@
             
             
 
-            <div class="table-content-box">
+            <div class="table-content-box"> 
                 <div class="content-header">
                     <div class="title-section">
                         <h2 class="section-title">To do List (<span id="activetodoList">0</span>)</h2>
                         <p class="section-subtitle">Upcoming task and Need to accomplish</p>
                     </div>
-                    <button class="btn-add-exp" id="addPigBtn">
+                    <button class="btn-add-rem" id="addPigBtn">
                         <i class="fa-solid fa-plus"></i> 
                         <span>Add Reminders</span>
                     </button>
                 </div>
 
                 <div class="table-container">
-                    <table class="exp-table" id="expTable">
+                    <table class="rem-table" id="remTable">
                         <thead>
                             <tr>
                                 <th class="col-date">Date</th>
@@ -129,7 +129,7 @@
 
 
         <!-- ADD TASK FORM MODAL -->
-    <div class="page-wrapper" id="addExpense">
+    <div class="page-wrapper" id="addRem">
         <div class="dialog">
             <button type="button" class="btn-close" id="CloseModal">×</button>
 
@@ -212,6 +212,6 @@
 
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="rem.js"></script>
+    <script src="jscripts/rem.js"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 // rem.js
 document.addEventListener('DOMContentLoaded', function () {
     /* ---------- ELEMENTS ---------- */
-    const modalWrapper   = document.getElementById('addExpense');
+    const modalWrapper   = document.getElementById('addRem');
     const openModalBtn   = document.getElementById('addPigBtn');
     const closeModalBtn  = document.getElementById('CloseModal');
 
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const totalCount     = document.getElementById('totalCount');
     const searchInput    = document.getElementById('searchInput');
 
-    let reminders = [];
+    let reminders = []; 
 
     /* ---------- MODAL HANDLERS ---------- */
     function openModal() {
