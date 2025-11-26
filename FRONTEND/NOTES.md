@@ -5,3 +5,4 @@
 
 3. REMNIDERS UI - contains reminders/TODOLIST UI (need to integrate this to the dashboard)
 4. Compile Poinky - contains the compilation of all the the UI and been cleaned
+ 
