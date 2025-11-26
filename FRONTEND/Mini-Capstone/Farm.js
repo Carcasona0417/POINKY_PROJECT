@@ -71,6 +71,18 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentDetailPigId = null;
     let currentEditWeightRecordIndex = null;
 
+    // 🆕 NEW: Farm Context Menu Elements
+    const farmContextMenu = document.getElementById('farmContextMenu');
+    const renameFarmBtn = document.getElementById('renameFarmBtn');
+    const deleteFarmBtn = document.getElementById('deleteFarmBtn');
+    const renameFarmModal = document.getElementById('renameFarmModal');
+    const renameFarmForm = document.getElementById('renameFarmForm');
+    const newFarmNameInput = document.getElementById('newFarmName');
+    const closeRenameFarmModal = document.getElementById('closeRenameFarmModal');
+    const cancelRenameFarm = document.getElementById('cancelRenameFarm');
+
+    let currentContextFarmId = null; // Track which farm is being edited
+
     // 🆕 New Pig Details Action Menu Elements
     const pigDetailsMenuIcon = document.getElementById('pigDetailsMenuIcon');
     const pigActionMenu = document.getElementById('pigActionMenu');
@@ -179,7 +191,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- Farm Management (UNCHANGED) ---
-
     function addNewFarm() {
         const newFarm = {
             id: nextFarmId,
@@ -196,6 +207,11 @@ document.addEventListener('DOMContentLoaded', function() {
         newTab.setAttribute('data-farm', newFarm.id);
         newTab.textContent = newFarm.name;
 
+        // 🆕 ADD DOUBLE-CLICK EVENT LISTENER
+        newTab.addEventListener('dblclick', function(e) {
+            showFarmContextMenu(newFarm.id, e);
+        });
+
         tabsContainer.insertBefore(newTab, tabAdd);
 
         newTab.addEventListener('click', function() {
@@ -203,9 +219,129 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         switchToFarm(newFarm.id);
-
         nextFarmId++;
     }
+
+    // 🆕 NEW: Farm Context Menu Event Listeners
+    document.addEventListener('click', function(e) {
+        if (!farmContextMenu.contains(e.target)) {
+            hideFarmContextMenu();
+        }
+    });
+
+    // Double-click event for existing farm tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('dblclick', function(e) {
+            const farmId = parseInt(this.dataset.farm);
+            showFarmContextMenu(farmId, e);
+        });
+    });
+
+// 🆕 FIXED: Context menu button events
+if (renameFarmBtn) {
+    renameFarmBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        console.log('Rename button clicked, currentContextFarmId:', currentContextFarmId);
+        
+        if (!currentContextFarmId) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No farm selected. Please try again.',
+                showConfirmButton: true
+            });
+            return;
+        }
+        
+        hideFarmContextMenu();
+        openRenameFarmModal();
+    });
+}
+
+if (deleteFarmBtn) {
+    deleteFarmBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        console.log('Delete button clicked, currentContextFarmId:', currentContextFarmId);
+        
+        if (currentContextFarmId) {
+            hideFarmContextMenu();
+            deleteFarm(currentContextFarmId);
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No farm selected. Please try again.',
+                showConfirmButton: true
+            });
+        }
+    });
+}
+
+// Fix for Rename Farm Form
+if (renameFarmForm) {
+    renameFarmForm.addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default form submission
+        
+        if (!currentContextFarmId) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No farm selected. Please try again.',
+                showConfirmButton: true
+            });
+            return;
+        }
+        
+        const newName = newFarmNameInput.value.trim();
+        
+        if (!newName) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Missing Name',
+                text: 'Please enter a farm name.',
+                showConfirmButton: true,
+                confirmButtonColor: '#dc2626'
+            });
+            newFarmNameInput.focus();
+            return;
+        }
+        
+        // Call the rename function
+        renameFarm(currentContextFarmId, newName);
+    });
+}
+
+if (closeRenameFarmModal) {
+    closeRenameFarmModal.addEventListener('click', function() {
+        renameFarmModal.style.display = 'none';
+        currentContextFarmId = null; // 🆕 Reset here too
+    });
+}
+
+if (cancelRenameFarm) {
+    cancelRenameFarm.addEventListener('click', function() {
+        renameFarmModal.style.display = 'none';
+        currentContextFarmId = null; // 🆕 Reset here too
+    });
+}
+
+    const clearAddPigFormBtn = document.getElementById('clearAddPigForm');
+
+    if (clearAddPigFormBtn) {
+        clearAddPigFormBtn.addEventListener('click', function() {
+            addPigForm.reset();
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('pigDate').value = today; // Reset date to today
+        });
+    }
+
+    // Close rename modal when clicking outside
+    renameFarmModal.addEventListener('click', function(e) {
+        if (e.target === renameFarmModal) {
+            renameFarmModal.style.display = 'none';
+        }
+    });
+
 
     function switchToFarm(farmId) {
         tabs.forEach(tab => tab.classList.remove('active'));
@@ -910,7 +1046,7 @@ if (clearVaccinationFormBtn) {
     });
 }
 
-// 🆕 NEW: Add Expense Form Handler (UPDATED)
+
 // 🆕 NEW: Add Expense Form Handler (UPDATED)
 if (addExpenseForm) {
     addExpenseForm.addEventListener('submit', function(e) {
@@ -1319,15 +1455,6 @@ function showVaccinationSuccessAlert() {
             document.body.style.overflow = 'hidden';
         }
     }
-
-    const clearAddPigFormBtn = document.getElementById('clearAddPigForm');
-        if (clearAddPigFormBtn) {
-            clearAddPigFormBtn.addEventListener('click', function() {
-                addPigForm.reset();
-                const today = new Date().toISOString().split('T')[0];
-                document.getElementById('pigDate').value = today; // Reset date to today
-            });
-        }
 
     // Add Weight Form
 if(addWeightForm) {
@@ -2102,10 +2229,204 @@ document.getElementById('closeSoldConfirmationModal')?.addEventListener('click',
         updateDisplayCounts(visibleCount);
     }
 
-    // --- Initialize the application ---
+
+// 🆕 FIXED: Farm Context Menu Function
+function showFarmContextMenu(farmId, event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    currentContextFarmId = farmId;
+    console.log('Context menu opened for farm:', farmId, 'currentContextFarmId:', currentContextFarmId);
+    
+    const farmTab = event.target;
+    const tabRect = farmTab.getBoundingClientRect();
+    const menuWidth = 180;
+    
+    let leftPosition = tabRect.left + (tabRect.width - menuWidth) / 2;
+    const padding = 10;
+    
+    if (leftPosition + menuWidth > window.innerWidth - padding) {
+        leftPosition = window.innerWidth - menuWidth - padding;
+    }
+    
+    if (leftPosition < padding) {
+        leftPosition = padding;
+    }
+    
+    farmContextMenu.style.left = leftPosition + 'px';
+    farmContextMenu.style.top = (tabRect.bottom + window.scrollY) + 'px';
+    farmContextMenu.classList.add('active');
+    
+    // 🆕 FIX: Use a named function for proper removal
+    function closeContextMenuHandler(e) {
+        if (!farmContextMenu.contains(e.target) && !e.target.classList.contains('tab')) {
+            // 🆕 DON'T reset currentContextFarmId here - keep it until an action is taken
+            farmContextMenu.classList.remove('active');
+            document.removeEventListener('click', closeContextMenuHandler);
+        }
+    }
+    
+    document.addEventListener('click', closeContextMenuHandler);
+}
+
+// 🆕 FIXED: Hide context menu (don't reset currentContextFarmId here)
+function hideFarmContextMenu() {
+    farmContextMenu.classList.remove('active');
+    // 🆕 DON'T set currentContextFarmId = null here
+}
+
+function renameFarm(farmId, newName) {
+    const farm = farms.find(f => f.id === farmId);
+    if (!farm) return;
+    
+    const trimmedName = newName.trim();
+    if (!trimmedName) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Invalid Name',
+            text: 'Farm name cannot be empty.',
+            showConfirmButton: true,
+            confirmButtonColor: '#dc2626'
+        });
+        return;
+    }
+    
+    const isDuplicate = farms.some(f => 
+        f.id !== farmId && f.name.toLowerCase() === trimmedName.toLowerCase()
+    );
+    
+    if (isDuplicate) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Duplicate Name',
+            text: 'A farm with this name already exists.',
+            showConfirmButton: true
+        });
+        return;
+    }
+    
+    farm.name = trimmedName;
+    
+    const farmTab = document.querySelector(`.tab[data-farm="${farmId}"]`);
+    if (farmTab) {
+        farmTab.textContent = trimmedName;
+    }
+    
+    renameFarmModal.style.display = 'none';
+    
+    // 🆕 RESET the currentContextFarmId only after successful rename
+    currentContextFarmId = null;
+    
+    Swal.fire({
+        icon: 'success',
+        title: 'Farm Renamed!',
+        text: `Farm has been renamed to "${trimmedName}".`,
+        showConfirmButton: false,
+        timer: 2000
+    });
+}
+
+// 🆕 NEW: Delete Farm Function
+function deleteFarm(farmId) {
+    if (farms.length <= 1) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Cannot Delete',
+            text: 'You must have at least one farm.',
+            showConfirmButton: true
+        });
+        return;
+    }
+    
+    const farm = farms.find(f => f.id === farmId);
+    if (!farm) return;
+    
+    Swal.fire({
+        title: 'Delete Farm?',
+        html: `You are about to delete <strong>"${farm.name}"</strong> and all its pigs.<br><br>This action cannot be undone!`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#4CAF50',
+        confirmButtonText: 'Yes, Delete It',
+        cancelButtonText: 'Cancel',
+        customClass: {
+            popup: 'swal2-high-zindex'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Remove farm from array
+            farms = farms.filter(f => f.id !== farmId);
+            
+            // Remove farm tab
+            const farmTab = document.querySelector(`.tab[data-farm="${farmId}"]`);
+            if (farmTab) {
+                farmTab.remove();
+            }
+            
+            // Switch to first available farm
+            if (farms.length > 0) {
+                switchToFarm(farms[0].id);
+            }
+            
+            hideFarmContextMenu();
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Farm Deleted!',
+                text: `"${farm.name}" and all its pigs have been removed.`,
+                showConfirmButton: false,
+                timer: 2000
+            });
+        }
+    });
+}
+
+
+
+// 🆕 FIXED: Open Rename Farm Modal
+function openRenameFarmModal() {
+    console.log('Opening rename modal, currentContextFarmId:', currentContextFarmId);
+    
+    if (!currentContextFarmId) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No farm selected. Please try again.',
+            showConfirmButton: true
+        });
+        return;
+    }
+    
+    const farm = farms.find(f => f.id === currentContextFarmId);
+    if (!farm) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Farm not found.',
+            showConfirmButton: true
+        });
+        return;
+    }
+    
+    newFarmNameInput.value = farm.name;
+    newFarmNameInput.focus();
+    
+    renameFarmModal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
     function init() {
         // Load initial farm data
         loadFarmData(currentFarmId);
+        
+        // 🆕 ADD DOUBLE-CLICK TO EXISTING FARM TABS
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('dblclick', function(e) {
+                const farmId = parseInt(this.dataset.farm);
+                showFarmContextMenu(farmId, e);
+            });
+        });
     }
 
     // Start the application

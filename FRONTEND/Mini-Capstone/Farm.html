@@ -91,6 +91,42 @@
                 </button>
             </div>
 
+            <!-- Add this anywhere in your body, preferably near the farm tabs -->
+            <div id="farmContextMenu" class="farm-context-menu">
+                <button id="renameFarmBtn" class="context-menu-item rename-item">
+                    <i class="fas fa-edit"></i> Rename Farm
+                </button>
+                <button id="deleteFarmBtn" class="context-menu-item delete-item">
+                    <i class="fas fa-trash"></i> Delete Farm
+                </button>
+            </div>
+
+<!-- Add Rename Farm Modal -->
+<div id="renameFarmModal" class="modal">
+    <div class="modal-content">
+        <div class="weight-modal-header">
+            <h3>Rename Farm</h3>
+            <button type="button" id="closeRenameFarmModal" class="modal-close-red">&times;</button>
+        </div>
+        
+        <form id="renameFarmForm">
+            <div class="weight-form-group">
+                <div class="input-group-details">
+                    <label for="newFarmName">Farm Name</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="newFarmName" name="newFarmName" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="weight-modal-actions">
+                <button type="button" id="cancelRenameFarm" class="btn-gray">Cancel</button>
+                <button type="submit" id="saveRenameFarm" class="btn-green">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
             <div class="table-content-box">
                 <div class="content-header">
                     <div class="title-section">
