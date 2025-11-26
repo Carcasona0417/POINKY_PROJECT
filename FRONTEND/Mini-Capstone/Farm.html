@@ -91,42 +91,6 @@
                 </button>
             </div>
 
-            <!-- Add this anywhere in your body, preferably near the farm tabs -->
-            <div id="farmContextMenu" class="farm-context-menu">
-                <button id="renameFarmBtn" class="context-menu-item rename-item">
-                    <i class="fas fa-edit"></i> Rename Farm
-                </button>
-                <button id="deleteFarmBtn" class="context-menu-item delete-item">
-                    <i class="fas fa-trash"></i> Delete Farm
-                </button>
-            </div>
-
-<!-- Add Rename Farm Modal -->
-<div id="renameFarmModal" class="modal">
-    <div class="modal-content">
-        <div class="weight-modal-header">
-            <h3>Rename Farm</h3>
-            <button type="button" id="closeRenameFarmModal" class="modal-close-red">&times;</button>
-        </div>
-        
-        <form id="renameFarmForm">
-            <div class="weight-form-group">
-                <div class="input-group-details">
-                    <label for="newFarmName">Farm Name</label>
-                    <div class="input-wrapper">
-                        <input type="text" id="newFarmName" name="newFarmName" required>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="weight-modal-actions">
-                <button type="button" id="cancelRenameFarm" class="btn-gray">Cancel</button>
-                <button type="submit" id="saveRenameFarm" class="btn-green">Save Changes</button>
-            </div>
-        </form>
-    </div>
-</div>
-
             <div class="table-content-box">
                 <div class="content-header">
                     <div class="title-section">
@@ -385,59 +349,18 @@
                     </div>
 
                     <div class="tab-content" id="tab-expenses" style="display:none;">
-                        <div class="tab-header-row">
-                            <h4>Expenses Records</h4>
-                            <button class="btn-add-record" id="addExpenseBtn">
-                                <i class="fa-solid fa-plus"></i> Add Expenses
-                            </button>
-                        </div>
-                        
-                        <div class="records-table-container">
-                            <table class="records-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Expenses</th>
-                                        <th>Category</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="expensesRecordsBody">
-                                    <!-- Expenses records will be populated here -->
-                                </tbody>
-                            </table>
-                        </div>
+                        <h4>Expenses</h4>
+                        <p class="empty-tab">No expense records yet.</p>
                     </div>
-
                     <div class="tab-content" id="tab-health" style="display:none;">
-                        <div class="tab-header-row">
-                            <h4>Vaccination Records</h4>
-                            <button class="btn-add-record" id="addVaccinationBtn">
-                                <i class="fa-solid fa-plus"></i> Add Vaccination
-                            </button>
-                        </div>
-                        
-                        <div class="records-table-container">
-                            <table class="records-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Due Date</th>
-                                        <th>Vaccine Type</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="vaccinationRecordsBody">
-                                    <!-- Vaccination records will be populated here -->
-                                </tbody>
-                            </table>
-                        </div>
+                        <h4>Health & Vaccination</h4>
+                        <p class="empty-tab">No health records yet.</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Add Weight Modal -->
     <div class="modal" id="addWeightModal" style="z-index: 3000;">
         <div class="modal-content weight-modal-content">
             <div class="weight-modal-header">
@@ -477,93 +400,6 @@
         </div>
     </div>
 
-    <!-- Add Expense Modal -->
-    <div class="modal" id="addExpenseModal" style="z-index: 3000;">
-        <div class="modal-content weight-modal-content">
-            <div class="weight-modal-header">
-                <h3>Add Expenses</h3>
-                <button class="modal-close-red" id="closeExpenseModal">&times;</button>
-            </div>
-            
-            <form id="addExpenseForm">
-                <div class="weight-form-group">
-                    <div class="input-wrapper">
-                        <input type="date" id="newExpenseDate" required>
-                    </div>
-                </div>
-
-                <div class="weight-form-group">
-                    <div class="weight-input-wrapper">
-                        <input type="number" id="newExpensePrice" placeholder="Price" step="0.01" required>
-                        <span class="weight-suffix">₱</span>
-                    </div>
-                </div>
-
-                <div class="weight-form-group">
-                    <div class="select-wrapper">
-                        <select id="newExpenseCategory" required>
-                            <option value="" disabled selected hidden>Category</option>
-                            <option value="Feeds">Feeds</option>
-                            <option value="Piglets">Piglets</option>
-                            <option value="Medicine">Medicine</option>
-                            <option value="Utilities">Utilities</option>
-                            <option value="Labor">Labor</option>
-                            <option value="Maintenance">Maintenance</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="weight-modal-actions">
-                    <button type="button" class="btn-gray" id="clearExpenseForm">Clear</button>
-                    <button type="submit" class="btn-green">Save</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Add Vaccination Modal -->
-    <div class="modal" id="addVaccinationModal" style="z-index: 3000;">
-        <div class="modal-content weight-modal-content">
-            <div class="weight-modal-header">
-                <h3>Add Vaccination</h3>
-                <button class="modal-close-red" id="closeVaccinationModal">&times;</button>
-            </div>
-            
-            <form id="addVaccinationForm">
-                <div class="weight-form-group">
-                    <div class="input-wrapper">
-                        <input type="date" id="newVaccinationDate" required>
-                    </div>
-                </div>
-
-                <div class="weight-form-group">
-                    <div class="input-wrapper">
-                        <input type="date" id="newVaccinationDueDate" required>
-                    </div>
-                </div>
-
-                <div class="weight-form-group">
-                    <div class="select-wrapper">
-                        <select id="newVaccinationType" required>
-                            <option value="" disabled selected hidden>Vaccination Type</option>
-                            <option value="Clear">Clear</option>
-                            <option value="Booster MLV">Booster MLV</option>
-                            <option value="Bacterine Toxoid">Bacterine Toxoid</option>
-                            <option value="Recombinant">Recombinant</option>
-                            <option value="Autogenous">Autogenous</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="weight-modal-actions">
-                    <button type="button" class="btn-gray" id="clearVaccinationForm">Clear</button>
-                    <button type="submit" class="btn-green">Save</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Edit Weight Modal -->
     <div id="editWeightModal" class="modal">
         <div class="modal-content weight-modal-content">
             <div class="weight-modal-header">
@@ -642,73 +478,51 @@
 </div>
 
 
-<div id="editPigDetailsModal" class="modal">
-    <div class="modal-content">
-        <div class="weight-modal-header">
-            <h3>Edit Pig Details</h3>
-            <button type="button" id="closeEditPigDetailsModal" class="modal-close-red">&times;</button>
-        </div>
-        
-        <div class="edit-pig-id-display" id="editPigShortIdDisplay">
-            Editing: 1 (1)
-        </div>
-        
-        <form id="editPigDetailsForm">
-            <div class="weight-form-group">
+    <div id="editPigDetailsModal" class="modal-stat" style="display: none;">
+        <div class="modal-content-stat">
+            <span class="close swal-close-icon" id="closeEditPigDetailsModal">
+                <i class="fas fa-times"></i>
+            </span>
+            <div class="modal-header-sales">
+                <h3 class="swal-title-red">Edit Pig Details</h3>
+                <p id="editPigShortIdDisplay" style="font-weight: 500;"></p>
+            </div>
+            
+            <form id="editPigDetailsForm">
                 <div class="input-group-details">
                     <label for="editPigName">Pig Name/ID</label>
-                    <div class="input-wrapper">
-                        <input type="text" id="editPigName" name="editPigName" required>
-                    </div>
+                    <input type="text" id="editPigName" required>
                 </div>
-            </div>
-            
-            <div class="weight-form-group">
                 <div class="input-group-details">
                     <label for="editPigBreed">Breed</label>
-                    <div class="select-wrapper">
-                        <select id="editPigBreed" name="editPigBreed" required>
-                            <option value="Duroc">Duroc</option>
-                            <option value="Yorkshire">Yorkshire</option>
-                            <option value="Hampshire">Hampshire</option>
-                            <option value="Landrace">Landrace</option>
-                            <option value="Pietrain">Pietrain</option>
-                            <option value="Berkshire">Berkshire</option>
-                            <option value="Chester White">Chester White</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
+                    <select id="editPigBreed" required>
+                        <option value="Duroc">Duroc</option>
+                        <option value="Landrace">Landrace</option>
+                        <option value="Yorkshire">Yorkshire</option>
+                        <option value="Hampshire">Hampshire</option>
+                        <option value="Mix">Mixed Breed</option>
+                        <option value="Other">Other</option>
+                    </select>
                 </div>
-            </div>
-            
-            <div class="weight-form-group">
                 <div class="input-group-details">
                     <label for="editPigGender">Gender</label>
-                    <div class="select-wrapper">
-                        <select id="editPigGender" name="editPigGender" required>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                        </select>
-                    </div>
+                    <select id="editPigGender" required>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
                 </div>
-            </div>
-            
-            <div class="weight-form-group">
                 <div class="input-group-details">
                     <label for="editPigDate">Date Acquired</label>
-                    <div class="input-wrapper">
-                        <input type="date" id="editPigDate" name="editPigDate" required>
-                    </div>
+                    <input type="date" id="editPigDate" required>
                 </div>
-            </div>
-            
-            <div class="weight-modal-actions">
-                <button type="button" id="cancelEditPigDetails" class="btn-gray">Cancel</button>
-                <button type="submit" class="btn-green">Save Changes</button>
-            </div>
-        </form>
+                
+                <div class="modal-actions-inline modal-actions-edit">
+                    <button type="button" class="swal-button swal-button-secondary clear-btn-gray" id="cancelEditPigDetails">Cancel</button>
+                    <button type="submit" class="swal-button swal-button-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="Farm.js"></script>
