@@ -1,12 +1,13 @@
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcrypt';
-import nodemailer from 'nodemailer';
 
-import {createUser, getUserByCredentials} from './Login-register.js';
+
+import {createUser, getUserByCredentials, SendOTPEmail, updateUserPassword} from './Login-register.js';
 import { getTotalFarms,getTotalPigs,getUpcomingReminders, getMonthExpenses, getChartData } from './Dashboard.js';
 
 const app = express();
+let otpStore = {};
 
 
 app.use(cors());
@@ -33,7 +34,9 @@ app.post('/login', async (req, res, next) => {
         return res.send({
             success: true,
             message: `Login successful! Welcome ${user.Username}.`,
-            user: user
+            user: {
+                UserID: user.UserID,
+            }
         });
     } catch (err) {
         next(err);
@@ -60,49 +63,147 @@ app.post('/register', async (req, res, next) => {
     }
 });
 
-// OTP sending
-app.get("/send-otp", async (req, res) => {
-  try {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: "oskarjene08@gmail.com",
-        pass: "dtez egni aqnt qaub"
-      }
-    });
-
-    const otp = Math.floor(100000 + Math.random() * 900000);
-
-    await transporter.sendMail({
-      to: "ojcarcasona8@gmail.com",
-      subject: "Notification",
-      html: `<p>Your OTP is: <b>${otp}</b></p>`
-    });
-
-    res.send({ success: true, otp });
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Error sending email");
-  }
-});
-
-
-// TOTAL FARMS ROUTE
-app.post('/total-farms', async (req, res, next) => {
+// Verifying Email
+app.post('/verifyEmail', async (req, res, next) => {
     try {
-        const rows = await getTotalFarms();
-        return res.send({ totalFarms: rows[0].totalFarms });
+        const { email } = req.body;
+
+        const users = await getUserByCredentials(email);
+
+        if (!users || users.length === 0) {
+            return res.status(401).send({
+                success: false,
+                message: "Email not found."
+            });
+        }
+
+        return res.send({
+            success: true,
+            message: "Email verified."
+        });
+
     } catch (err) {
         next(err);
     }
 });
 
+// OTP sending
+app.post("/send-otp", async (req, res,next) => {
+
+  try {
+    const { email } = req.body;
+    const otp = await SendOTPEmail(email);
+
+    otpStore[email] = {
+      otp: otp,
+      expiresAt: Date.now() + (5 * 60 * 1000) // 5 minutes
+    };
+
+    res.send({success: true, message: "OTP has been sent."})
+
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Confrim OTP
+app.post("/confirm-OTP", async (req, res, next) => {
+
+    try{
+        const {email,otp} = req.body;
+
+        const entry = otpStore[email]
+
+        // NO OTP FOUND
+        if (!entry){
+            return res.status(400).send({
+                success: false,
+                message: "No OTP found or OTP expired"
+            })
+        }
+
+        // OTP EXPIRES
+        if (Date.now() > entry.expireAt){
+            delete otpStore[email];
+            return res.status(400).send({
+                success: false,
+                message: "OTP has expired. Please request another!"
+            })
+        }
+
+       // OTP INCORRECT
+        if (entry.otp.toString() !== otp.toString()) {
+            return res.status(400).send({
+                success: false,
+                message: "Incorrect OTP"
+            });
+        }
+
+        // OTP IS CORRECT
+        delete otpStore[email];
+        return res.send({
+            success: true,
+            message: "OTP verified successfully!"
+        })
+        
+
+    } catch (err){
+        next(err);
+    }
+})
+
+
+// UPDATING PASSOWRD
+app.post('/Update-Password', async (req, res, next) => {
+    try {
+        const { email, newPassword } = req.body;
+
+        // IF THE TEXTBOXES ARE EMPTY
+        if(!email || !newPassword) {
+            return res.status(400).send({
+                succes: false,
+                message: "Email and new Password is required"
+            })
+        }
+        const hashedPassword = await bcrypt.hash(newPassword, 10)
+
+        await updateUserPassword(email,hashedPassword)
+
+        return res.send({
+            success: true,
+            message: "Password Succesfully Updated!"
+        });
+        
+    } catch (err) {
+        next (err);
+    }
+}); 
+
+
+// TOTAL FARMS ROUTE
+app.post('/total-farms', async (req, res, next) => {
+
+    try{
+
+        const { userId } = req.body;
+        const rows = await getTotalFarms(userId);
+        res.json({ totalFarms: rows[0].totalFarms });
+
+    } catch (err){
+        next(err)
+    }
+
+});
+
 // TOTAL PIGS ROUTE
 app.post('/total-pigs', async (req, res, next) => {
+
     try {
-        const rows = await getTotalPigs();
+
+        const { userId } = req.body;
+        const rows = await getTotalPigs(userId);
         res.send({ totalPigs: rows[0].totalPigs });
+
     } catch (err) {
         next(err);
     }
@@ -110,8 +211,10 @@ app.post('/total-pigs', async (req, res, next) => {
 
 // TOTAL EXPENSES THIS MONTH
 app.post('/month-expenses', async (req, res, next) => {
+
     try {
-        const rows = await getMonthExpenses();
+        const { userId } = req.body
+        const rows = await getMonthExpenses(userId);
         res.send({ monthExpenses: rows[0].monthExpenses });
     } catch (err) {
         next(err);
@@ -120,9 +223,13 @@ app.post('/month-expenses', async (req, res, next) => {
 
 // TOTAL UPCOMING REMINDERS ROUTE
 app.post('/upcoming-reminders', async (req, res, next) => {
+
     try {
-        const rows = await getUpcomingReminders();
+
+        const { userId } = req.body
+        const rows = await getUpcomingReminders(userId);
         res.send({ upcomingReminders: rows[0].upcomingReminders });
+
     } catch (err) {
         next(err);
     }
@@ -130,8 +237,10 @@ app.post('/upcoming-reminders', async (req, res, next) => {
         
 // MONTHLY EXPENSES FOR BAR CHART
 app.post('/getChartData', async (req, res, next) => {
+
     try {
-        const rows = await getChartData();
+        const { userId } = req.body
+        const rows = await getChartData(userId);
         res.send({ chartData: rows});
 
     } catch (err) {

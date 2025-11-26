@@ -10,11 +10,16 @@
 - installed cors for the security to block unknown server
 - installed dotenv so that I will put all my pool there to prevent sensitive data in the app.js
 
-# ERRORS
-- The page always says Cannot POST /login-register
+
+# ERRORS / BUGS
+- The page always says Cannot POST /login-register - 11/23/2025
+- Chart is not displaying the data of specific user - 11/23/2025
+- Chart logic is not working due to undefined variables and also repeating code block - 11/23/2025
+- Login don't have a condition for gmail it accept any like @a.com or @akfsak.com - 11/23/2025
+
 
 # FIXED 
-- Cannot POST has been fixed the error is in the Login-register.js missing path for env
+- Cannot POST has been fixed the error is in the Login-register.js missing path for env - 11/23/2025
 
 # WHAT WAS DONE? ( DESCRIPTION )
 - Done With the logic for the login and successful message in the login page
@@ -28,6 +33,7 @@
 - done with the backend logic for Chart
 - done with merging the logic for chart
 - done with the OTP for forget password using SMTP (nodemailer.js)
+- done wtih the statistic count for each user
 
 # CHANGES 
 - I change the API instead of /login-register I change it into /login for login and /register for register
@@ -41,7 +47,16 @@ because it's the url of each pages
 # TO DO LISTS
 - Notification should be able to fetch data from the reminders
 - add a logic where if the status of the pig is sold it will automatically change the category in the database into income
-- Integrate backend logic for Farm 
-- Merge the logic for to the front end
-- add logic for the following expenses: medical expenses, transportation expenses, and other expenses.
-- Merge the logic for forget password to the front end
+- Integrate backend logic for Farm and merge it
+- integrate backend logic for Expenses and merge it
+
+- Integrate backend logic for Reminders
+- email should only recieve @gmail none other
+- username should not store number
+- condition for 8 characters 1 special and 1 uppercase (password)
+- Chart need to be fix
+
+- 
+
+# SECURITY CHECK (To be done by another programmer)
+-

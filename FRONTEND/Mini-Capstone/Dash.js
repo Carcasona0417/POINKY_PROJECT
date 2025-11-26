@@ -5,12 +5,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 2️⃣ Fetch Dashboard Counts
     async function fetchDashboardData() {
+        const userId = localStorage.getItem('userID');
+
+        const bodyData = {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({userId})
+        };
+
         try {
             const [farmsRes, pigsRes, expensesRes, remindersRes] = await Promise.all([
-                fetch('http://localhost:8080/total-farms', { method: 'POST' }),
-                fetch('http://localhost:8080/total-pigs', { method: 'POST' }),
-                fetch('http://localhost:8080/month-expenses', { method: 'POST' }),
-                fetch('http://localhost:8080/upcoming-reminders', { method: 'POST' })
+                fetch('http://localhost:8080/total-farms', bodyData),
+                fetch('http://localhost:8080/total-pigs', bodyData),
+                fetch('http://localhost:8080/month-expenses', bodyData),
+                fetch('http://localhost:8080/upcoming-reminders', bodyData)
             ]);
 
             const farmsData = await farmsRes.json();
@@ -31,12 +39,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 3️⃣ Fetch Chart Data
     async function fetchChartData() {
-        try {
-            const res = await fetch('http://localhost:8080/getChartData', { method: 'POST' });
+        
+        const userId = localStorage.getItem('userID');
+
+         try {
+            const res = await fetch('http://localhost:8080/getChartData', {
+                 method: 'POST' ,
+                 headers: {'Content-Type': 'application/json'},
+                 body: JSON.stringify({userId})
+                });
+                
             const result = await res.json();
             const chartData = result.chartData;
-
-            // Map backend data to arrays
+            
+         // Map backend data to arrays
             const incomeData = Array(12).fill(0);
             const farmExpenseData = Array(12).fill(0);
             const feedExpenseData = Array(12).fill(0);
@@ -47,6 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 farmExpenseData[monthIndex] = d.farm_expenses || 0;
                 feedExpenseData[monthIndex] = d.feed_expenses || 0;
             });
+       
 
             // Chart.js Data
             const data = {
@@ -214,10 +231,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }, true);
     }
 
+}); //end of document.add list
 
     // ========== SIMPLE SAMPLE DATA CHART ==========
     
     // 1. Setup Sample Chart Context
+    /*
     const sampleCtx = document.getElementById('sample-chart').getContext('2d');
     
     // 2. Define Sample Data for Pig Production
@@ -312,7 +331,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 5. Render Sample Chart
     new Chart(sampleCtx, sampleConfig);
-});
+
+
+*/ 
 
 // Notification System
 class NotificationManager {
@@ -569,6 +590,8 @@ class NotificationManager {
 const notificationManager = new NotificationManager();
 
 // Your existing chart code
+
+/*
 document.addEventListener('DOMContentLoaded', function() {
     
     // 1. Setup the Chart Context
@@ -747,5 +770,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }, true);
     }
 });
+*/
 
 // Add analytics for other expenses breakdown farm expenses: medical, transportation, others
