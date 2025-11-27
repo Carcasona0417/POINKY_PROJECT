@@ -63,45 +63,47 @@ export async function getUpcomingReminders(userId) {
 // function for Monthly Expenses for bar chart
 export async function getChartData(userId) {
 
-    const [income_rows] = await pool.query(`
-        SELECT MONTH(Date) AS month, SUM(Amount) AS total_income
+    const [rows] = await pool.query(`
+        SELECT 
+            MONTH(Date) AS month,
+            SUM(CASE WHEN Category = 'Sold' THEN Amount ELSE 0 END) AS income,
+            SUM(CASE WHEN Category != 'Sold' THEN Amount ELSE 0 END) AS farm_expenses
         FROM expenses
         WHERE UserID = ?
-        AND Category = 'Sold'
-        GROUP BY MONTH(Date)`,
-        [userId]
-);
+        GROUP BY MONTH(Date)
+        ORDER BY month
+    `, [userId]);
 
-    // breakdown farm expeses
-    const [farm_expense_rows] = await pool.query(`
-        SELECT MONTH(Date) AS month, SUM(Amount) AS farm_expenses
-        FROM expenses
-        WHERE UserID = ?
-        AND Category != 'Sold' 
-        AND Category != 'Feed'
-        GROUP BY MONTH(Date)`,
-        [userId]
-    );
-    
-    const [feed_expense_rows] = await pool.query(`
-        SELECT MONTH(Date) AS month, SUM(Amount) AS feed_expenses
-        FROM expenses
-        WHERE UserID = ?
-        AND Category = 'feed'
-        GROUP BY MONTH(Date)`
-        [userId]
-    );
-
-    // merge into one array of 12 months
+    // Merge into 12 months
     const result = [];
     for (let m = 1; m <= 12; m++) {
+        const row = rows.find(r => r.month === m);
         result.push({
             month: m,
-            income: (income_rows.find(r => r.month === m)?.total_income) || 0,
-            farm_expenses: (farm_expense_rows.find(r => r.month === m)?.farm_expenses) || 0,
-            feed_expenses: (feed_expense_rows.find(r => r.month === m)?.feed_expenses) || 0
+            income: row?.income || 0,
+            farm_expenses: row?.farm_expenses || 0,
         });
     }
 
     return result;
+}
+
+// FUNCTION FOR PIE CHART --- BREAKDOWN OF ALL THE EXPENSES
+export async function getPieChart(userId) {
+
+    const[rows] = await pool.query(`
+        
+        SELECT 
+            SUM(CASE WHEN Category = 'Feed' THEN Amount ELSE 0 END) AS feed,
+            SUM(CASE WHEN Category = 'Piglets' THEN Amount ELSE 0 END) AS piglets,
+            SUM(CASE WHEN Category = 'Medicines' OR Category = 'Vaccination' THEN Amount ELSE 0 END) AS medical,
+            SUM(CASE WHEN Category = 'Utilities' THEN Amount ELSE 0 END) AS utilities,
+            SUM(CASE WHEN Category = 'Labor' THEN Amount ELSE 0 END) AS labor,
+            SUM(CASE WHEN Category = 'Maintenance' THEN Amount ELSE 0 END) AS maintenance
+        FROM expenses
+        WHERE UserID = ?`, [userId]
+    );
+
+    return rows[0];
+    
 }

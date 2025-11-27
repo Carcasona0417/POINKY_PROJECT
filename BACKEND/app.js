@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 
 
 import {createUser, getUserByCredentials, SendOTPEmail, updateUserPassword} from './Login-register.js';
-import { getTotalFarms,getTotalPigs,getUpcomingReminders, getMonthExpenses, getChartData } from './Dashboard.js';
+import { getTotalFarms,getTotalPigs,getUpcomingReminders, getMonthExpenses, getChartData, getPieChart } from './Dashboard.js';
 
 const app = express();
 let otpStore = {};
@@ -235,7 +235,7 @@ app.post('/upcoming-reminders', async (req, res, next) => {
     }
 });
         
-// MONTHLY EXPENSES FOR BAR CHART
+// MONTHLY INCOME AND farm EXPENSES FOR BAR CHART
 app.post('/getChartData', async (req, res, next) => {
 
     try {
@@ -249,6 +249,29 @@ app.post('/getChartData', async (req, res, next) => {
 
 });
 
+// MONTHLY BREAKDOWN OF ALL EXPENSES FOR PIE CHART
+app.post('/getPieChart', async (req, res, next) => {
+
+    try{
+        
+        const { userId } = req.body
+        const rows = await getPieChart(userId);
+        res.send({
+            feed: rows.feed,
+            piglets: rows.piglets,
+            medical: rows.medical,
+            utilities: rows.utilities,
+            labor: rows.labor,
+            maintenance: rows.maintenance
+        });
+
+    } catch (err){
+
+        next(err);
+
+    }
+
+});
 
 app.use((error, req, res, next) => {
     console.error(error && error.stack ? error.stack : error);

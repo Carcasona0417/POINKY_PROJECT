@@ -13,3 +13,12 @@
  4. If possible, add error bootstrap messages in input boxes (all)
  5. Farm improve layout and change colors
  6. Notification modal fix
+
+
+ # CHANGES HTML AND JS (DASHBAORD) ---- FOR MORE INFORMATION JUST GO TO BACKEND NOTES!!
+ - Legend-items for medicines change into medical (JUST TEXT/DISPLAY)
+ - Added ASYNC FUNCTION and FETCH data 
+ - After fetching data Calculates all the fetched data from the database
+ - Feed expenses was deleted from both html and js along with the legend-items
+ - I deleted the extra codes in the dash.js and eliminate double code
+ - It is fully integrated except for the notification
