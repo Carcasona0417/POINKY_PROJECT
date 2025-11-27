@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poinky Dashboard</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="stylesheets/dashnew.css">
+
+</head>
+<body>
+
+
+    <div class="sidebar">
+        <div class="brand"> 
+            <img src="Dash Icons/ICON.png" alt="Poinky Logo" class="brand-logo">
+            <span class="brand-name">Poinky</span>
+        </div>
+
+        <nav class="menu">
+            <ul class="menu-list">
+                <li class="menu-item active">
+                    <a href="dashboard.html" class="menu-link">
+                        <i class="fa-solid fa-house menu-icon"></i>
+                        <span class="menu-text">Dashboard</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="farm.html" class="menu-link">
+                        <i class="fas fa-warehouse menu-icon"></i>
+                        <span class="menu-text">Farm</span>
+                    </a>
+                </li> 
+                <li class="menu-item">
+                    <a href="expenses.html" class="menu-link">
+                        <i class="fas fa-file-invoice-dollar menu-icon"></i>
+                        <span class="menu-text">Expenses & Reports</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="reminders.html" class="menu-link">
+                        <i class="fa-solid fa-bell menu-icon"></i>
+                        <span class="menu-text">Reminders</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    
+    
+    
+    <div class="main-content">
+        <div class="header-bg">
+               <div class="top-bar">
+                <div class="user-actions">
+                <button type="button" class="notification-btn" id="notificationIcon">
+                <i class="fa-regular fa-bell notification-icon"></i>
+                <span id="notificationBadge" class="notificationBadge"></span>
+            </button>
+                    <button class="user-profile-btn" aria-label="User Profile">
+                        <i class="fa-solid fa-circle-user user-icon"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="header-content">
+                <h1 class="page-title">
+                    Welcome Oinkmate!
+                </h1>
+                
+            </div>
+        </div>
+
+        <div class="dashboard-section">
+            
+            <div class="stats-panel">
+                <div class="stat-box">
+                    <i class="fas fa-warehouse"></i>
+                    <p>Total Farms:</p>
+                    <span id="totalFarms">0</span>
+
+                </div>
+                <div class="stat-box">
+                    <i class="fas fa-piggy-bank"></i>
+                    <p>Total Pigs:</p>
+                    <span id="totalPigs">0</span>
+                </div>
+                <div class="stat-box">
+                    <i class="fas fa-hand-holding-usd"></i>
+                    <p>Expenses this<br/>Month:</p>
+                    <span id="monthExpenses">₱0</span>
+                </div>
+                <div class="stat-box">
+                    <i class="fas fa-clipboard-list"></i>
+                    <p>Upcoming<br/>Reminders:</p>
+                    <span id="upcomingReminders">0</span>
+                </div>
+            </div>
+
+
+            <!--Bar Chart-->
+            <div class="chart-panel">
+                <h2>Monthly Financial Overview</h2>
+                
+                <div class="chart-container">
+                    <canvas id="chart"></canvas>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="dot" style="background: var(--chart-green);"></div> Income
+                    </div>
+                    <div class="legend-item">
+                        <div class="dot" style="background: var(--chart-yellow);"></div> Farm Expenses
+                    </div>
+                    <div class="legend-item">
+                        <div class="dot" style="background: var(--chart-red);"></div> Feed Expenses
+                    </div>
+                </div>
+            </div>
+
+           <!--Pie Chart-->
+            <div class="chart-panel">
+                 <div class="expenses-card">
+                    <h2>Monthly Expenses Breakdown</h2>
+                </div>
+
+                     <div class="chart-wrapper" style="position: relative; width: 300px; height: 300px; margin:auto;">
+                        <canvas id="expensesChart" width="300" height="300"></canvas>
+                            <div class="center-label" style="
+                            position: absolute;
+                            top: 50%;
+                            left: 50%;
+                            transform: translate(-50%, -50%);
+                            font-size: 24px;
+                            font-weight: bold;
+                             color: #333;
+                            text-align: center;
+                            pointer-events: none;
+                            z-index: 10;
+                            ">
+                            ₱ 20,200
+                            </div>
+                         </div>
+
+
+         <div class="legend">
+        <div class="legend-item">
+            <div class="dot" style="background:#7c57ff;"></div> Feeds
+        </div>
+        <div class="legend-item">
+            <div class="dot" style="background:#ff8686;"></div> Piglets
+        </div>
+        <div class="legend-item">
+            <div class="dot" style="background:#3bc7e6;"></div> Medicines
+        </div>
+        <div class="legend-item">
+            <div class="dot" style="background:#ffb64d;"></div> Utilities
+        </div>
+        <div class="legend-item">
+            <div class="dot" style="background:#4d78ff;"></div> Labor
+        </div>
+        <div class="legend-item">
+            <div class="dot" style="background:#4cbf65;"></div> Maintenance
+        </div>
+    </div>
+</div>
+
+
+<!-- end Pie Chart-->
+
+
+    <!-- Notification Modal -->
+    <div class="notification-modal" id="notificationModal">
+        <div class="notification-modal-content">
+            <div class="notification-header">
+                <h2>Notifications</h2>
+               
+            </div>
+            <div class="notification-list" id="notificationList">
+                <!-- Notifications will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="jscripts/dashnew.js"></script>
+
+</body>
+</html>
