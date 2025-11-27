@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="Dash.css">
+
 </head>
 <body>
 
@@ -72,6 +73,8 @@
                 </div>
             </div>
 
+
+            <!--Bar Chart-->
             <div class="chart-panel">
                 <h2>Monthly Financial Overview</h2>
                 
@@ -92,8 +95,56 @@
                 </div>
             </div>
 
+           <!--Pie Chart-->
+            <div class="chart-panel">
+                 <div class="expenses-card">
+                    <h2>Monthly Expenses Breakdown</h2>
+                </div>
+
+                     <div class="chart-wrapper" style="position: relative; width: 300px; height: 300px; margin:auto;">
+                        <canvas id="expensesChart" width="300" height="300"></canvas>
+                            <div class="center-label" style="
+                            position: absolute;
+                            top: 50%;
+                            left: 50%;
+                            transform: translate(-50%, -50%);
+                            font-size: 24px;
+                            font-weight: bold;
+                             color: #333;
+                            text-align: center;
+                            pointer-events: none;
+                            z-index: 10;
+                            ">
+                            ₱ 20,200
+                            </div>
+                         </div>
+
+
+         <div class="legend">
+        <div class="legend-item">
+            <div class="dot" style="background:#7c57ff;"></div> Feeds
+        </div>
+        <div class="legend-item">
+            <div class="dot" style="background:#ff8686;"></div> Piglets
+        </div>
+        <div class="legend-item">
+            <div class="dot" style="background:#3bc7e6;"></div> Medicines
+        </div>
+        <div class="legend-item">
+            <div class="dot" style="background:#ffb64d;"></div> Utilities
+        </div>
+        <div class="legend-item">
+            <div class="dot" style="background:#4d78ff;"></div> Labor
+        </div>
+        <div class="legend-item">
+            <div class="dot" style="background:#4cbf65;"></div> Maintenance
         </div>
     </div>
+</div>
+
+
+<!-- end Pie Chart-->
+
 
     <!-- Notification Modal -->
     <div class="notification-modal" id="notificationModal">

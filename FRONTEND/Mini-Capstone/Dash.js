@@ -584,6 +584,7 @@ class NotificationManager {
         this.updateBadge();
         this.updateRemindersCount();
     }
+    
 }
 
 // Initialize Notification Manager
@@ -773,3 +774,33 @@ document.addEventListener('DOMContentLoaded', function() {
 */
 
 // Add analytics for other expenses breakdown farm expenses: medical, transportation, others
+
+//pie chart
+const ctx = document.getElementById("expensesChart");
+
+new Chart(ctx, {
+    type: "doughnut",
+    data: {
+        labels: ["Feeds", "Piglets", "Medicines", "Utilities", "Labor", "Maintenance"],
+        datasets: [{
+            data: [5000, 10000, 1500, 1000, 700, 2000],
+            backgroundColor: [
+                "#7c57ff",   // feeds
+                "#ff8686",   // piglets
+                "#3bc7e6",   // medicines
+                "#ffb64d",   // utilities
+                "#4d78ff",   // labor
+                "#4cbf65"    // maintenance
+            ],
+            borderWidth: 0,
+            cutout: "65%"
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        }
+    }
+});
+//pie chart end

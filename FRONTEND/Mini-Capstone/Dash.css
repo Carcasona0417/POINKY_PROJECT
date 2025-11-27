@@ -664,4 +664,48 @@ body {
     .notification-item {
         padding: 12px 15px;
     }
+    
+/* pie chart*/
+.expenses-card {
+    background: #fff;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    width: 700px;
+}
+
+.chart-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 450px;
+    margin: auto;
+}
+
+.center-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+    pointer-events: none;
+    z-index: 10;
+}
+
+
+
+.expense-label {
+    position: absolute;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.expense-label span {
+    font-size: 13px;
+    color: #666;
+}
+
+
 }
