@@ -30,52 +30,99 @@ const fireAlert = (icon, title, text, confirmButtonText = 'OK') => {
 };
 
 // --- Step 1: Email Input Handler (UPDATED) ---
-document.getElementById('form-email').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const email = document.getElementById('email').value.trim();
+let globalEmail = "";
 
-    // Basic Email Validation
+document.getElementById('form-email').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const email = document.getElementById('email').value.trim();
+    globalEmail = email;
+
     if (!email) {
         fireAlert('error', 'Error', 'Please enter a valid email address.');
         return;
     }
 
-    // SIMULATED SUCCESS: Show confirmation alert, then transition to Step 2
-    fireAlert('success', 'Email Sent!', `A 4-digit verification code has been sent to ${email}.`, 'Continue')
-        .then((result) => {
-            // This 'then' block runs after the user clicks 'Continue' or dismisses the alert.
+    try {
+        // STEP 1: Check if email exists
+        const verifyRes = await fetch('http://localhost:8080/verifyEmail', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+
+        const verifyData = await verifyRes.json();
+
+        if (!verifyData.success) {
+            fireAlert('error', 'Error', 'Email does not exist.');
+            return;
+        }
+
+        // STEP 2: Send OTP
+        const otpRes = await fetch('http://localhost:8080/send-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+
+        const otpData = await otpRes.json();
+
+        if (!otpData.success) {
+            fireAlert('error', 'Error', 'Failed to send OTP.');
+            return;
+        }
+
+        // STEP 3: Show your SweetAlert (UI stays the same)
+        fireAlert(
+            'success',
+            'Email Sent!',
+            `A 6-digit verification code has been sent to ${email}.`,
+            'Continue'
+        ).then((result) => {
             if (result.isConfirmed || result.isDismissed) {
-                // Now we transition to the next step: Verify Code
                 showStep('step-verify-code');
             }
         });
+
+    } catch (error) {
+        fireAlert('error', 'Server Error', 'Something went wrong.');
+    }
 });
 
 
 // --- Step 2: Code Input Handler ---
-document.getElementById('form-code').addEventListener('submit', function(e) {
+document.getElementById('form-code').addEventListener('submit', async function(e) {
     e.preventDefault();
-    const codeInputs = document.querySelectorAll('#form-code .code-box');
-    let code = '';
-    
-    // Concatenate the four code inputs
-    codeInputs.forEach(input => {
-        code += input.value;
-    });
+    const inputs = document.querySelectorAll('#form-code .code-box');
 
-    // Code Validation (Example: Must be 4 digits)
-    if (code.length !== 4 || !/^\d+$/.test(code)) {
-        fireAlert('error', 'Invalid Code', 'Please enter the 4-digit code correctly.');
+    let otp = "";
+    inputs.forEach(input => otp += input.value);
+
+    if (otp.length !== 6 || !/^\d+$/.test(otp)){
+        fireAlert('error','Invalid Code','Please Enter 6-digit code!')
         return;
     }
+    try{
 
-    // SIMULATED SUCCESS: Assume code is correct, move to New Password step
-    fireAlert('success', 'Code Verified!', 'Verification successful. You can now set a new password.', 'Set New Password')
-        .then((result) => {
-            if (result.isConfirmed || result.isDismissed) {
-                showStep('step-new-password');
-            }
+        const verifyRes = await fetch('http://localhost:8080/confirm-OTP', {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: globalEmail, otp: otp })
         });
+
+        const data = await verifyRes.json();
+
+        if(!data.success) {
+            fireAlert('error', 'Invalid', data.message)
+            return;
+        }
+        
+        fireAlert('success','Code Verified!','You can now set your new password').then(() => showStep('step-new-password'));
+
+    } catch (error){
+        fireAlert('error', 'Server Error', 'Something Went Wrong' )
+    };
+
 });
 
 // --- Step 2: Resend Code Handler ---
@@ -86,7 +133,7 @@ document.getElementById('resend-code').addEventListener('click', function(e) {
 
 
 // --- Step 3: New Password Handler ---
-document.getElementById('form-new-password').addEventListener('submit', function(e) {
+document.getElementById('form-new-password').addEventListener('submit', async function(e) {
     e.preventDefault();
     const newPass = document.getElementById('new-password').value;
     const confirmPass = document.getElementById('confirm-password').value;
@@ -103,14 +150,26 @@ document.getElementById('form-new-password').addEventListener('submit', function
         return;
     }
 
-    // SIMULATED FINAL SUCCESS: Password updated!
-    fireAlert('success', 'Password Updated! 🎉', 'Your password has been successfully reset. Please log in with your new password.', 'Go to Login')
-        .then((result) => {
-            if (result.isConfirmed || result.isDismissed) {
-                // Final step: Redirect user back to the starting step (Login page)
-                showStep('step-email-input'); 
-            }
+    try{
+        const res = await fetch('http://localhost:8080/Update-Password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: globalEmail, newPassword: newPass })
         });
+        
+        const data = await res.json();
+
+        if(!data.success){
+            fireAlert('error','Error', data.message);
+            return;
+        }
+
+        fireAlert('success', 'Password Updated!', 'Your password has been reset. Please proceed to login.')
+        .then(() => showStep('step-email-input'));
+
+    } catch(err) {
+        fireAlert ('error', 'Server Error', 'Something went wrong.')
+    }
 });
 
 // --- Step 2: Auto-tabbing for code inputs (UX improvement) ---

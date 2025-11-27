@@ -312,7 +312,10 @@ if (loginForm) {
 
         if (data.success) {
 
-            // Modernized alert for successful login
+            // ADD here! Modernized alert for successful login
+
+            localStorage.setItem("userID", data.user.UserID);
+           
             alert(data.message); 
             window.location.replace("Dashboard.html");
 

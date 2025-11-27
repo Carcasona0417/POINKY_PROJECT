@@ -1,6 +1,7 @@
 import mysql from 'mysql2';
-
+import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+
 dotenv.config({ path: './BACKEND/.env' });
 
 
@@ -10,6 +11,7 @@ const pool = mysql.createPool({
   password: process.env.MYSQL_PASSWORD,
   database: process.env.MYSQL_DATABASE
 }).promise();
+
 
 // Function for Register user and have an auto incremented UserID
 export async function createUser(userID, username, email, password) {
@@ -35,13 +37,37 @@ export async function createUser(userID, username, email, password) {
 
     return result;
 }
-
+// function for login
 export async function getUserByCredentials(email) {
 
     const [rows] = await pool.query('SELECT * FROM user WHERE Email = ?', [email]);
     return rows;
 }
+
 // OTP Send Email function
+
+export async function SendOTPEmail(email){
+
+    const [rows] = await pool.query('SELECT * FROM user WHERE Email = ?', [email]);
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "oskarjene08@gmail.com",
+        pass: "dtez egni aqnt qaub"
+      }
+    });
+    
+    const otp = Math.floor(100000 + Math.random() * 900000);
+
+    await transporter.sendMail({
+      to: email,    
+      subject: "Notification",
+      html: `<p>Your OTP is: <b>${otp}</b></p>`
+    });
+    return otp;
+
+} 
 
 // function for password reset using OTP
 export async function updateUserPassword(email, newPassword) {
