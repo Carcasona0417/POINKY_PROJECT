@@ -495,6 +495,39 @@ body {
     margin-bottom: 20px;
 }
 
+.chart-header h2 {
+    font-weight: 700;
+}
+
+.chart-filters {
+    display: flex;
+    gap: 10px;
+}
+
+.filter-dropdown {
+    padding: 6px 12px;
+    font-size: 14px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-dark);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    
+    /* Remove native OS styling */
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.filter-dropdown:hover {
+    border-color: var(--primary-pink);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+
+
 /* Custom Legend */
 .legend {
     display: flex;
@@ -866,6 +899,23 @@ body {
     font-size: 13px;
     color: #666;
 }
+
+.filter-btn {
+        padding: 6px 12px;
+        border: none;
+        cursor: pointer;
+        margin-right: 5px;
+        border-radius: 4px;
+        background-color: #e0e0e0;
+        transition: 0.2s;
+    }
+    .filter-btn:hover {
+        background-color: #d0d0d0;
+    }
+    .filter-btn.active {
+        background-color: #4caf50;
+        color: white;
+    }
 
 
 }

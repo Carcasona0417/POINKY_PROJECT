@@ -804,3 +804,36 @@ new Chart(ctx, {
     }
 });
 //pie chart end
+
+
+//filter bar chart 
+const monthlyBtn = document.getElementById('monthlyBtn');
+    const yearlyBtn = document.getElementById('yearlyBtn');
+
+    monthlyBtn.addEventListener('click', () => {
+        monthlyBtn.classList.add('active');
+        yearlyBtn.classList.remove('active');
+        updateChart('monthly'); // call your function to load monthly data
+    });
+
+    yearlyBtn.addEventListener('click', () => {
+        yearlyBtn.classList.add('active');
+        monthlyBtn.classList.remove('active');
+        updateChart('yearly'); // call your function to load yearly data
+    });
+
+    function updateChart(filter) {
+        // Example: replace chart data based on filter
+        if(filter === 'monthly') {
+            chart.data.labels = ["Jan","Feb","Mar","Apr","May"];
+            chart.data.datasets[0].data = [5000,6000,5500,7000,6500];
+            chart.data.datasets[1].data = [2000,2500,2300,3000,2800];
+            chart.data.datasets[2].data = [1000,1200,1100,1300,1250];
+        } else if(filter === 'yearly') {
+            chart.data.labels = ["2021","2022","2023","2024"];
+            chart.data.datasets[0].data = [65000,70000,72000,75000];
+            chart.data.datasets[1].data = [25000,26000,27000,28000];
+            chart.data.datasets[2].data = [12000,13000,12500,14000];
+        }
+        chart.update();
+    }

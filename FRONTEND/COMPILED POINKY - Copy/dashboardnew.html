@@ -101,32 +101,57 @@
 
 
             <!--Bar Chart-->
-            <div class="chart-panel">
-                <h2>Monthly Financial Overview</h2>
-                
-                <div class="chart-container">
-                    <canvas id="chart"></canvas>
-                </div>
-
-                <div class="legend">
-                    <div class="legend-item">
-                        <div class="dot" style="background: var(--chart-green);"></div> Income
-                    </div>
-                    <div class="legend-item">
-                        <div class="dot" style="background: var(--chart-yellow);"></div> Farm Expenses
-                    </div>
-                    <div class="legend-item">
-                        <div class="dot" style="background: var(--chart-red);"></div> Feed Expenses
-                    </div>
-                </div>
+    <!-- Chart Panel -->
+    <div class="chart-panel">
+        <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h2 style="margin: 0; color: var(--primary-pink); font-size: 22px;">Financial Overview</h2>
+            
+            <!-- Styled Dropdown Filter -->
+            <div class="dropdown-wrapper">
+                <select id="timeFilter" class="filter-dropdown">
+                    <option value="monthly" selected>Monthly</option>
+                    <option value="yearly">Yearly</option>
+                </select>
+                <i class="arrow-down"></i>
             </div>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="chart"></canvas>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="dot" style="background: var(--chart-green);"></div> Income
+            </div>
+            <div class="legend-item">
+                <div class="dot" style="background: var(--chart-yellow);"></div> Farm Expenses
+            </div>
+            <div class="legend-item">
+                <div class="dot" style="background: var(--chart-red);"></div> Feed Expenses
+            </div>
+        </div>
+    </div>
+
+
+
+
+
 
            <!--Pie Chart-->
             <div class="chart-panel">
-                 <div class="expenses-card">
-                    <h2>Monthly Expenses Breakdown</h2>
-                </div>
+                 <div class="expenses-card" style="display: flex; justify-content: space-between; align-items: center;">
+                        <h2 style="margin: 0; color: var(--primary-pink); font-size: 22px;">Monthly Expenses Breakdown</h2>
 
+                        <!-- Styled Dropdown Filter -->
+                        <div class="dropdown-wrapper" style="position: relative;">
+                            <select id="timeFilter" class="filter-dropdown">
+                                <option value="monthly" selected>Monthly</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
+                            <i class="arrow-down"></i>
+                        </div>
+                    </div>
                      <div class="chart-wrapper" style="position: relative; width: 300px; height: 300px; margin:auto;">
                         <canvas id="expensesChart" width="300" height="300"></canvas>
                             <div class="center-label" style="
@@ -143,30 +168,30 @@
                             ">
                             ₱ 20,200
                             </div>
-                         </div>
+                             </div>
 
 
-         <div class="legend">
-        <div class="legend-item">
-            <div class="dot" style="background:#7c57ff;"></div> Feeds
-        </div>
-        <div class="legend-item">
-            <div class="dot" style="background:#ff8686;"></div> Piglets
-        </div>
-        <div class="legend-item">
-            <div class="dot" style="background:#3bc7e6;"></div> Medicines
-        </div>
-        <div class="legend-item">
-            <div class="dot" style="background:#ffb64d;"></div> Utilities
-        </div>
-        <div class="legend-item">
-            <div class="dot" style="background:#4d78ff;"></div> Labor
-        </div>
-        <div class="legend-item">
-            <div class="dot" style="background:#4cbf65;"></div> Maintenance
-        </div>
-    </div>
-</div>
+                            <div class="legend">
+                            <div class="legend-item">
+                                <div class="dot" style="background:#7c57ff;"></div> Feeds
+                            </div>
+                            <div class="legend-item">
+                                <div class="dot" style="background:#ff8686;"></div> Piglets
+                            </div>
+                            <div class="legend-item">
+                                <div class="dot" style="background:#3bc7e6;"></div> Medicines
+                            </div>
+                            <div class="legend-item">
+                                <div class="dot" style="background:#ffb64d;"></div> Utilities
+                            </div>
+                            <div class="legend-item">
+                                <div class="dot" style="background:#4d78ff;"></div> Labor
+                            </div>
+                            <div class="legend-item">
+                                <div class="dot" style="background:#4cbf65;"></div> Maintenance
+                            </div>
+                        </div>
+                    </div>
 
 
 <!-- end Pie Chart-->
