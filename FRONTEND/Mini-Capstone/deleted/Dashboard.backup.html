@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poinky Dashboard - Backup</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/Dash.css">
+
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="logo">
+            <img src="assets/dash-icons/ICON.png" alt="Poinky">
+            <h2>Poinky</h2>
+        </div>
+        <nav class="nav">
+            <a href="#" class="nav-item active">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="Farm.html" class="nav-item">
+                <i class="fas fa-warehouse"></i> Farm
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-file-invoice-dollar"></i> Expenses & Reports
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-bell"></i> Reminders
+            </a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        
+        <div class="top-icons">
+            <div class="notification" id="notificationIcon">
+                <i class="fas fa-bell"></i>
+                <span class="badge" id="notificationBadge">3</span>
+            </div>
+            <i class="fas fa-user-circle"></i>
+        </div>
+
+        <div class="header">
+            <h1>Welcome Oinkmate!</h1>
+        </div>
+
+        <div class="dashboard-section">
+            
+            <div class="stats-panel">
+                <div class="stat-box">
+                    <i class="fas fa-warehouse"></i>
+                    <p>Total Farms:</p>
+                    <span id="totalFarms">0</span>
+
+                </div>
+                <div class="stat-box">
+                    <i class="fas fa-piggy-bank"></i>
+                    <p>Total Pigs:</p>
+                    <span id="totalPigs">0</span>
+                </div>
+                <div class="stat-box">
+                    <i class="fas fa-hand-holding-usd"></i>
+                    <p>Expenses this<br/>Month:</p>
+                    <span id="monthExpenses">₱0</span>
+                </div>
+                <div class="stat-box">
+                    <i class="fas fa-clipboard-list"></i>
+                    <p>Upcoming<br/>Reminders:</p>
+                    <span id="upcomingReminders">0</span>
+                </div>
+            </div>
+
+            <!--Bar Chart and other sections omitted for brevity in backup -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/Dash.js"></script>
+</body>
+</html>
