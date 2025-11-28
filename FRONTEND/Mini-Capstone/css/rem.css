@@ -1,0 +1,458 @@
+/* --- General Styles --- */
+:root {
+    --primary-pink: #F08080; /* The main pink color */
+    --primary-pink-dark: #E57373;
+    --sidebar-bg: #FFF0F5; /* Very light pink for sidebar */
+    --header-overlay: rgba(240, 128, 128, 0.6); /* Reddish overlay for header img */
+    --text-dark: #444;
+    --text-light: #888;
+    --bg-light: #F9F9F9;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+ 
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--bg-light);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* --- Sidebar --- */
+.sidebar {
+    width: 250px;
+    background-color: var(--sidebar-bg);
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 50px;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-pink);
+}
+
+.brand-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.brand-name {
+    font-weight: 700;
+}
+
+.menu-list {
+    list-style: none;
+}
+
+.menu-item {
+    margin-bottom: 15px;
+}
+
+.menu-link {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    color: #F16877;
+    font-weight: 600;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.menu-link .menu-icon {
+    margin-right: 15px;
+    font-size: 20px;
+    width: 25px;
+    text-align: center;
+}
+
+.menu-item.active .menu-link,
+.menu-link:hover {
+    background-color: #F16877;
+    color: white;
+}
+
+/* --- Main Content --- */
+.main-content {
+    flex-grow: 1;
+    overflow-y: auto;
+    position: relative;
+}
+
+/* Header with Background */
+.header-bg {
+    background-image: url('../assets/background-images/BG.png');
+    background-size: cover;
+    background-position: center;
+    height: 280px;
+    padding: 20px 40px;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* Moving background pattern */
+.header-bg::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+    animation: float 20s infinite linear;
+    pointer-events: none;
+}
+
+@keyframes float {
+    0% { transform: translateX(0) translateY(0); }
+    100% { transform: translateX(-100px) translateY(-100px); }
+}
+
+.top-bar {
+    position: fixed;                 /* 🔒 stick to top */
+    top: 0;
+    right: 0;
+    left: 250px;                     /* same width as sidebar */
+    height: 60px;                    /* adjust as needed */
+    background-color: var(--sidebar-bg); /* same bg color */
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 0 25px;
+    z-index: 1000;                   /* stays above content */
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1); 
+}
+
+
+.user-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.notification-btn,
+.user-profile-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    position: relative;
+    padding: 5px;
+    transition: transform 0.3s ease;
+}
+
+.notification-btn .notification-icon,
+.user-profile-btn .user-icon {
+    color: #F16877 !important;
+}
+
+
+.notification-btn:hover .notification-icon,
+.user-profile-btn:hover .user-icon {
+    color: #d95866; /* darker pink on hover */
+}
+
+
+
+.notification-btn:hover,
+.user-profile-btn:hover {
+    transform: scale(1.1);
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -8px;
+    background-color: var(--primary-pink);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 50%;
+    border: 2px solid white;
+    min-width: 18px;
+    text-align: center;
+}
+
+.header-content {
+    text-align: center;
+    margin-top: auto;
+    margin-bottom: 50px;
+    position: relative;
+    z-index: 1;
+}
+
+.page-title {
+    font-size: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.page-icon {
+    width: 70px;
+    height: 70px;
+}
+
+.search-container {
+    background: white;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    border-radius: 30px;
+    position: relative;
+}
+
+.search-input {
+    border: none;
+    outline: none;
+    flex-grow: 1;
+    font-size: 16px;
+    font-family: 'Poppins', sans-serif;
+    padding-right: 30px;
+}
+
+.search-icon {
+    color: var(--text-light);
+    position: absolute;
+    right: 20px;
+}
+
+/* --- Data Container (The White Card) --- */
+.data-container {
+    margin: -50px 40px 40px 40px;
+    position: relative;
+    z-index: 10;
+}
+
+/* Table Content Box */
+.table-content-box {
+    background: white;
+    border-radius: 0 15px 15px 15px;
+    padding: 30px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+}
+
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 25px;
+}
+
+.title-section h2 {
+    color: #F16877;
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+
+.section-subtitle {
+    color: var(--text-light);
+    font-size: 14px;
+}
+
+.btn-add-rem {
+    background-color: #E74A5A;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.3s;
+}
+
+.btn-add-rem:hover {
+    background-color: #BE4040;
+}
+
+/* Table Styles */
+.table-container {
+    overflow-x: auto;
+    border: 2px solid #000;      /* 🔲 outer black border */
+    border-radius: 10px;         /* keep rounded corners (optional) */
+    padding: 0;                  /* make sure border hugs the table */
+    box-sizing: border-box; 
+}
+
+.rem-table th:first-child { border-top-left-radius: 0; }
+.rem-table th:last-child  { border-top-right-radius: 0; }
+
+
+
+.rem-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 800px;
+}
+
+.rem-table th {
+    background-color: #FFA2AB;
+    color: #413F3F;
+    font-weight: 600;
+    padding: 15px;
+    text-align: left;
+    border-bottom: 2px solid #FFB6C1;
+}
+
+.rem-table th:first-child { border-top-left-radius: 10px; }
+.rem-table th:last-child { border-top-right-radius: 10px; }
+
+.rem-table td {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    color: var(--text-dark);
+    vertical-align: middle;
+}
+
+/* Table Footer */
+.table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    color: var(--text-light);
+}
+
+.pagination-info {
+    font-size: 14px;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pagination-btn {
+    background: none;
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--text-dark);
+}
+
+.pagination-btn:hover:not(:disabled) {
+    border-color: var(--primary-pink);
+    color: var(--primary-pink);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-page {
+    font-weight: 600;
+    padding: 0 10px;
+}
+
+/* Modal (Add Reminder / Add Reminder – base overlay) */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .sidebar {
+        display: none;
+    }
+    
+    .data-container {
+        margin: -30px 20px 20px 20px;
+    }
+    
+    .header-bg {
+        padding: 20px;
+        height: auto;
+        min-height: 250px;
+    }
+    
+    .content-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    .table-footer {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-title {
+        font-size: 24px;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .table-content-box {
+        padding: 20px;
+    }
+}
+
+
+
+
+
+
+#addRem {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(5px);
+    display: none;  /* hidden by default */
+    justify-content: center;
+    align-items: center;
+    z-index: 2000 !important;  /* HIGHER THAN TOP BAR */
+}
+
+#addRem.show {
+    display: flex;
+}
+
+#addRem .dialog {
+    position: relative;
+    background: #fff;
+    border-radius: 12px;
+    padding: 30px;
+    z-index: 2100;
+}

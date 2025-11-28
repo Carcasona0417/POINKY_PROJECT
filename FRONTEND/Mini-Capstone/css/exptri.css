@@ -1,0 +1,734 @@
+/* ----------------------------------------- */
+/*              ROOT VARIABLES               */
+/* ----------------------------------------- */
+:root {
+    --primary-pink: #F08080;
+    --primary-pink-dark: #E57373;
+    --sidebar-bg: #FFF0F5;
+    --header-overlay: rgba(240, 128, 128, 0.6);
+    --text-dark: #444;
+    --text-light: #888;
+    --bg-light: #F9F9F9;
+}
+
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--bg-light);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* ----------------------------------------- */
+/*                 SIDEBAR                   */
+/* ----------------------------------------- */
+.sidebar {
+    width: 250px;
+    background-color: var(--sidebar-bg);
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 50px;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-pink);
+}
+
+.brand-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.menu-list {
+    list-style: none;
+}
+
+.menu-item {
+    margin-bottom: 15px;
+}
+
+.menu-link {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    text-decoration: none;
+    color: #F16877;
+    font-weight: 600;
+    border-radius: 12px;
+    transition: 0.3s ease;
+}
+
+.menu-link .menu-icon {
+    margin-right: 15px;
+    font-size: 20px;
+    width: 25px;
+}
+
+.menu-item.active .menu-link,
+.menu-link:hover {
+    background-color: #F16877;
+    color: #fff;
+}
+
+/* ----------------------------------------- */
+/*               MAIN CONTENT                */
+/* ----------------------------------------- */
+.main-content {
+    flex-grow: 1;
+    overflow-y: auto;
+    position: relative;
+}
+
+/* HEADER BACKGROUND */
+.header-bg {
+    background-image: url('../assets/background-images/BG.png');
+    background-size: cover;
+    background-position: center;
+    height: 280px;
+    padding: 20px 40px;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* FLOATING OVERLAY PATTERN */
+.header-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7z' fill='%23ffffff' fill-opacity='0.1'/%3E%3C/svg%3E");
+    animation: float 20s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes float {
+    0% { transform: translate(0, 0);}
+    100% { transform: translate(-100px, -100px);}
+}
+ 
+/* FIXED TOP BAR */
+.top-bar {
+    position: fixed;                 /* 🔒 stick to top */
+    top: 0;
+    right: 0;
+    left: 250px;                     /* same width as sidebar */
+    height: 60px;                    /* adjust as needed */
+    background-color: var(--sidebar-bg); /* same bg color */
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 0 25px;
+    z-index: 1000;                   /* stays above content */
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1); 
+}
+
+.user-actions {
+    display: flex;
+    gap: 20px;
+}
+
+.notification-btn,
+.user-profile-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    position: relative;
+    transition: .3s ease;
+}
+
+.notification-btn .notification-icon,
+.user-profile-btn .user-icon {
+    color: #F16877;
+}
+
+.notification-btn:hover,
+.user-profile-btn:hover {
+    transform: scale(1.1);
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -8px;
+    background: var(--primary-pink);
+    color: #fff;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 50%;
+    border: 2px solid #fff;
+}
+
+/* TITLE + SEARCH */
+.header-content {
+    text-align: center;
+    margin-top: auto;
+    margin-bottom: 50px;
+    z-index: 1;
+}
+
+.page-title {
+    font-size: 32px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.page-icon {
+    width: 70px;
+}
+
+.search-container {
+    margin: 20px auto 0;
+    background: white;
+    max-width: 500px;
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    border-radius: 30px;
+}
+
+.search-input {
+    border: none;
+    outline: none;
+    flex: 1;
+    font-size: 16px;
+    font-family: 'Poppins';
+}
+
+.search-icon {
+    position: absolute;
+    right: 20px;
+    color: var(--text-light);
+}
+
+/* ----------------------------------------- */
+/*             MAIN WHITE CARD               */
+/* ----------------------------------------- */
+.data-container {
+    margin: -50px 40px 40px 40px;
+    position: relative;
+}
+
+.table-content-box {
+    background: #fff;
+    padding: 30px;
+    border-radius: 0 15px 15px 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+}
+
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.section-title {
+    font-size: 24px;
+    color: #F16877;
+}
+
+.btn-add-rem {
+    background: #E74A5A;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: .3s;
+}
+
+.btn-add-rem:hover {
+    background: #BE4040;
+}
+
+/* ----------------------------------------- */
+/*               TABLE DESIGN                */
+/* ----------------------------------------- */
+.table-container {
+    overflow-x: auto;
+    border: 2px solid #000;
+    border-radius: 10px;
+}
+
+.rem-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.rem-table th {
+    background: #FFA2AB;
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #413F3F;
+    border-bottom: 2px solid #FFB6C1;
+}
+
+.rem-table td {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    color: var(--text-dark);
+}
+
+/* TABLE FOOTER */
+.table-footer {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    color: var(--text-light);
+    display: flex;
+    justify-content: space-between;
+}
+
+/* ----------------------------------------- */
+/*        EXPENSES & REPORTS LAYOUT          */
+/* ----------------------------------------- */
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 1.4fr; /* left 2 cards, right big card */
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Generic card style */
+.info-card {
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 20px 24px;
+    box-shadow: 0 0 0 1px #dcdcdc;
+}
+
+/* Card header with icon + title */
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.card-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    font-size: 16px;
+}
+
+.card-icon i {
+    font-size: 30px; /* <- adjust this to change height */
+    color: #F16877;  /* optional: change color */
+}
+
+.card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #F16877;
+}
+
+/* Summary / Breakdown rows */
+.summary-rows,
+.breakdown-rows {
+    margin-top: 6px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid #EFEFEF;
+    font-size: 14px;
+}
+
+.summary-row:last-child {
+    border-bottom: none;
+}
+
+.summary-row .label {
+    color: #444;
+}
+
+/* DIFFERENT VALUE STYLES */
+.value-sum {
+    color: #F16877;      /* summary – main pink */
+    font-weight: 600;
+}
+
+.value-exp {
+    color: #D94555;      /* breakdown – slightly darker */
+    font-weight: 600;
+}
+
+/* Right side chart card */
+.chart-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 320px;
+}
+
+.chart-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #F16877;
+    margin-bottom: 12px;
+}
+
+.chart-area {
+    flex: 1;
+    border-radius: 8px;
+    background: #FAFAFA;
+    border: 1px solid #E4E4E4;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Temporary placeholder for the graph area */
+.chart-placeholder {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: #bbbbbb;
+    border-bottom: 1px solid #EAEAEA;
+}
+
+/* Legend at the bottom of chart */
+.chart-legend {
+    padding: 10px 16px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: #555;
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    display: inline-block;
+    margin-right: 4px;
+}
+
+.income-dot {
+    background: #26a93d;  /* green */
+}
+
+.expenses-dot {
+    background: #F16877;  /* pink */
+}
+
+/* ----------------------------------------- */
+/*               RESPONSIVE                  */
+/* ----------------------------------------- */
+@media (max-width: 992px) {
+    .cards-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .sidebar { display: none; }
+
+    .top-bar { left: 0; }
+
+    .data-container {
+        margin: -30px 20px 20px 20px;
+    }
+
+    .content-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .table-footer {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-title {
+        font-size: 24px;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .table-content-box {
+        padding: 20px;
+    }
+}
+
+
+
+
+
+
+/*======================TABLES BELOW===========================*/
+
+
+
+
+
+/* ===== EXPENSE TABLE SECTIONS ===== */
+
+.table-section {
+    margin-top: 25px;
+}
+
+.table-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #F16877;
+    margin-bottom: 15px;
+}
+
+.styled-table-container {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 2px solid #0d0d0d; /* thicker border, visible */
+    padding: 0; 
+    background: #fff;
+}
+
+
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.styled-table thead th {
+    background-color: #FFA2AB;
+    color: #413F3F;
+    padding: 14px;
+    font-weight: 600;
+    text-align: left;
+    border-bottom: 2px solid #FFB6C1;
+}
+
+.styled-table tbody td {
+    padding: 14px;
+    border-bottom: 1px solid #eee;
+    color: #444;
+}
+
+.styled-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.styled-table tbody tr:hover {
+    background-color: #FFF4F5;
+    transition: 0.2s;
+}
+
+/* Rounded header corners */
+.styled-table thead th:first-child {
+    border-top-left-radius: 10px;
+}
+.styled-table thead th:last-child {
+    border-top-right-radius: 10px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*  */
+#addRem {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(5px);
+    display: none;  /* hidden by default */
+    justify-content: center;
+    align-items: center;
+    z-index: 2000 !important;  /* HIGHER THAN TOP BAR */
+}
+
+#addRem.show {
+    display: flex;
+}
+
+#addRem .dialog {
+    position: relative;
+    background: #fff;
+    border-radius: 12px;
+    padding: 30px;
+    z-index: 2100;
+}
+
+
+
+
+/*========THIS IS FOR THE FILTER CSS STYLES===========*/
+
+
+
+/* container on the right side of the header */
+.filter-container {
+    position: relative;       /* <— THIS MAKES DROPDOWN RELATIVE */
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+/* ---------- FILTER BUTTON ---------- */
+.filter-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    padding: 8px 16px;
+    min-width: 350px;
+    border-radius: 999px;
+    border: 1px solid #dcdcdc;
+    background: #ffffff;
+
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #333;
+
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+.filter-toggle:hover {
+    border-color: #ff4861;
+
+    transform: translateY(-1px);
+}
+
+/* icon + label inside */
+.filter-toggle-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-icon {
+    font-size: 14px;
+    color: #ff4861;
+}
+
+.filter-label {
+    font-size: 13px;
+    color: #333;
+    margin-left: 5px;
+}
+
+.filter-caret {
+    font-size: 11px;
+    color: #777;
+}
+
+/* ---------- DROPDOWN PANEL ---------- */
+.filter-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+
+    width: 230px;
+    padding: 10px 12px;
+
+    border-radius: 8px;
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+
+    display: none;
+    z-index: 999; /* stays on top */
+}
+
+.filter-dropdown.show {
+    display: block;
+}
+
+/* each row inside dropdown */
+.filter-field {
+    margin-bottom: 8px;
+}
+
+.filter-field:last-child {
+    margin-bottom: 0;
+}
+
+/* ---------- SELECT STYLING MATCHES YOUR INPUTS ---------- */
+.filter-dropdown .form-select {
+    width: 100%;
+    height: 40px;
+    padding: 8px 12px;
+
+    border-radius: 6px;
+    border: 1px solid #dcdcdc;
+
+    font-size: 13px;
+    font-family: 'Poppins', sans-serif;
+
+    background-color: #fff;
+    outline: none;
+
+    transition: border-color .2s ease, box-shadow .2s ease;
+
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23666' stroke-width='1.3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 12px;
+}
+
+.filter-dropdown .form-select:focus {
+    border-color: #ff4861;
+    
+}
