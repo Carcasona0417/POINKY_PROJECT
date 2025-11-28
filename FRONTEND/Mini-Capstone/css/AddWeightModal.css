@@ -1,436 +1,316 @@
-/* --- Add Weight Modal Specific Styles --- */
-.weight-modal-content {
-    width: 350px; /* Smaller, compact modal */
-    padding: 25px;
-    border-radius: 12px;
+/* =========================================
+   SHARED MODAL STYLES (WEIGHT / EXPENSE / VACCINATION)
+========================================= */
+
+/* Modal container */
+.modal-content.weight-modal-content {
+    width: 100%;
+    max-width: 450px;
+    max-height: 380px;
+    overflow-y: auto;
+    padding: 30px;
+    border-radius: 15px;
+    background-color: #fff;
+    position: relative;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
 }
 
+/* Header */
 .weight-modal-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
     margin-bottom: 25px;
 }
 
-.weight-modal-header h3 {
-    color: #F08080;
-    font-size: 20px;
+.weight-title {
+    font-size: 24px;
+    color: var(--primary-pink);
     font-weight: 700;
 }
 
+/* Close button */
 .modal-close-red {
-    background-color: #EF5350;
-    color: white;
+    background-color: var(--primary-pink);
+    color: #fff;
     border: none;
-    width: 28px;
-    height: 28px;
-    border-radius: 4px;
-    font-size: 18px;
-    cursor: pointer;
+    border-radius: 5px;
+    font-size: 20px;
+    width: 30px;
+    height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    transition: background-color .2s ease;
 }
 
+.modal-close-red:hover {
+    background-color: var(--primary-pink-dark);
+}
+
+/* Form group */
 .weight-form-group {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
+    text-align: left;
 }
 
-/* Input Styling to match screenshot */
-.input-wrapper input,
-.weight-input-wrapper input {
+/* =========================================
+   FLOATING INPUT BASE
+========================================= */
+
+.weight-modal-content .input-wrapper {
+    position: relative;
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-family: 'Poppins', sans-serif;
-    color: #555;
+}
+
+.weight-modal-content .input-wrapper input,
+.weight-modal-content .input-wrapper select {
+    width: 100%;
+    height: 46px;
+    padding: 12px 14px;
+    padding-right: 60px; /* space for unit box / calendar / arrow */
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    font-size: 14px;
     outline: none;
+    background: #fff;
+    transition: border-color .2s ease, box-shadow .2s ease;
 }
 
-/* The "kg" suffix box style */
-.weight-input-wrapper {
-    display: flex;
-    align-items: stretch;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    overflow: hidden;
+/* Focus state border + glow */
+.weight-modal-content .input-wrapper input:focus,
+.weight-modal-content .input-wrapper select:focus {
+    border-color: #ff4861;
+    box-shadow: 0 0 0 1px rgba(255,72,97,0.15);
 }
 
-.weight-input-wrapper input {
-    border: none;
-    flex-grow: 1;
+/* Floating label base */
+.weight-modal-content .input-wrapper label {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #777;
+    font-size: 12px;
+    pointer-events: none;
+    transition: .25s ease;
+    background: #fff;
+    padding: 0 4px;
 }
 
-.weight-suffix {
-    background-color: #E0E0E0;
-    color: #666;
-    padding: 0 15px;
+/* FLOAT LABEL — NUMBER (Weight / Price) */
+.weight-modal-content .input-wrapper input[type="number"]:focus ~ label,
+.weight-modal-content .input-wrapper input[type="number"]:not(:placeholder-shown) ~ label {
+    top: -8px;
+    transform: translateY(-10%);
+    font-size: 12px;
+    color: #ff4861;
+}
+
+/* =========================================
+   UNIT BOX (KG / ₱)
+========================================= */
+
+.weight-modal-content .weight-wrapper {
+    position: relative;
+}
+
+.weight-modal-content .weight-wrapper .unit-box {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 55px;
+    height: 100%;
+    background: #e9e9e9;
+    border-left: 1px solid #dcdcdc;
+    border-radius: 0 6px 6px 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-style: italic;
+    color: #555;
     font-size: 14px;
-    border-left: 1px solid #ccc;
+    padding-right: 6px;
+    box-sizing: border-box;
 }
 
-/* File Upload Styling */
-.file-input-wrapper {
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 10px;
+/* Highlight unit box on focus */
+.weight-modal-content .weight-wrapper:focus-within .unit-box {
+    background: #ffe5ea;
+    border-left-color: #ff4861;
+}
+
+/* =========================================
+   DATE FIELD (with calendar icon)
+========================================= */
+
+.weight-modal-content .date-wrapper {
+    position: relative;
+}
+
+.weight-modal-content .date-wrapper::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 55px;
+    height: 100%;
+    background: #e9e9e9;
+    border-left: 1px solid #dcdcdc;
+    border-radius: 0 6px 6px 0;
+    pointer-events: none;
+    transition: .2s ease;
+}
+
+/* Calendar icon */
+.weight-modal-content .calendar-icon {
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
     cursor: pointer;
+    background-size: 18px;
+    background-repeat: no-repeat;
+    z-index: 2;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
 }
 
-.file-label {
-    display: flex;
-    justify-content: space-between;
+/* Hide native date icon */
+.weight-modal-content input[type="date"]::-webkit-calendar-picker-indicator { 
+    opacity: 0;
+}
+.weight-modal-content input[type="date"] { 
+    -moz-appearance: textfield; 
+}
+
+/* Date text hidden until value chosen (optional) */
+.weight-modal-content .date-wrapper input[type="date"] {
+    color: transparent;
+    caret-color: transparent;
+}
+
+/* Show date & caret when focused or has value */
+.weight-modal-content .date-wrapper input[type="date"]:focus,
+.weight-modal-content .date-wrapper.has-value input[type="date"] {
+    color: #000;
+    caret-color: auto;
+}
+
+/* Float label for date */
+.weight-modal-content .date-wrapper input[type="date"]:focus ~ label,
+.weight-modal-content .date-wrapper.has-value label {
+    top: -8px;
+    transform: translateY(-10%);
+    font-size: 12px;
+    color: #ff4861;
+}
+
+/* Focus border + right box highlight */
+.weight-modal-content .date-wrapper:focus-within input {
+    border-color: #ff4861;
+    box-shadow: 0 0 0 1px rgba(255,72,97,0.15);
+}
+.weight-modal-content .date-wrapper:focus-within::after {
+    background: #ffe5ea;
+    border-left-color: #ff4861;
+}
+
+/* =========================================
+   SELECT (Category / Vaccination Type)
+========================================= */
+
+.weight-modal-content .select-wrapper select {
+    padding-right: 40px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23666' stroke-width='1.3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+}
+
+/* Float label when select focused or has valid value */
+.weight-modal-content .select-wrapper select:focus ~ label,
+.weight-modal-content .select-wrapper select:valid ~ label {
+    top: -8px;
+    transform: translateY(-10%);
+    font-size: 12px;
+    color: #ff4861;
+}
+
+/* =========================================
+   FILE UPLOAD (for weight image)
+========================================= */
+
+.weight-modal-content .file-label {
+    display: inline-flex;
     align-items: center;
-    color: #888;
-    font-size: 14px;
-    font-style: italic;
-    cursor: pointer;
+    justify-content: space-between;
+    gap: 10px;
     width: 100%;
+    padding: 12px 14px;
+    border-radius: 6px;
+    border: 1px dashed #dcdcdc;
+    cursor: pointer;
+    font-size: 14px;
+    color: #777;
+    transition: border-color .2s ease, background-color .2s ease, color .2s ease;
 }
 
-/* Buttons */
+.weight-modal-content .file-label i {
+    font-size: 16px;
+}
+
+.weight-modal-content .file-label:hover {
+    border-color: #ff4861;
+    background-color: #fff5f7;
+    color: #ff4861;
+}
+
+/* =========================================
+   BUTTONS
+========================================= */
+
 .weight-modal-actions {
     display: flex;
-    justify-content: space-between;
-    margin-top: 25px;
+    justify-content: flex-end;
     gap: 15px;
+    margin-top: 25px;
 }
 
-.btn-gray {
-    background-color: #E0E0E0;
-    color: #444;
+.weight-modal-actions .btn-gray,
+.weight-modal-actions .btn-green {
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    min-width: 90px;
     border: none;
-    padding: 10px 0;
-    border-radius: 6px;
-    font-weight: 700;
-    cursor: pointer;
-    width: 40%;
-    font-family: 'Poppins', sans-serif;
+    transition: all 0.2s ease;
 }
 
-.btn-green {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 10px 0;
-    border-radius: 6px;
-    font-weight: 700;
-    cursor: pointer;
-    width: 40%;
-    font-family: 'Poppins', sans-serif;
-}
-
-.btn-green:hover {
-    background-color: #43A047;
-}
-
-/* Edit */
-/* Styles for action icons in tables */
-.action-icon {
-    cursor: pointer;
-    margin-left: 10px;
-    font-size: 1.1em;
-    transition: color 0.2s ease-in-out;
-}
-
-.action-icon.edit-icon {
-    color: var(--primary-color); /* Green for edit */
-}
-
-.action-icon.delete-icon {
-    color: var(--danger-color); /* Red for delete */
-}
-
-.action-icon:hover {
-    filter: brightness(1.2); /* Slightly brighter on hover */
-}
-
-/* Make sure the records table allows space for the icons */
-.records-table td {
-    position: relative;
-    padding-right: 40px; /* Give space for icons */
-}
-
-.records-table td .action-icon {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-/* --- FIX FOR SWEETALERT BEHIND MODAL --- */
-.swal2-container {
-    /* Target the SweetAlert container itself to ensure it's on top */
-    z-index: 9999999 !important; 
-}
-
-/* CSS to force SweetAlert to the top layer */
-.swal2-high-zindex {
-    /* Set this higher than any modal's z-index (e.g., higher than 2000) */
-    z-index: 9999999 !important; 
-}
-
-/* Updated Add Expense Modal to match Weight Modal */
-#addExpenseModal {
-    display: none;
-    position: fixed;
-    z-index: 3000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-}
-
-#addExpenseModal .modal-content {
-    background: white;
-    border-radius: 12px;
-    width: 350px; /* Match weight modal width */
-    padding: 25px; /* Match weight modal padding */
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    animation: modalSlideIn 0.3s ease-out;
-}
-
-#addExpenseModal .weight-modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 25px; /* Match weight modal spacing */
-}
-
-#addExpenseModal .weight-modal-header h3 {
-    color: #F08080; /* Match weight modal color */
-    font-size: 20px;
-    font-weight: 700;
-    margin: 0;
-}
-
-#addExpenseModal .modal-close-red {
-    background-color: #EF5350; /* Match weight modal close button */
-    color: white;
-    border: none;
-    width: 28px;
-    height: 28px;
-    border-radius: 4px;
-    font-size: 18px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-#addExpenseModal form {
-    padding: 0; /* Remove extra padding since modal-content already has padding */
-}
-
-#addExpenseModal .weight-form-group {
-    margin-bottom: 15px; /* Match weight modal spacing */
-}
-
-#addExpenseModal .input-wrapper input,
-#addExpenseModal .select-wrapper select {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-family: 'Poppins', sans-serif;
+.weight-modal-actions .btn-gray {
+    background-color: #e0e0e0;
     color: #555;
-    outline: none;
-    background-color: white;
-    box-sizing: border-box;
-}
-
-#addExpenseModal .select-wrapper {
-    position: relative;
-}
-
-#addExpenseModal .select-wrapper::after {
-    content: '▼';
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #666;
-    font-size: 12px;
-    pointer-events: none;
-}
-
-#addExpenseModal .select-wrapper select {
-    appearance: none;
-    cursor: pointer;
-}
-
-#addExpenseModal .weight-modal-actions {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 25px;
-    gap: 15px;
-}
-
-#addExpenseModal .btn-gray {
-    background-color: #E0E0E0;
-    color: #444;
-    border: none;
-    padding: 10px 0;
-    border-radius: 6px;
-    font-weight: 700;
-    cursor: pointer;
-    width: 40%;
-    font-family: 'Poppins', sans-serif;
-}
-
-#addExpenseModal .btn-green {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 10px 0;
-    border-radius: 6px;
-    font-weight: 700;
-    cursor: pointer;
-    width: 40%;
-    font-family: 'Poppins', sans-serif;
-}
-
-#addExpenseModal .btn-green:hover {
-    background-color: #43A047;
-}
-
-/* Updated Add Vaccination Modal to match Weight Modal */
-#addVaccinationModal {
-    display: none;
-    position: fixed;
-    z-index: 3000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-}
-
-#addVaccinationModal .modal-content {
-    background: white;
-    border-radius: 12px;
-    width: 350px; /* Match weight modal width */
-    padding: 25px; /* Match weight modal padding */
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-
-#addVaccinationModal .weight-modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 25px; /* Match weight modal spacing */
-}
-
-#addVaccinationModal .weight-modal-header h3 {
-    color: #F08080; /* Match weight modal color */
-    font-size: 20px;
-    font-weight: 700;
-    margin: 0;
-}
-
-#addVaccinationModal .modal-close-red {
-    background-color: #EF5350; /* Match weight modal close button */
-    color: white;
-    border: none;
-    width: 28px;
-    height: 28px;
-    border-radius: 4px;
-    font-size: 18px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-#addVaccinationModal form {
-    padding: 0; /* Remove extra padding since modal-content already has padding */
-}
-
-#addVaccinationModal .weight-form-group {
-    margin-bottom: 15px; /* Match weight modal spacing */
-}
-
-#addVaccinationModal .input-wrapper input,
-#addVaccinationModal .select-wrapper select {
-    width: 100%;
-    padding: 10px;
     border: 1px solid #ccc;
-    border-radius: 4px;
-    font-family: 'Poppins', sans-serif;
-    color: #555;
-    outline: none;
-    background-color: white;
-    box-sizing: border-box;
 }
 
-#addVaccinationModal .select-wrapper {
-    position: relative;
+.weight-modal-actions .btn-gray:hover {
+    background-color: #d0d0d0;
+    border-color: #bbb;
 }
 
-#addVaccinationModal .select-wrapper::after {
-    content: '▼';
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #666;
-    font-size: 12px;
-    pointer-events: none;
-}
-
-#addVaccinationModal .select-wrapper select {
-    appearance: none;
-    cursor: pointer;
-}
-
-#addVaccinationModal .weight-modal-actions {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 25px;
-    gap: 15px;
-}
-
-#addVaccinationModal .btn-gray {
-    background-color: #E0E0E0;
-    color: #444;
-    border: none;
-    padding: 10px 0;
-    border-radius: 6px;
-    font-weight: 700;
-    cursor: pointer;
-    width: 40%;
-    font-family: 'Poppins', sans-serif;
-}
-
-#addVaccinationModal .btn-green {
+.weight-modal-actions .btn-green {
     background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 10px 0;
-    border-radius: 6px;
-    font-weight: 700;
-    cursor: pointer;
-    width: 40%;
-    font-family: 'Poppins', sans-serif;
+    color: #fff;
 }
 
-#addVaccinationModal .btn-green:hover {
-    background-color: #43A047;
+.weight-modal-actions .btn-green:hover {
+    background-color: #45a049;
 }
 
 
-/* Ensure modals are centered */
-#addExpenseModal[style*="display: flex"],
-#addExpenseModal[style*="display: block"],
-#addVaccinationModal[style*="display: flex"],
-#addVaccinationModal[style*="display: block"] {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-}
+
