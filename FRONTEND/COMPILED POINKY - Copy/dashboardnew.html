@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--<link rel="icon" href="Mini-Capstone/assets/Icons/favicon.ico" type="image/x-icon">-->
     <title>Poinky Dashboard</title>
-    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="stylesheets/dashnew.css">
+    <link rel="stylesheet" href="Mini-Capstone/profilebtn/dashnew.css">
+
 
 </head>
 <body>
@@ -15,7 +17,7 @@
 
     <div class="sidebar">
         <div class="brand"> 
-            <i class="fas fa-pig" style="font-size: 32px; color: var(--primary-pink);"></i>
+            <img src="assets/dash-icons/ICON.png" alt="Poinky Logo" class="brand-logo">
             <span class="brand-name">Poinky</span>
         </div>
 
@@ -167,7 +169,7 @@
                             <div class="dot" style="background:#ff8686;"></div> Piglets
                         </div>
                         <div class="legend-item">
-                            <div class="dot" style="background:#3bc7e6;"></div> Medical
+                            <div class="dot" style="background:#3bc7e6;"></div> Medicines
                         </div>
                         <div class="legend-item">
                             <div class="dot" style="background:#ffb64d;"></div> Utilities
@@ -200,7 +202,7 @@
         </div>
     </div>
 
-    <!-- Profile Modal -->
+   <!-- Profile Modal -->
         <div class="profile-modal" id="profileModal">
             <div class="profile-modal-content">
                 <div class="profile-header">
@@ -208,19 +210,35 @@
                     <p class="profile-username">Username</p>
                 </div>
 
-                <div class="profile-item">
+                <a href="ProfileSettings.html" class="profile-item profile-settings-link">
                     <i class="fa-solid fa-gear"></i> Profile Settings
-                </div>
+                </a>
 
-                <div class="profile-item logout">
+                <div class="profile-item logout" id="logoutBtn">
                     <i class="fa-solid fa-right-from-bracket"></i> Log Out
                 </div>
             </div>
         </div>
 
+        <!-- Logout Modal -->
+        <div class="logout-modal" id="logoutModal" aria-hidden="true">
+            <div class="logout-modal-dialog">
+                <h2>Confirm Logout</h2>
+                <p>Are you sure you want to log out?</p>
+                <div class="logout-modal-buttons">
+                    <button class="logout-cancel-btn" id="logoutCancelBtn">No</button>
+                    <button class="logout-confirm-btn" id="logoutConfirmBtn">Yes</button>
+                </div>
+            </div>
+        </div>
+
+
+
+
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="jscripts/dashnew.js"></script>
+    <script src="Mini-Capstone/js/profilebtn.js"></script>
 
     
 

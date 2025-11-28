@@ -1,4 +1,13 @@
+// ======================================================================
+// POINKY FARM.JS
+// - Handles farms, pigs, modals, weight, expenses, vaccination, and sale
+// ======================================================================
+
 document.addEventListener('DOMContentLoaded', function() {
+
+    // ------------------------------------------------------------
+    // 1. DOM ELEMENT REFERENCES & GLOBAL STATE
+    // ------------------------------------------------------------
 
     // --- Initialize Variables (UPDATED) ---
     const selectAllCheckbox = document.getElementById('selectAll');
@@ -20,11 +29,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const showingCount = document.getElementById('showingCount');
     const totalCount = document.getElementById('totalCount');
 
-    // Modal elements
+    // --- Modal elements: main pig & notification modals ---
     const addPigModal = document.getElementById('addPigModal');
     const notificationModal = document.getElementById('notificationModal');
     const addPigForm = document.getElementById('addPigForm');
     const detailsModal = document.getElementById('pigDetailsModal');
+
+    // --- Weight modals ---
     const addWeightModal = document.getElementById('addWeightModal');
     const addWeightForm = document.getElementById('addWeightForm');
     const newWeightImgInput = document.getElementById('newWeightImg');
@@ -32,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnOpenAddWeight = document.querySelector('.btn-add-record');
     const closeWeightModalBtn = document.getElementById('closeWeightModal');
 
-    // 🆕 NEW: Expense and Vaccination Modal Elements
+    // Expense and Vaccination Modal Elements
     const addExpenseModal = document.getElementById('addExpenseModal');
     const addExpenseForm = document.getElementById('addExpenseForm');
     const closeExpenseModalBtn = document.getElementById('closeExpenseModal');
@@ -45,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const clearVaccinationFormBtn = document.getElementById('clearVaccinationForm');
     const addVaccinationBtn = document.getElementById('addVaccinationBtn');
 
-    // Sale Modal Elements
+    // --- Sale Modal Elements ---
     const priceInputModal = document.getElementById('priceInputModal');
     const soldConfirmationModal = document.getElementById('soldConfirmationModal');
     const priceInputForm = document.getElementById('priceInputForm');
@@ -53,13 +64,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const finalSoldPriceDisplay = document.getElementById('finalSoldPriceDisplay');
     const confirmSoldPriceBtn = document.getElementById('confirmSoldPrice');
 
-    // Global State Variables (CRITICALLY UPDATED FOR BULK SALE)
-    let currentPigsForSaleIds = []; // Stores IDs of ALL pigs selected for the bulk sale
-    let calculatedTotalSalePrice = 0; // Total calculated price (Price Per Pig * Count)
-    let pricePerPigInput = 0; // Price entered by the user (Price Per Pig)
-    let currentPigForSaleId = null; // Unused in bulk flow, but kept for non-sale functions
+    // Global State Variables (for BULK SALE)
+    let currentPigsForSaleIds = [];   // IDs of pigs involved in current bulk sale
+    let calculatedTotalSalePrice = 0; // PricePerPig * count
+    let pricePerPigInput = 0;         // Value user entered (per pig)
+    let currentPigForSaleId = null;   // Reserved for single-sale use (not used in bulk)
 
-    // Edit Weight Modal elements
+    // --- Edit Weight Modal elements ---
     const editWeightModal = document.getElementById('editWeightModal');
     const editWeightForm = document.getElementById('editWeightForm');
     const editWeightImgInput = document.getElementById('editWeightImg');
@@ -67,11 +78,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeEditWeightModalBtn = document.getElementById('closeEditWeightModal');
     const btnCancelEditWeight = document.getElementById('btnCancelEditWeight');
 
-    // State Variables
+    // --- Detail view state ---
     let currentDetailPigId = null;
     let currentEditWeightRecordIndex = null;
 
-    // 🆕 NEW: Farm Context Menu Elements
+    // Farm Context Menu Elements
     const farmContextMenu = document.getElementById('farmContextMenu');
     const renameFarmBtn = document.getElementById('renameFarmBtn');
     const deleteFarmBtn = document.getElementById('deleteFarmBtn');
@@ -81,15 +92,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeRenameFarmModal = document.getElementById('closeRenameFarmModal');
     const cancelRenameFarm = document.getElementById('cancelRenameFarm');
 
-    let currentContextFarmId = null; // Track which farm is being edited
+    let currentContextFarmId = null; // Track which farm is being edited via context menu
 
-    // 🆕 New Pig Details Action Menu Elements
+    // Pig Details Action Menu Elements
     const pigDetailsMenuIcon = document.getElementById('pigDetailsMenuIcon');
     const pigActionMenu = document.getElementById('pigActionMenu');
     const editPigDetailsBtn = document.getElementById('editPigDetailsBtn');
     const deletePigBtn = document.getElementById('deletePigBtn');
     
-    // 🆕 New Edit Pig Details Modal Elements
+    // Edit Pig Details Modal Elements
     const editPigDetailsModal = document.getElementById('editPigDetailsModal');
     const closeEditPigDetailsModal = document.getElementById('closeEditPigDetailsModal');
     const cancelEditPigDetails = document.getElementById('cancelEditPigDetails');
@@ -100,8 +111,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const editPigDateInput = document.getElementById('editPigDate');
     const editPigShortIdDisplay = document.getElementById('editPigShortIdDisplay');
 
+    // ------------------------------------------------------------
+    // 2. FARM DATA STRUCTURE (IN-MEMORY DB)
+    // ------------------------------------------------------------
 
-    // Farm data storage - Start with initial data structure (UPDATED)
     let farms = [
         { id: 1, name: 'Farm 1', pigs: [] },
         { id: 2, name: 'Farm 2', pigs: [] },
@@ -112,49 +125,12 @@ document.addEventListener('DOMContentLoaded', function() {
     let nextFarmId = 4;
     let nextPigId = 1;
 
-    // Helper: Get the current farm object
     const getCurrentFarm = () => farms.find(farm => farm.id === currentFarmId);
-    
-    // NEW Helper: Get a pig by ID from the current farm
     const getPigById = (pigId) => getCurrentFarm()?.pigs.find(p => p.id === pigId);
-    
-    // --- NEW HELPER FUNCTION TO FIND NEWEST WEIGHT ---
-    /**
-     * Finds the latest (newest) weight from the history based on date.
-     * @param {Array<Object>} history - The pig's weightHistory array.
-     * @returns {number} The newest weight value.
-     */
-    function getNewestWeight(history) {
-        if (!history || history.length === 0) {
-            return 0;
-        }
-        
-        // Find the record with the most recent date
-        const newestRecord = history.reduce((latest, record) => {
-            const latestDate = new Date(latest.date || 0);
-            const recordDate = new Date(record.date);
-            
-            // If the current record is newer, or if dates are equal, choose the heavier weight
-            if (recordDate > latestDate) {
-                return record;
-            } else if (recordDate.getTime() === latestDate.getTime() && record.weight > latest.weight) {
-                return record;
-            }
-            return latest;
-        }, { date: '1970-01-01', weight: 0 }); // Use a very old date as starting point
 
-        return newestRecord.weight;
-    }
-
-    // ✅ NEW VALIDATION FUNCTION: Checks for duplicate pig name (case-insensitive)
-    function isDuplicatePigName(pigName) {
-        const currentFarm = getCurrentFarm();
-        if (!currentFarm) return false;
-        // Check if any existing pig has the same name (case-insensitive)
-        return currentFarm.pigs.some(pig => pig.name.toLowerCase() === pigName.toLowerCase());
-    }
-
-    // --- Helper & Modal Management (UPDATED) ---
+    // ------------------------------------------------------------
+    // 3. HELPER FUNCTIONS (STATUS, WEIGHT, DUPLICATES)
+    // ------------------------------------------------------------
 
     function formatStatusText(status) {
         const statusMap = {
@@ -166,18 +142,62 @@ document.addEventListener('DOMContentLoaded', function() {
         return statusMap[status] || status;
     }
 
-    /**
-     * Closes all modals and resets the body overflow.
-     * Also clears the sale state variables.
-     */
+    function getNewestWeight(history) {
+        if (!history || history.length === 0) {
+            return 0;
+        }
+        
+        const newestRecord = history.reduce((latest, record) => {
+            const latestDate = new Date(latest.date || 0);
+            const recordDate = new Date(record.date);
+            
+            if (recordDate > latestDate) {
+                return record;
+            } else if (recordDate.getTime() === latestDate.getTime() && record.weight > latest.weight) {
+                return record;
+            }
+            return latest;
+        }, { date: '1970-01-01', weight: 0 });
+
+        return newestRecord.weight;
+    }
+
+    function isDuplicatePigName(pigName) {
+        const currentFarm = getCurrentFarm();
+        if (!currentFarm) return false;
+
+        return currentFarm.pigs.some(pig => pig.name.toLowerCase() === pigName.toLowerCase());
+    }
+
+    function getNewestWeightRecord(history) {
+        if (!history || history.length === 0) {
+            return null;
+        }
+        
+        return history.reduce((latest, record) => {
+            const latestDate = new Date(latest.date || 0);
+            const recordDate = new Date(record.date);
+            
+            if (recordDate > latestDate) {
+                return record;
+            } else if (recordDate.getTime() === latestDate.getTime() && record.weight > latest.weight) {
+                return record;
+            }
+            return latest;
+        }, { date: '1970-01-01', weight: 0 });
+    }
+
+    // ------------------------------------------------------------
+    // 4. GLOBAL MODAL HANDLING HELPERS
+    // ------------------------------------------------------------
+
     function closeAllModals() {
-        const modals = document.querySelectorAll('.modal, .notification-modal');
+        const modals = document.querySelectorAll('.modal, .notification-modal, .modal-stat');
         modals.forEach(modal => {
             modal.style.display = 'none';
         });
-        document.body.style.overflow = 'auto'; // Back to page view
+        document.body.style.overflow = 'auto';
 
-        // Always clear sale state when closing any sale modal
         currentPigsForSaleIds = [];
         calculatedTotalSalePrice = 0;
         pricePerPigInput = 0;
@@ -190,7 +210,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // --- Farm Management (UNCHANGED) ---
+    // ------------------------------------------------------------
+    // 5. FARM MANAGEMENT (ADD, SWITCH, CONTEXT MENU, RENAME, DELETE)
+    // ------------------------------------------------------------
+
     function addNewFarm() {
         const newFarm = {
             id: nextFarmId,
@@ -207,7 +230,6 @@ document.addEventListener('DOMContentLoaded', function() {
         newTab.setAttribute('data-farm', newFarm.id);
         newTab.textContent = newFarm.name;
 
-        // 🆕 ADD DOUBLE-CLICK EVENT LISTENER
         newTab.addEventListener('dblclick', function(e) {
             showFarmContextMenu(newFarm.id, e);
         });
@@ -222,126 +244,103 @@ document.addEventListener('DOMContentLoaded', function() {
         nextFarmId++;
     }
 
-    // 🆕 NEW: Farm Context Menu Event Listeners
     document.addEventListener('click', function(e) {
         if (!farmContextMenu.contains(e.target)) {
             hideFarmContextMenu();
         }
     });
 
-    // Double-click event for existing farm tabs
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('dblclick', function(e) {
-            const farmId = parseInt(this.dataset.farm);
-            showFarmContextMenu(farmId, e);
-        });
-    });
-
-// 🆕 FIXED: Context menu button events
-if (renameFarmBtn) {
-    renameFarmBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        console.log('Rename button clicked, currentContextFarmId:', currentContextFarmId);
-        
-        if (!currentContextFarmId) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'No farm selected. Please try again.',
-                showConfirmButton: true
-            });
-            return;
-        }
-        
-        hideFarmContextMenu();
-        openRenameFarmModal();
-    });
-}
-
-if (deleteFarmBtn) {
-    deleteFarmBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        console.log('Delete button clicked, currentContextFarmId:', currentContextFarmId);
-        
-        if (currentContextFarmId) {
+    if (renameFarmBtn) {
+        renameFarmBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (!currentContextFarmId) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No farm selected. Please try again.',
+                    showConfirmButton: true
+                });
+                return;
+            }
             hideFarmContextMenu();
-            deleteFarm(currentContextFarmId);
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'No farm selected. Please try again.',
-                showConfirmButton: true
-            });
-        }
-    });
-}
-
-// Fix for Rename Farm Form
-if (renameFarmForm) {
-    renameFarmForm.addEventListener('submit', function(e) {
-        e.preventDefault(); // Prevent default form submission
-        
-        if (!currentContextFarmId) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'No farm selected. Please try again.',
-                showConfirmButton: true
-            });
-            return;
-        }
-        
-        const newName = newFarmNameInput.value.trim();
-        
-        if (!newName) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Missing Name',
-                text: 'Please enter a farm name.',
-                showConfirmButton: true,
-                confirmButtonColor: '#dc2626'
-            });
-            newFarmNameInput.focus();
-            return;
-        }
-        
-        // Call the rename function
-        renameFarm(currentContextFarmId, newName);
-    });
-}
-
-if (closeRenameFarmModal) {
-    closeRenameFarmModal.addEventListener('click', function() {
-        renameFarmModal.style.display = 'none';
-        currentContextFarmId = null; // 🆕 Reset here too
-    });
-}
-
-if (cancelRenameFarm) {
-    cancelRenameFarm.addEventListener('click', function() {
-        renameFarmModal.style.display = 'none';
-        currentContextFarmId = null; // 🆕 Reset here too
-    });
-}
-
-    const clearAddPigFormBtn = document.getElementById('clearAddPigForm');
-
-    if (clearAddPigFormBtn) {
-        clearAddPigFormBtn.addEventListener('click', function() {
-            addPigForm.reset();
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('pigDate').value = today; // Reset date to today
+            openRenameFarmModal();
         });
     }
 
-    // Close rename modal when clicking outside
-    renameFarmModal.addEventListener('click', function(e) {
-        if (e.target === renameFarmModal) {
-            renameFarmModal.style.display = 'none';
-        }
-    });
+    if (deleteFarmBtn) {
+        deleteFarmBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (currentContextFarmId) {
+                hideFarmContextMenu();
+                deleteFarm(currentContextFarmId);
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No farm selected. Please try again.',
+                    showConfirmButton: true
+                });
+            }
+        });
+    }
 
+    if (renameFarmForm) {
+        renameFarmForm.addEventListener('submit', function(e) {
+            e.preventDefault(); 
+            
+            if (!currentContextFarmId) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No farm selected. Please try again.',
+                    showConfirmButton: true
+                });
+                return;
+            }
+            
+            const newName = newFarmNameInput.value.trim();
+            
+            if (!newName) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Name',
+                    text: 'Please enter a farm name.',
+                    showConfirmButton: true,
+                    confirmButtonColor: '#dc2626'
+                });
+                newFarmNameInput.focus();
+                return;
+            }
+            
+            renameFarm(currentContextFarmId, newName);
+        });
+    }
+
+    if (closeRenameFarmModal) {
+        closeRenameFarmModal.addEventListener('click', function() {
+            renameFarmModal.style.display = 'none';
+            currentContextFarmId = null;
+            document.body.style.overflow = 'auto';
+        });
+    }
+
+    if (cancelRenameFarm) {
+        cancelRenameFarm.addEventListener('click', function() {
+            renameFarmModal.style.display = 'none';
+            currentContextFarmId = null;
+            document.body.style.overflow = 'auto';
+        });
+    }
+
+    if (renameFarmModal) {
+        renameFarmModal.addEventListener('click', function(e) {
+            if (e.target === renameFarmModal) {
+                renameFarmModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+                currentContextFarmId = null;
+            }
+        });
+    }
 
     function switchToFarm(farmId) {
         tabs.forEach(tab => tab.classList.remove('active'));
@@ -354,19 +353,9 @@ if (cancelRenameFarm) {
         loadFarmData(farmId);
     }
 
-    // --- Pig Management (UPDATED) ---
-
-    function openAddPigModal() {
-        if (addPigModal) {
-            addPigModal.style.display = 'block';
-            document.body.style.overflow = 'hidden';
-
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('pigDate').value = today;
-
-            document.getElementById('pigName').focus();
-        }
-    }
+    // ------------------------------------------------------------
+    // 6. PIG MANAGEMENT (ADD PIG, RENDER ROWS, LOAD FARM)
+    // ------------------------------------------------------------
 
     function addNewPig(pigData) {
         const currentFarm = getCurrentFarm();
@@ -386,7 +375,6 @@ if (cancelRenameFarm) {
                 weight: initialWeight,
                 img: 'assets/dash-icons/WPig.png'
             }],
-            // 🆕 NEW: Initialize expense and vaccination records
             expenseRecords: [],
             vaccinationRecords: [],
             medicalRecords: [],
@@ -403,41 +391,40 @@ if (cancelRenameFarm) {
         loadFarmData(currentFarmId);
     }
 
-function createPigRow(pig) {
-    const row = document.createElement('tr');
-    row.className = `pig-row ${pig.status === 'sold' || pig.status === 'deceased' ? 'inactive' : ''}`;
-    row.setAttribute('data-id', pig.id);
-    row.setAttribute('data-status', pig.status);
+    function createPigRow(pig) {
+        const row = document.createElement('tr');
+        row.className = `pig-row ${pig.status === 'sold' || pig.status === 'deceased' ? 'inactive' : ''}`;
+        row.setAttribute('data-id', pig.id);
+        row.setAttribute('data-status', pig.status);
 
-    const isInactive = pig.status === 'sold' || pig.status === 'deceased';
-    // Determine the class and the onclick attribute based on the status
-    const badgeClass = isInactive ? 'pig-id-badge' : 'pig-id-badge clickable-badge';
-    const onClickAttribute = isInactive ? '' : `onclick="openPigDetails(${pig.id})"`;
+        const isInactive = pig.status === 'sold' || pig.status === 'deceased';
+        const badgeClass = isInactive ? 'pig-id-badge' : 'pig-id-badge clickable-badge';
+        const onClickAttribute = isInactive ? '' : `onclick="openPigDetails(${pig.id})"`;
 
-    row.innerHTML = `
-        <td class="col-checkbox">
-            <input type="checkbox" class="pig-checkbox" data-pig-id="${pig.id}" ${isInactive ? 'disabled' : ''}>
-        </td>
-        <td class="col-name">
-            <span class="${badgeClass}" ${onClickAttribute}>
-                ${pig.shortId}
-            </span>
-        </td>
-        <td class="col-age">${pig.age}</td>
-        <td class="col-weight">${pig.weight}</td>
-        <td class="col-gender">
-            <i class="fa-solid fa-${pig.gender === 'female' ? 'venus' : 'mars'} gender-icon ${pig.gender}"></i>
-            ${pig.gender === 'female' ? 'Female' : 'Male'}
-        </td>
-        <td class="col-status">
-            <span class="status-badge status-${pig.status}">${formatStatusText(pig.status)}</span>
-        </td>
-    `;
+        row.innerHTML = `
+            <td class="col-checkbox">
+                <input type="checkbox" class="pig-checkbox" data-pig-id="${pig.id}" ${isInactive ? 'disabled' : ''}>
+            </td>
+            <td class="col-name">
+                <span class="${badgeClass}" ${onClickAttribute}>
+                    ${pig.shortId}
+                </span>
+            </td>
+            <td class="col-age">${pig.age}</td>
+            <td class="col-weight">${pig.weight}</td>
+            <td class="col-gender">
+                <i class="fa-solid fa-${pig.gender === 'female' ? 'venus' : 'mars'} gender-icon ${pig.gender}"></i>
+                ${pig.gender === 'female' ? 'Female' : 'Male'}
+            </td>
+            <td class="col-status">
+                <span class="status-badge status-${pig.status}">${formatStatusText(pig.status)}</span>
+            </td>
+        `;
 
-    return row;
-}
+        return row;
+    }
 
-    function loadFarmData(farmId) {
+    function loadFarmData() {
         const currentFarm = getCurrentFarm();
         if (!currentFarm) return;
 
@@ -460,16 +447,18 @@ function createPigRow(pig) {
 
         pigCheckboxes = document.querySelectorAll('.pig-checkbox');
         pigRows = document.querySelectorAll('.pig-row');
+
         setupSelectAllCheckbox(selectAllCheckbox, pigCheckboxes);
         setupSelectAllCheckbox(tableSelectAllCheckbox, pigCheckboxes);
+
         updatePigCounts();
         updateFilterCounts();
     }
 
+    // ------------------------------------------------------------
+    // 7. PIG DETAILS MODAL & TABS
+    // ------------------------------------------------------------
 
-    // --- 🐷 Pig Details & Weight Management Functions (UPDATED) ---
-
-    // Expose to window for inline HTML calls (like from createPigRow)
     window.openPigDetails = function(pigId) {
         const pig = getCurrentFarm()?.pigs.find(p => p.id === pigId);
 
@@ -482,13 +471,11 @@ function createPigRow(pig) {
         document.getElementById('detailDate').textContent = pig.date;
         document.getElementById('detailInitialWeight').textContent = (pig.weightHistory[0]?.weight || '0') + ' kg';
         
-        // Use getNewestWeight to ensure the current weight is accurate
         const currentWeight = getNewestWeight(pig.weightHistory);
         document.getElementById('detailCurrentWeight').textContent = `${currentWeight} kg`;
         
         document.getElementById('detailStatus').textContent = formatStatusText(pig.status);
 
-        // Reset and set active tab to Weight
         document.querySelectorAll('.detail-tab').forEach(tab => tab.classList.remove('active'));
         document.querySelector(`.detail-tab[data-tab="weight"]`)?.classList.add('active');
 
@@ -506,42 +493,31 @@ function createPigRow(pig) {
 
         content.style.display = 'block';
 
+        // WEIGHT TAB
         if (tabId === 'weight') {
             const tbody = document.getElementById('weightRecordsBody');
             tbody.innerHTML = '';
 
             if (pig.weightHistory && pig.weightHistory.length > 0) {
-                // Sort records by date descending (newest first)
                 const sortedHistory = pig.weightHistory.slice().sort((a, b) => {
                     const dateA = new Date(a.date);
                     const dateB = new Date(b.date);
-                    
                     if (dateB.getTime() !== dateA.getTime()) {
-                        return dateB - dateA; // Sort by date descending
+                        return dateB - dateA;
                     }
-                    return b.weight - a.weight; // If dates are the same, heavier weight comes first
+                    return b.weight - a.weight;
                 });
                 
-                // Find the newest record's values to determine which one is editable
-                const newestRecordInHistory = getNewestWeightRecord(pig.weightHistory);
-                
-                const totalRecords = pig.weightHistory.length;
-
                 sortedHistory.forEach((rec) => {
-                    // Find the original index for the action buttons
-                    const originalIndex = pig.weightHistory.findIndex(r => r.date === rec.date && r.weight === rec.weight);
-                    
                     const tr = document.createElement('tr');
+                    const originalIndex = pig.weightHistory.findIndex(r => r.date === rec.date && r.weight === rec.weight);
                     
                     const dateObj = new Date(rec.date);
                     const dateString = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                     
                     let actionIconHTML = '';
-                    
-                    // The newest record in the history is the one with the latest date/weight, 
-                    // which is now the first item in the sortedHistory array.
+
                     if (rec === sortedHistory[0]) {
-                        // Use the original index from the unsorted array for editing
                         actionIconHTML = `<i class="fas fa-edit action-icon edit-icon" data-record-index="${originalIndex}"></i>`;
                     } else {
                         actionIconHTML = `<i class="fas fa-trash-alt action-icon delete-icon" data-record-index="${originalIndex}"></i>`;
@@ -558,17 +534,14 @@ function createPigRow(pig) {
                     tbody.appendChild(tr);
                 });
 
-                // Attach event listeners to the new icons
                 tbody.querySelectorAll('.edit-icon').forEach(icon => {
                     icon.addEventListener('click', function() {
-                        // ✅ FIX: Changed 'record-index' to 'recordIndex' for dataset access
                         const index = parseInt(this.dataset.recordIndex); 
                         openEditWeightModal(index);
                     });
                 });
                 tbody.querySelectorAll('.delete-icon').forEach(icon => {
                     icon.addEventListener('click', function() {
-                        // ✅ FIX: Changed 'record-index' to 'recordIndex' for dataset access
                         const index = parseInt(this.dataset.recordIndex); 
                         deleteWeightRecord(index);
                     });
@@ -579,13 +552,12 @@ function createPigRow(pig) {
             }
         }
 
-        // 🆕 NEW: Expenses Tab Content (FIXED)
+        // EXPENSES TAB
         else if (tabId === 'expenses') {
             const tbody = document.getElementById('expensesRecordsBody');
             tbody.innerHTML = '';
 
             if (pig.expenseRecords && pig.expenseRecords.length > 0) {
-                // 🆕 FIRST: Filter out any invalid records
                 const validExpenses = pig.expenseRecords.filter(expense => 
                     expense.date && 
                     !isNaN(expense.price) && 
@@ -598,17 +570,15 @@ function createPigRow(pig) {
                     return;
                 }
 
-                // Sort valid expenses by date descending (newest first)
                 const sortedExpenses = validExpenses.slice().sort((a, b) => {
                     const dateA = new Date(a.date);
                     const dateB = new Date(b.date);
                     return dateB - dateA;
                 });
 
-                sortedExpenses.forEach((expense, index) => {
+                sortedExpenses.forEach((expense) => {
                     const tr = document.createElement('tr');
                     
-                    // 🆕 FIX: Proper date formatting with error handling
                     let dateString = 'Invalid Date';
                     try {
                         const dateObj = new Date(expense.date);
@@ -619,7 +589,6 @@ function createPigRow(pig) {
                         console.warn('Invalid date:', expense.date);
                     }
                     
-                    // 🆕 FIX: Proper price formatting with error handling
                     let priceString = 'Invalid Price';
                     if (!isNaN(expense.price) && expense.price > 0) {
                         priceString = `₱${expense.price.toFixed(2)}`;
@@ -633,7 +602,6 @@ function createPigRow(pig) {
                     tbody.appendChild(tr);
                 });
 
-                // 🆕 OPTIONAL: Clean up the original data by removing invalid records
                 if (validExpenses.length < pig.expenseRecords.length) {
                     pig.expenseRecords = validExpenses;
                 }
@@ -643,13 +611,12 @@ function createPigRow(pig) {
             }
         }
 
-        // 🆕 NEW: Health/Vaccination Tab Content (FIXED)
+        // HEALTH / VACCINATION TAB
         else if (tabId === 'health') {
             const tbody = document.getElementById('vaccinationRecordsBody');
             tbody.innerHTML = '';
 
             if (pig.vaccinationRecords && pig.vaccinationRecords.length > 0) {
-                // 🆕 FIRST: Filter out any invalid records
                 const validVaccinations = pig.vaccinationRecords.filter(vaccination => 
                     vaccination.date && 
                     vaccination.dueDate && 
@@ -661,17 +628,15 @@ function createPigRow(pig) {
                     return;
                 }
 
-                // Sort valid vaccinations by date descending (newest first)
                 const sortedVaccinations = validVaccinations.slice().sort((a, b) => {
                     const dateA = new Date(a.date);
                     const dateB = new Date(b.date);
                     return dateB - dateA;
                 });
 
-                sortedVaccinations.forEach((vaccination, index) => {
+                sortedVaccinations.forEach((vaccination) => {
                     const tr = document.createElement('tr');
                     
-                    // 🆕 FIX: Proper date formatting with error handling
                     let dateString = 'Invalid Date';
                     let dueDateString = 'Invalid Date';
                     try {
@@ -688,7 +653,6 @@ function createPigRow(pig) {
                         console.warn('Invalid date in vaccination record:', vaccination.date, vaccination.dueDate);
                     }
                     
-                    // 🆕 FIX: Determine status with proper error handling
                     let status = 'Done';
                     let statusClass = 'status-done';
                     
@@ -722,7 +686,6 @@ function createPigRow(pig) {
                     tbody.appendChild(tr);
                 });
 
-                // 🆕 OPTIONAL: Clean up the original data by removing invalid records
                 if (validVaccinations.length < pig.vaccinationRecords.length) {
                     pig.vaccinationRecords = validVaccinations;
                 }
@@ -732,90 +695,72 @@ function createPigRow(pig) {
             }
         }
 
-        // Update the add button based on active tab
+        // Update header "Add" button behavior
         if (tabId === 'weight') {
-            btnOpenAddWeight.textContent = 'Add Weight Record';
-            btnOpenAddWeight.onclick = openAddWeightModal;
-            btnOpenAddWeight.style.display = 'inline-block';
+            if (btnOpenAddWeight) {
+                btnOpenAddWeight.textContent = 'Add Weight';
+                btnOpenAddWeight.onclick = openAddWeightModal;
+                btnOpenAddWeight.style.display = 'inline-block';
+            }
         } else if (tabId === 'expenses') {
-            btnOpenAddWeight.textContent = 'Add Expenses';
-            btnOpenAddWeight.onclick = openAddExpenseModal;
-            btnOpenAddWeight.style.display = 'inline-block';
+            if (btnOpenAddWeight) {
+                btnOpenAddWeight.textContent = 'Add Expenses';
+                btnOpenAddWeight.onclick = openAddExpenseModal;
+                btnOpenAddWeight.style.display = 'inline-block';
+            }
         } else if (tabId === 'health') {
-            btnOpenAddWeight.textContent = 'Add Vaccination';
-            btnOpenAddWeight.onclick = openAddVaccinationModal;
-            btnOpenAddWeight.style.display = 'inline-block';
-        } else {
+            if (btnOpenAddWeight) {
+                btnOpenAddWeight.textContent = 'Add Vaccination';
+                btnOpenAddWeight.onclick = openAddVaccinationModal;
+                btnOpenAddWeight.style.display = 'inline-block';
+            }
+        } else if (btnOpenAddWeight) {
             btnOpenAddWeight.style.display = 'none';
         }
     }
 
-// 🆕 ENHANCED CLEANUP FUNCTION FOR BOTH EXPENSE AND VACCINATION RECORDS
-function cleanupInvalidRecords() {
-    const currentFarm = getCurrentFarm();
-    if (currentFarm) {
-        currentFarm.pigs.forEach(pig => {
-            // Clean up expense records
-            if (pig.expenseRecords && pig.expenseRecords.length > 0) {
-                const originalExpenseCount = pig.expenseRecords.length;
-                pig.expenseRecords = pig.expenseRecords.filter(expense => 
-                    expense.date && 
-                    !isNaN(expense.price) && 
-                    expense.price > 0 &&
-                    expense.category
-                );
-                if (pig.expenseRecords.length !== originalExpenseCount) {
-                    console.log(`Cleaned ${originalExpenseCount - pig.expenseRecords.length} invalid expense records from pig ${pig.id}`);
-                }
-            }
-            
-            // 🆕 Clean up vaccination records
-            if (pig.vaccinationRecords && pig.vaccinationRecords.length > 0) {
-                const originalVaccinationCount = pig.vaccinationRecords.length;
-                pig.vaccinationRecords = pig.vaccinationRecords.filter(vaccination => 
-                    vaccination.date && 
-                    vaccination.dueDate && 
-                    vaccination.type
-                );
-                if (pig.vaccinationRecords.length !== originalVaccinationCount) {
-                    console.log(`Cleaned ${originalVaccinationCount - pig.vaccinationRecords.length} invalid vaccination records from pig ${pig.id}`);
-                }
-            }
-        });
-        loadFarmData(currentFarmId);
-    }
-}
+    // ------------------------------------------------------------
+    // 8. DATA CLEANUP HELPERS
+    // ------------------------------------------------------------
 
-// 🆕 CALL THIS ONCE TO CLEAN EXISTING DATA
-cleanupInvalidRecords();
-    
-    /**
-     * Finds the newest weight record object in the history based on date.
-     * @param {Array<Object>} history - The pig's weightHistory array.
-     * @returns {Object|null} The newest record object or null.
-     */
-    function getNewestWeightRecord(history) {
-        if (!history || history.length === 0) {
-            return null;
+    function cleanupInvalidRecords() {
+        const currentFarm = getCurrentFarm();
+        if (currentFarm) {
+            currentFarm.pigs.forEach(pig => {
+                if (pig.expenseRecords && pig.expenseRecords.length > 0) {
+                    const originalExpenseCount = pig.expenseRecords.length;
+                    pig.expenseRecords = pig.expenseRecords.filter(expense => 
+                        expense.date && 
+                        !isNaN(expense.price) && 
+                        expense.price > 0 &&
+                        expense.category
+                    );
+                    if (pig.expenseRecords.length !== originalExpenseCount) {
+                        console.log(`Cleaned ${originalExpenseCount - pig.expenseRecords.length} invalid expense records from pig ${pig.id}`);
+                    }
+                }
+                
+                if (pig.vaccinationRecords && pig.vaccinationRecords.length > 0) {
+                    const originalVaccinationCount = pig.vaccinationRecords.length;
+                    pig.vaccinationRecords = pig.vaccinationRecords.filter(vaccination => 
+                        vaccination.date && 
+                        vaccination.dueDate && 
+                        vaccination.type
+                    );
+                    if (pig.vaccinationRecords.length !== originalVaccinationCount) {
+                        console.log(`Cleaned ${originalVaccinationCount - pig.vaccinationRecords.length} invalid vaccination records from pig ${pig.id}`);
+                    }
+                }
+            });
+            loadFarmData(currentFarmId);
         }
-        
-        return history.reduce((latest, record) => {
-            const latestDate = new Date(latest.date || 0);
-            const recordDate = new Date(record.date);
-            
-            // Prioritize date, then weight if dates are equal
-            if (recordDate > latestDate) {
-                return record;
-            } else if (recordDate.getTime() === latestDate.getTime() && record.weight > latest.weight) {
-                return record;
-            }
-            return latest;
-        }, { date: '1970-01-01', weight: 0 });
     }
 
-    // =========================================================================
-    // 🆕 EXPENSE AND VACCINATION MODAL FUNCTIONS
-    // =========================================================================
+    cleanupInvalidRecords();
+
+    // ------------------------------------------------------------
+    // 9. EXPENSE & VACCINATION MODALS (OPEN FUNCTIONS)
+    // ------------------------------------------------------------
 
     function openAddExpenseModal() {
         if (!currentDetailPigId) return;
@@ -834,15 +779,14 @@ cleanupInvalidRecords();
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('newVaccinationDate').value = today;
         
-        // Set due date to 30 days from today by default
         const dueDate = new Date();
         dueDate.setDate(dueDate.getDate() + 30);
         document.getElementById('newVaccinationDueDate').value = dueDate.toISOString().split('T')[0];
     }
 
-    // =========================================================================
-    // 🆕 PIG DETAILS EDIT/DELETE FUNCTIONS
-    // =========================================================================
+    // ------------------------------------------------------------
+    // 10. PIG DETAILS EDIT (OPEN, SAVE, DELETE PIG)
+    // ------------------------------------------------------------
 
     function openEditPigDetailsModal() {
         if (!currentDetailPigId) return;
@@ -850,75 +794,66 @@ cleanupInvalidRecords();
         const pig = getCurrentFarm()?.pigs.find(p => p.id === currentDetailPigId);
         if (!pig) return;
 
-        // 1. Populate the form fields with the current pig data
         editPigNameInput.value = pig.name;
         editPigGenderInput.value = pig.gender;
         editPigDateInput.value = pig.date;
         editPigShortIdDisplay.textContent = `Editing: ${pig.shortId} (${pig.name})`;
 
-        // 🆕 UPDATED: Set the breed dropdown value
         const breedSelect = document.getElementById('editPigBreed');
         if (breedSelect) {
-            breedSelect.value = pig.breed;
-            // If the breed isn't in the options, set it to "Other"
             if (!breedSelect.querySelector(`option[value="${pig.breed}"]`)) {
                 breedSelect.value = 'Other';
+            } else {
+                breedSelect.value = pig.breed;
             }
         }
 
-        // 2. Open the modal
         detailsModal.style.display = 'none';
         editPigDetailsModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     }
 
-function handleEditPigDetailsSubmit() {
-    if (!currentDetailPigId) return;
-    const pig = getCurrentFarm()?.pigs.find(p => p.id === currentDetailPigId);
-    if (!pig) return;
+    function handleEditPigDetailsSubmit() {
+        if (!currentDetailPigId) return;
+        const pig = getCurrentFarm()?.pigs.find(p => p.id === currentDetailPigId);
+        if (!pig) return;
 
-    const newName = editPigNameInput.value.trim();
-    const newBreed = document.getElementById('editPigBreed').value; // 🆕 Get from dropdown
+        const newName = editPigNameInput.value.trim();
+        const newBreed = document.getElementById('editPigBreed').value;
 
-    // 1. Check for duplicate name against all OTHER pigs
-    const isDuplicate = getCurrentFarm().pigs.some(p => 
-        p.id !== currentDetailPigId && p.name.toLowerCase() === newName.toLowerCase()
-    );
+        const isDup = getCurrentFarm().pigs.some(p => 
+            p.id !== currentDetailPigId && p.name.toLowerCase() === newName.toLowerCase()
+        );
 
-    if (isDuplicate) {
+        if (isDup) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Invalid Name',
+                text: 'A pig with this name already exists in this farm.',
+                showConfirmButton: true
+            });
+            return;
+        }
+
+        pig.name = newName;
+        pig.breed = newBreed;
+        pig.gender = editPigGenderInput.value;
+        pig.date = editPigDateInput.value;
+        pig.shortId = pig.name.substring(0, 3).toUpperCase();
+        
+        editPigDetailsModal.style.display = 'none';
+        loadFarmData(currentFarmId);
+        
+        window.openPigDetails(pig.id); 
+
         Swal.fire({
-            icon: 'error',
-            title: 'Invalid Name',
-            text: 'A pig with this name already exists in this farm.',
-            showConfirmButton: true
+            icon: 'success',
+            title: 'Details Updated!',
+            text: `${pig.name}'s details have been successfully saved.`,
+            showConfirmButton: false,
+            timer: 2000
         });
-        return;
     }
-
-    // 2. Update the pig object
-    pig.name = newName;
-    pig.breed = newBreed; // 🆕 Updated breed from dropdown
-    pig.gender = editPigGenderInput.value;
-    pig.date = editPigDateInput.value;
-    
-    // Re-generate derived fields
-    pig.shortId = pig.name.substring(0, 3).toUpperCase();
-    
-    // 3. Close modal and refresh UI
-    editPigDetailsModal.style.display = 'none';
-    loadFarmData(currentFarmId);
-    
-    // Re-open the details modal with the new info
-    window.openPigDetails(pig.id); 
-
-    Swal.fire({
-        icon: 'success',
-        title: 'Details Updated!',
-        text: `${pig.name}'s details have been successfully saved.`,
-        showConfirmButton: false,
-        timer: 2000
-    });
-}
 
     function deletePig(pigId) {
         if (!pigId) return;
@@ -938,14 +873,12 @@ function handleEditPigDetailsSubmit() {
             if (result.isConfirmed) {
                 const currentFarm = getCurrentFarm();
                 if (currentFarm) {
-                    // Find the index of the pig to remove
                     const pigIndex = currentFarm.pigs.findIndex(p => p.id === pigId);
                     
                     if (pigIndex > -1) {
-                        currentFarm.pigs.splice(pigIndex, 1); // Remove pig from the array
-
-                        closeAllModals(); // Close the details modal
-                        loadFarmData(currentFarmId); // Refresh the table
+                        currentFarm.pigs.splice(pigIndex, 1);
+                        closeAllModals();
+                        loadFarmData(currentFarmId);
 
                         Swal.fire('Deleted!', 'The pig record has been successfully removed.', 'success');
                     }
@@ -954,12 +887,10 @@ function handleEditPigDetailsSubmit() {
         });
     }
 
-    // =========================================================================
-    // END PIG DETAILS EDIT/DELETE FUNCTIONS
-    // =========================================================================
+    // ------------------------------------------------------------
+    // 11. WEIGHT MODALS (OPEN / EDIT / DELETE)
+    // ------------------------------------------------------------
 
-
-    // --- Add Weight Modal Logic (UNCHANGED) ---
     function openAddWeightModal() {
         if (!currentDetailPigId) return;
         detailsModal.style.display = 'none';
@@ -974,295 +905,22 @@ function handleEditPigDetailsSubmit() {
         document.getElementById('newWeightImg').value = '';
     }
 
-    // 🆕 NEW: Open Expense Modal Function
-function openAddExpenseModal() {
-    if (!currentDetailPigId) return;
-    detailsModal.style.display = 'none';
-    addExpenseModal.style.display = 'flex';
-
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('newExpenseDate').value = today;
-}
-
-// 🆕 NEW: Open Vaccination Modal Function
-function openAddVaccinationModal() {
-    if (!currentDetailPigId) return;
-    detailsModal.style.display = 'none';
-    addVaccinationModal.style.display = 'flex';
-
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('newVaccinationDate').value = today;
-    
-    // Set due date to 30 days from today by default
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 30);
-    document.getElementById('newVaccinationDueDate').value = dueDate.toISOString().split('T')[0];
-}
-
-// 🆕 NEW: Expense and Vaccination Button Listeners
-if (addExpenseBtn) {
-    addExpenseBtn.addEventListener('click', openAddExpenseModal);
-}
-
-if (addVaccinationBtn) {
-    addVaccinationBtn.addEventListener('click', openAddVaccinationModal);
-}
-
-// 🆕 NEW: Expense Modal Close Listeners
-if(closeExpenseModalBtn) {
-    closeExpenseModalBtn.addEventListener('click', function() {
-        addExpenseModal.style.display = 'none';
-        detailsModal.style.display = 'flex';
-    });
-}
-
-// 🆕 NEW: Vaccination Modal Close Listeners
-if(closeVaccinationModalBtn) {
-    closeVaccinationModalBtn.addEventListener('click', function() {
-        addVaccinationModal.style.display = 'none';
-        detailsModal.style.display = 'flex';
-    });
-}
-
-// 🆕 NEW: Clear Form Buttons
-if (clearExpenseFormBtn) {
-    clearExpenseFormBtn.addEventListener('click', function() {
-        addExpenseForm.reset();
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('newExpenseDate').value = today;
-    });
-}
-
-if (clearVaccinationFormBtn) {
-    clearVaccinationFormBtn.addEventListener('click', function() {
-        addVaccinationForm.reset();
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('newVaccinationDate').value = today;
-        
-        // Reset due date to 30 days from today
-        const dueDate = new Date();
-        dueDate.setDate(dueDate.getDate() + 30);
-        document.getElementById('newVaccinationDueDate').value = dueDate.toISOString().split('T')[0];
-    });
-}
-
-
-// 🆕 NEW: Add Expense Form Handler (UPDATED)
-if (addExpenseForm) {
-    addExpenseForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const dateVal = document.getElementById('newExpenseDate').value;
-        const priceVal = document.getElementById('newExpensePrice').value;
-        const categoryVal = document.getElementById('newExpenseCategory').value;
-
-        if (!dateVal || !priceVal || !categoryVal) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Missing Information',
-                text: 'Please enter all expense details.',
-                showConfirmButton: true,
-                confirmButtonColor: '#dc2626'
-            });
-            return;
-        }
-
-        // 🆕 ADD VALIDATION: Check if price is a valid number
-        const priceNumber = parseFloat(priceVal);
-        if (isNaN(priceNumber) || priceNumber <= 0) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Invalid Price',
-                text: 'Please enter a valid price amount.',
-                showConfirmButton: true,
-                confirmButtonColor: '#dc2626'
-            });
-            return;
-        }
-
-        const currentFarm = getCurrentFarm();
-        const pig = currentFarm.pigs.find(p => p.id === currentDetailPigId);
-        if (pig) {
-            const newExpense = {
-                date: dateVal,
-                price: priceNumber, // Use the validated number
-                category: categoryVal
-            };
-
-            // Initialize expenseRecords array if it doesn't exist
-            if (!pig.expenseRecords) {
-                pig.expenseRecords = [];
-            }
-
-            pig.expenseRecords.push(newExpense);
-
-            // 🆕 RESET THE FORM FIRST before showing success
-            addExpenseForm.reset();
-            
-            // Set today's date after reset
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('newExpenseDate').value = today;
-
-            addExpenseModal.style.display = 'none';
-            detailsModal.style.display = 'flex';
-            
-            // Update the expenses tab content
-            updateDetailsTabContent(pig, 'expenses');
-            
-            // 🆕 UPDATED: Use SweetAlert instead of alert
-            showExpenseSuccessAlert();
-            
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Pig not found. Please try again.',
-                showConfirmButton: true,
-                confirmButtonColor: '#dc2626'
-            });
-            addExpenseModal.style.display = 'none';
-        }
-    });
-}
-
-// 🆕 NEW: Add Vaccination Form Handler (UPDATED)
-// 🆕 NEW: Add Vaccination Form Handler (UPDATED)
-if (addVaccinationForm) {
-    addVaccinationForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const dateVal = document.getElementById('newVaccinationDate').value;
-        const dueDateVal = document.getElementById('newVaccinationDueDate').value;
-        const typeVal = document.getElementById('newVaccinationType').value;
-
-        if (!dateVal || !dueDateVal || !typeVal) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Missing Information',
-                text: 'Please enter all vaccination details.',
-                showConfirmButton: true,
-                confirmButtonColor: '#dc2626'
-            });
-            return;
-        }
-
-        const currentFarm = getCurrentFarm();
-        const pig = currentFarm.pigs.find(p => p.id === currentDetailPigId);
-        if (pig) {
-            const newVaccination = {
-                date: dateVal,
-                dueDate: dueDateVal,
-                type: typeVal
-            };
-
-            // Initialize vaccinationRecords array if it doesn't exist
-            if (!pig.vaccinationRecords) {
-                pig.vaccinationRecords = [];
-            }
-
-            pig.vaccinationRecords.push(newVaccination);
-
-            // 🆕 RESET THE FORM FIRST before showing success
-            addVaccinationForm.reset();
-            
-            // Set today's date and due date after reset
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('newVaccinationDate').value = today;
-            
-            const dueDate = new Date();
-            dueDate.setDate(dueDate.getDate() + 30);
-            document.getElementById('newVaccinationDueDate').value = dueDate.toISOString().split('T')[0];
-
-            addVaccinationModal.style.display = 'none';
-            detailsModal.style.display = 'flex';
-            
-            // Update the health tab content
-            updateDetailsTabContent(pig, 'health');
-            
-            // 🆕 UPDATED: Use SweetAlert instead of alert
-            showVaccinationSuccessAlert();
-            
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Pig not found. Please try again.',
-                showConfirmButton: true,
-                confirmButtonColor: '#dc2626'
-            });
-            addVaccinationModal.style.display = 'none';
-        }
-    });
-}
-
-// Temporary cleanup - add this at the bottom of your DOMContentLoaded function
-setTimeout(() => {
-    const currentFarm = getCurrentFarm();
-    if (currentFarm) {
-        let cleaned = false;
-        currentFarm.pigs.forEach(pig => {
-            if (pig.expenseRecords) {
-                const originalLength = pig.expenseRecords.length;
-                pig.expenseRecords = pig.expenseRecords.filter(expense => 
-                    expense.date && expense.date !== 'Invalid Date' && 
-                    !isNaN(expense.price) && expense.price > 0
-                );
-                if (pig.expenseRecords.length !== originalLength) {
-                    cleaned = true;
-                }
-            }
-        });
-        if (cleaned) {
-            loadFarmData(currentFarmId);
-        }
-    }
-}, 1000);
-
-// 🆕 ADD THESE SUCCESS ALERT FUNCTIONS:
-function showExpenseSuccessAlert() {
-    Swal.fire({
-        title: 'Success!',
-        text: 'Expense record added successfully!',
-        icon: 'success',
-        confirmButtonText: 'OK',
-        confirmButtonColor: '#4CAF50',
-        customClass: {
-            popup: 'swal2-high-zindex'
-        }
-    });
-}
-
-function showVaccinationSuccessAlert() {
-    Swal.fire({
-        title: 'Success!',
-        text: 'Vaccination record added successfully!',
-        icon: 'success',
-        confirmButtonText: 'OK',
-        confirmButtonColor: '#4CAF50',
-        customClass: {
-            popup: 'swal2-high-zindex'
-        }
-    });
-}
-
-
-    // --- Edit Weight Modal Logic (UNCHANGED) ---
     function openEditWeightModal(recordIndex) {
         if (!currentDetailPigId) return;
 
         const pig = getCurrentFarm()?.pigs.find(p => p.id === currentDetailPigId);
-
         if (!pig || !pig.weightHistory || recordIndex >= pig.weightHistory.length) return;
 
         currentEditWeightRecordIndex = recordIndex;
         const recordToEdit = pig.weightHistory[recordIndex];
 
-        // Populate the form with existing data
         document.getElementById('editWeightDate').value = recordToEdit.date;
         document.getElementById('editWeightValue').value = recordToEdit.weight;
 
-        // Handle image display
-        const isDefaultImage = recordToEdit.img.includes('assets/dash-icons/WPig.png') || recordToEdit.img.includes('Dash Icons/WPig.png');
+        const isDefaultImage =
+            recordToEdit.img.includes('assets/dash-icons/WPig.png') ||
+            recordToEdit.img.includes('Dash Icons/WPig.png');
+
         editFileNameDisplay.textContent = isDefaultImage ? 'Upload Image' : 'Current Image';
         editFileNameDisplay.style.color = isDefaultImage ? 'var(--text-light)' : '#333';
         editFileNameDisplay.style.fontStyle = isDefaultImage ? 'italic' : 'normal';
@@ -1272,12 +930,10 @@ function showVaccinationSuccessAlert() {
         editWeightModal.style.display = 'flex';
     }
 
-    // --- 🗑️ DELETE WEIGHT RECORD LOGIC (UNCHANGED) ---
     function deleteWeightRecord(recordIndex) {
         if (!currentDetailPigId) return;
 
         const pig = getCurrentFarm()?.pigs.find(p => p.id === currentDetailPigId);
-
         if (!pig || !pig.weightHistory || recordIndex >= pig.weightHistory.length) return;
 
         Swal.fire({
@@ -1288,21 +944,16 @@ function showVaccinationSuccessAlert() {
             confirmButtonColor: '#d33',
             cancelButtonColor: '#4CAF50',
             confirmButtonText: 'Yes, delete it!',
-            // FIX: Uses custom class for high z-index to show SweetAlert over the Modal
             customClass: {
                 popup: 'swal2-high-zindex'
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                // 1. Remove the record from the array
                 pig.weightHistory.splice(recordIndex, 1);
 
-                // 2. Determine the new current weight using the robust function
                 const newCurrentWeight = getNewestWeight(pig.weightHistory);
                 pig.weight = `${newCurrentWeight}kg`;
 
-
-                // 3. Refresh UI
                 updateDetailsTabContent(pig, 'weight');
                 loadFarmData(currentFarmId);
 
@@ -1315,408 +966,459 @@ function showVaccinationSuccessAlert() {
         });
     }
 
-    // --- Form Handlers (UPDATED) ---
+    // ------------------------------------------------------------
+    // 12. ADD PIG FORM HANDLER + MODAL CONTROL
+    // ------------------------------------------------------------
 
-    // Add Pig Form
-    if (addPigForm) {
-        addPigForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // --- 1. Collect Data ---
-            const pigName = document.getElementById('pigName').value.trim(); // Get name separately for validation
-            const pigData = {
-                name: pigName,
-                breed: document.getElementById('pigBreed').value,
-                gender: document.getElementById('pigGender').value,
-                age: document.getElementById('pigAge').value, 
-                date: document.getElementById('pigDate').value,
-                initialWeight: document.getElementById('pigWeight').value
-            };
+    const closeAddPigModalBtn = document.getElementById('closeAddPigModal');
+    const clearAddPigFormBtn  = document.getElementById('clearAddPigForm');
+    const successModal        = document.getElementById('successModal');
 
-            // --- 2. Check for Required Fields ---
-            if (Object.values(pigData).every(val => val !== '' && val !== null)) {
-                
-                // 🛑 NEW VALIDATION CHECK for Duplicate Pig Name
-                if (isDuplicatePigName(pigName)) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Invalid Entry',
-                        text: 'A pig with the name "' + pigName + '" already exists in this farm. Pig names must be unique.',
-                        showConfirmButton: true
-                    });
-                    return; // Stop form submission
-                }
-                // ------------------------------------
-                
-                // --- 3. CRITICAL: Save the pig data ---
-                addNewPig(pigData); // <-- This saves the pig to the 'farms' array
-                
-                // --- 4. SUCCESS UI Sequence ---
-                closeAllModals(); 
-                openSuccessModal(); // <-- This opens the success pop-up
+    function openAddPigModal() {
+        if (addPigModal) {
+            addPigModal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
 
-                // Reset the form and set the date
-                this.reset();
+            const pigDateInput = document.getElementById('pigDate');
+            if (pigDateInput) {
                 const today = new Date().toISOString().split('T')[0];
-                document.getElementById('pigDate').value = today;
+                pigDateInput.value = today;
 
-                // Automatically close success modal after a few seconds
-                setTimeout(() => {
-                    closeAllModals(); 
-                }, 2000); 
-
-            } else {
-                // This runs if any field is empty
-                alert('Please fill out all fields.');
+                const wrapper = pigDateInput.closest('.date-wrapper');
+                if (wrapper) {
+                    wrapper.classList.add('has-value');
+                    wrapper.classList.remove('is-focused');
+                }
             }
-        });
+
+            const pigNameInput = document.getElementById('pigName');
+            if (pigNameInput) pigNameInput.focus();
+        }
     }
 
-    // 🆕 NEW: Add Expense Form Handler
-    if (addExpenseForm) {
-        addExpenseForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const dateVal = document.getElementById('newExpenseDate').value;
-            const priceVal = document.getElementById('newExpensePrice').value;
-            const categoryVal = document.getElementById('newExpenseCategory').value;
-
-            const currentFarm = getCurrentFarm();
-            const pig = currentFarm.pigs.find(p => p.id === currentDetailPigId);
-            if (pig) {
-                const newExpense = {
-                    date: dateVal,
-                    price: parseFloat(priceVal),
-                    category: categoryVal
-                };
-
-                // Initialize expenseRecords array if it doesn't exist
-                if (!pig.expenseRecords) {
-                    pig.expenseRecords = [];
-                }
-
-                pig.expenseRecords.push(newExpense);
-
-                addExpenseModal.style.display = 'none';
-                detailsModal.style.display = 'flex';
-                // Update the expenses tab content
-                updateDetailsTabContent(pig, 'expenses');
-                
-                addExpenseForm.reset();
-            } else {
-                 alert('Error: Pig not found.');
-                 addExpenseModal.style.display = 'none';
-            }
-        });
-    }
-
-    // 🆕 NEW: Add Vaccination Form Handler
-    if (addVaccinationForm) {
-        addVaccinationForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const dateVal = document.getElementById('newVaccinationDate').value;
-            const dueDateVal = document.getElementById('newVaccinationDueDate').value;
-            const typeVal = document.getElementById('newVaccinationType').value;
-
-            const currentFarm = getCurrentFarm();
-            const pig = currentFarm.pigs.find(p => p.id === currentDetailPigId);
-            if (pig) {
-                const newVaccination = {
-                    date: dateVal,
-                    dueDate: dueDateVal,
-                    type: typeVal
-                };
-
-                // Initialize vaccinationRecords array if it doesn't exist
-                if (!pig.vaccinationRecords) {
-                    pig.vaccinationRecords = [];
-                }
-
-                pig.vaccinationRecords.push(newVaccination);
-
-                addVaccinationModal.style.display = 'none';
-                detailsModal.style.display = 'flex';
-                // Update the health tab content
-                updateDetailsTabContent(pig, 'health');
-                
-                addVaccinationForm.reset();
-            } else {
-                 alert('Error: Pig not found.');
-                 addVaccinationModal.style.display = 'none';
-            }
-        });
+    function closeAddPigModalFn() {
+        if (!addPigModal) return;
+        addPigModal.style.display = 'none';
+        document.body.style.overflow = 'auto';
     }
 
     function openSuccessModal() {
-        const successModal = document.getElementById('successModal');
-        if (successModal) {
-            successModal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
+        if (!successModal) return;
+        successModal.display = 'flex';
+        successModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSuccessModal() {
+        if (!successModal) return;
+        successModal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    function resetAddPigFormFloatingStates() {
+        if (!addPigForm) return;
+
+        addPigForm.querySelectorAll('.input-wrapper input').forEach(inp => {
+            inp.classList.remove('has-value');
+            const wrapper = inp.closest('.input-wrapper');
+            if (wrapper) wrapper.classList.remove('is-focused');
+        });
+
+        addPigForm.querySelectorAll('.input-wrapper select').forEach(sel => {
+            sel.classList.remove('has-value');
+            const wrapper = sel.closest('.input-wrapper');
+            if (wrapper) wrapper.classList.remove('is-focused');
+        });
+
+        addPigForm.querySelectorAll('.date-wrapper').forEach(wrapper => {
+            wrapper.classList.remove('has-value', 'is-focused');
+        });
+
+        const weightWrapper = addPigForm.querySelector('.weight-wrapper');
+        if (weightWrapper) {
+            weightWrapper.classList.remove('is-focused');
         }
     }
 
-    // Add Weight Form
-if(addWeightForm) {
-    addWeightForm.addEventListener('submit', function(e) {
-        e.preventDefault();
+    // 🔹 NEW: Floating label listeners for inputs/selects/date
+    function applyFloatingLabelListeners() {
+        const fields = document.querySelectorAll('.input-wrapper input, .input-wrapper select, .date-wrapper input');
 
-        const dateVal = document.getElementById('newWeightDate').value;
-        const weightVal = document.getElementById('newWeightValue').value;
-
-        if (!dateVal || !weightVal) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Missing Information',
-                text: 'Please enter a date and weight.',
-                showConfirmButton: true,
-                confirmButtonColor: '#dc2626'
+        fields.forEach(field => {
+            // Focus → highlight wrapper
+            field.addEventListener('focus', function () {
+                const wrapper = this.closest('.input-wrapper, .date-wrapper');
+                if (wrapper) wrapper.classList.add('is-focused');
             });
-            return;
-        }
 
-        const currentFarm = getCurrentFarm();
-        const pig = currentFarm.pigs.find(p => p.id === currentDetailPigId);
-        if (pig) {
-            const newRecord = {
-                date: dateVal,
-                weight: parseFloat(weightVal),
-                img: newWeightImgInput.files && newWeightImgInput.files[0] ? URL.createObjectURL(newWeightImgInput.files[0]) : 'Dash Icons/WPig.png'
+            // Blur → keep label up only if has value
+            field.addEventListener('blur', function () {
+                const wrapper = this.closest('.input-wrapper, .date-wrapper');
+                if (!wrapper) return;
+
+                wrapper.classList.remove('is-focused');
+
+                if (this.value && this.value.toString().trim() !== '') {
+                    wrapper.classList.add('has-value');
+                } else {
+                    wrapper.classList.remove('has-value');
+                }
+            });
+
+            // On load: if already has value (e.g., default date), float label
+            if (field.value && field.value.toString().trim() !== '') {
+                const wrapper = field.closest('.input-wrapper, .date-wrapper');
+                if (wrapper) {
+                    wrapper.classList.add('has-value');
+                }
+            }
+        });
+    }
+
+    if (closeAddPigModalBtn) {
+        closeAddPigModalBtn.addEventListener('click', () => {
+            closeAddPigModalFn();
+        });
+    }
+
+    if (addPigModal) {
+        addPigModal.addEventListener('click', (e) => {
+            if (e.target === addPigModal) {
+                closeAddPigModalFn();
+            }
+        });
+    }
+
+    if (clearAddPigFormBtn) {
+        clearAddPigFormBtn.addEventListener('click', () => {
+            if (!addPigForm) return;
+
+            addPigForm.reset();
+            resetAddPigFormFloatingStates();
+
+            const pigDateInput = document.getElementById('pigDate');
+            if (pigDateInput) {
+                pigDateInput.value = '';
+                const wrapper = pigDateInput.closest('.date-wrapper');
+                if (wrapper) wrapper.classList.remove('has-value', 'is-focused');
+            }
+        });
+    }
+
+    if (addPigForm) {
+        addPigForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const pigNameInput = document.getElementById('pigName');
+            const pigName      = pigNameInput ? pigNameInput.value.trim() : '';
+
+            const pigData = {
+                name:   pigName,
+                breed:  document.getElementById('pigBreed')?.value || '',
+                gender: document.getElementById('pigGender')?.value || '',
+                age:    document.getElementById('pigAge')?.value || '',
+                date:   document.getElementById('pigDate')?.value || '',
+                initialWeight: document.getElementById('pigWeight')?.value || ''
             };
 
-            pig.weightHistory.push(newRecord);
-            
-            // Update the pig's current weight using the new helper
-            const newCurrentWeight = getNewestWeight(pig.weightHistory);
-            pig.weight = `${newCurrentWeight}kg`;
-
-            addWeightModal.style.display = 'none';
-            detailsModal.style.display = 'flex';
-            
-            // Show success message with SweetAlert
-            Swal.fire({
-                icon: 'success',
-                title: 'Weight Added!',
-                text: `Weight record has been successfully added.`,
-                showConfirmButton: false,
-                timer: 2000,
-                timerProgressBar: true
-            });
-            
-            // Call openPigDetails to ensure the detail sidebar is updated
-            window.openPigDetails(pig.id); 
-            
-            addWeightForm.reset();
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Pig not found. Please try again.',
-                showConfirmButton: true,
-                confirmButtonColor: '#dc2626'
-            });
-            addWeightModal.style.display = 'none';
-        }
-    });
-}
-
-// Edit Weight Form
-if (editWeightForm) {
-    editWeightForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const dateVal = document.getElementById('editWeightDate').value;
-        const weightVal = document.getElementById('editWeightValue').value;
-
-        if (!dateVal || !weightVal) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Missing Information',
-                text: 'Please enter a date and weight.',
-                showConfirmButton: true,
-                confirmButtonColor: '#dc2626'
-            });
-            return;
-        }
-
-        const pig = getCurrentFarm()?.pigs.find(p => p.id === currentDetailPigId);
-
-        if (pig && currentEditWeightRecordIndex !== null) {
-            const editedRecord = pig.weightHistory[currentEditWeightRecordIndex];
-            editedRecord.date = dateVal;
-            editedRecord.weight = parseFloat(weightVal);
-
-            if (editWeightImgInput.files && editWeightImgInput.files[0]) {
-                editedRecord.img = URL.createObjectURL(editWeightImgInput.files[0]);
+            const allFilled = Object.values(pigData).every(val => val !== '' && val !== null);
+            if (!allFilled) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Information',
+                    text: 'Please fill out all fields before saving.',
+                    showConfirmButton: true,
+                    confirmButtonColor: '#dc2626'
+                });
+                return;
             }
 
-            // Recalculate and update current weight based on newest date
-            const newCurrentWeight = getNewestWeight(pig.weightHistory);
-            pig.weight = `${newCurrentWeight}kg`;
-            
+            if (isDuplicatePigName(pigName)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Entry',
+                    text: 'A pig with the name "' + pigName + '" already exists in this farm. Pig names must be unique.',
+                    showConfirmButton: true
+                });
+                return;
+            }
+
+            addNewPig(pigData);
+
+            closeAddPigModalFn();
+            openSuccessModal();
+
+            this.reset();
+            resetAddPigFormFloatingStates();
+
+            const pigDateInput = document.getElementById('pigDate');
+            if (pigDateInput) {
+                const today = new Date().toISOString().split('T')[0];
+                pigDateInput.value = today;
+
+                const pigDateWrapper = pigDateInput.closest('.date-wrapper');
+                if (pigDateWrapper) {
+                    pigDateWrapper.classList.add('has-value');
+                    pigDateWrapper.classList.remove('is-focused');
+                }
+            }
+
+            setTimeout(() => {
+                closeSuccessModal();
+            }, 2000);
+        });
+    }
+
+    // ------------------------------------------------------------
+    // 13. ADD / EDIT WEIGHT FORM HANDLERS
+    // ------------------------------------------------------------
+
+    if (addWeightForm) {
+        addWeightForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const dateVal = document.getElementById('newWeightDate').value;
+            const weightVal = document.getElementById('newWeightValue').value;
+
+            if (!dateVal || !weightVal) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Information',
+                    text: 'Please enter a date and weight.',
+                    showConfirmButton: true,
+                    confirmButtonColor: '#dc2626'
+                });
+                return;
+            }
+
+            const currentFarm = getCurrentFarm();
+            const pig = currentFarm.pigs.find(p => p.id === currentDetailPigId);
+            if (pig) {
+                const newRecord = {
+                    date: dateVal,
+                    weight: parseFloat(weightVal),
+                    img: newWeightImgInput.files && newWeightImgInput.files[0]
+                        ? URL.createObjectURL(newWeightImgInput.files[0])
+                        : 'assets/dash-icons/WPig.png'
+                };
+
+                pig.weightHistory.push(newRecord);
+                
+                const newCurrentWeight = getNewestWeight(pig.weightHistory);
+                pig.weight = `${newCurrentWeight}kg`;
+
+                addWeightModal.style.display = 'none';
+                detailsModal.style.display = 'flex';
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Weight Added!',
+                    text: `Weight record has been successfully added.`,
+                    showConfirmButton: false,
+                    timer: 2000,
+                    timerProgressBar: true
+                });
+                
+                window.openPigDetails(pig.id); 
+                addWeightForm.reset();
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Pig not found. Please try again.',
+                    showConfirmButton: true,
+                    confirmButtonColor: '#dc2626'
+                });
+                addWeightModal.style.display = 'none';
+            }
+        });
+    }
+
+    if (editWeightForm) {
+        editWeightForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const dateVal = document.getElementById('editWeightDate').value;
+            const weightVal = document.getElementById('editWeightValue').value;
+
+            if (!dateVal || !weightVal) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Information',
+                    text: 'Please enter a date and weight.',
+                    showConfirmButton: true,
+                    confirmButtonColor: '#dc2626'
+                });
+                return;
+            }
+
+            const pig = getCurrentFarm()?.pigs.find(p => p.id === currentDetailPigId);
+
+            if (pig && currentEditWeightRecordIndex !== null) {
+                const editedRecord = pig.weightHistory[currentEditWeightRecordIndex];
+                editedRecord.date = dateVal;
+                editedRecord.weight = parseFloat(weightVal);
+
+                if (editWeightImgInput.files && editWeightImgInput.files[0]) {
+                    editedRecord.img = URL.createObjectURL(editWeightImgInput.files[0]);
+                }
+
+                const newCurrentWeight = getNewestWeight(pig.weightHistory);
+                pig.weight = `${newCurrentWeight}kg`;
+                
+                editWeightModal.style.display = 'none';
+                detailsModal.style.display = 'flex';
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Weight Updated!',
+                    text: `Weight record has been successfully updated.`,
+                    showConfirmButton: false,
+                    timer: 2000,
+                    timerProgressBar: true
+                });
+                
+                window.openPigDetails(pig.id); 
+                this.reset();
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Could not save changes. Please try again.',
+                    showConfirmButton: true,
+                    confirmButtonColor: '#dc2626'
+                });
+            }
+            currentEditWeightRecordIndex = null;
+        });
+    }
+
+    // ------------------------------------------------------------
+    // 14. GENERIC MODAL BACKDROP & CLOSE BUTTONS
+    // ------------------------------------------------------------
+
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('modal') || e.target.classList.contains('notification-modal')) {
+             closeAllModals();
+        }
+    });
+
+    if (closeWeightModalBtn) {
+        closeWeightModalBtn.addEventListener('click', function() {
+            addWeightModal.style.display = 'none';
+            detailsModal.style.display = 'flex';
+        });
+    }
+
+    if (closeExpenseModalBtn) {
+        closeExpenseModalBtn.addEventListener('click', function() {
+            addExpenseModal.style.display = 'none';
+            detailsModal.style.display = 'flex';
+        });
+    }
+
+    if (closeVaccinationModalBtn) {
+        closeVaccinationModalBtn.addEventListener('click', function() {
+            addVaccinationModal.style.display = 'none';
+            detailsModal.style.display = 'flex';
+        });
+    }
+
+    if (closeEditWeightModalBtn) {
+        closeEditWeightModalBtn.addEventListener('click', function() {
             editWeightModal.style.display = 'none';
             detailsModal.style.display = 'flex';
-            
-            // Show success message with SweetAlert
-            Swal.fire({
-                icon: 'success',
-                title: 'Weight Updated!',
-                text: `Weight record has been successfully updated.`,
-                showConfirmButton: false,
-                timer: 2000,
-                timerProgressBar: true
-            });
-            
-            // Call openPigDetails to ensure the detail sidebar is updated with the new current weight
-            window.openPigDetails(pig.id); 
-            
-            this.reset();
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Could not save changes. Please try again.',
-                showConfirmButton: true,
-                confirmButtonColor: '#dc2626'
-            });
-        }
-        currentEditWeightRecordIndex = null;
-    });
-}
-
-// --- Event Listeners for UI interaction (Modals, Tabs, Filters) (UPDATED) ---
-
-// Modal Close Listeners (Updated to be less aggressive and rely on specific handlers where possible)
-document.addEventListener('click', function(e) {
-    // Only trigger closeAllModals if clicking the backdrop or the close button doesn't have a specific handler
-    if (e.target.classList.contains('modal') || e.target.classList.contains('notification-modal')) {
-         closeAllModals();
+        });
     }
-});
 
-if(closeWeightModalBtn) {
-    closeWeightModalBtn.addEventListener('click', function() {
-        addWeightModal.style.display = 'none';
-        detailsModal.style.display = 'flex';
-    });
-}
+    if (btnCancelEditWeight) {
+        btnCancelEditWeight.addEventListener('click', function() {
+            editWeightModal.style.display = 'none';
+            detailsModal.style.display = 'flex';
+        });
+    }
 
-// 🆕 NEW: Expense Modal Close Listeners
-if(closeExpenseModalBtn) {
-    closeExpenseModalBtn.addEventListener('click', function() {
-        addExpenseModal.style.display = 'none';
-        detailsModal.style.display = 'flex';
-    });
-}
+    if (clearExpenseFormBtn) {
+        clearExpenseFormBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            addExpenseForm.reset();
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('newExpenseDate').value = today;
+        });
+    }
 
-// 🆕 NEW: Vaccination Modal Close Listeners
-if(closeVaccinationModalBtn) {
-    closeVaccinationModalBtn.addEventListener('click', function() {
-        addVaccinationModal.style.display = 'none';
-        detailsModal.style.display = 'flex';
-    });
-}
+    if (clearVaccinationFormBtn) {
+        clearVaccinationFormBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            addVaccinationForm.reset();
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('newVaccinationDate').value = today;
+            
+            const dueDate = new Date();
+            dueDate.setDate(dueDate.getDate() + 30);
+            document.getElementById('newVaccinationDueDate').value = dueDate.toISOString().split('T')[0];
+        });
+    }
 
-if (closeEditWeightModalBtn) {
-    closeEditWeightModalBtn.addEventListener('click', function() {
-        editWeightModal.style.display = 'none';
-        detailsModal.style.display = 'flex';
-    });
-}
+    if (addExpenseBtn) {
+        addExpenseBtn.addEventListener('click', openAddExpenseModal);
+    }
 
-// 🆕 NEW: Clear Form Buttons
-if (clearExpenseFormBtn) {
-    clearExpenseFormBtn.addEventListener('click', function(e) {
-        e.preventDefault(); // 🆕 ADD THIS LINE - Prevents form submission
-        addExpenseForm.reset();
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('newExpenseDate').value = today;
-    });
-}
+    if (addVaccinationBtn) {
+        addVaccinationBtn.addEventListener('click', openAddVaccinationModal);
+    }
 
-if (clearVaccinationFormBtn) {
-    clearVaccinationFormBtn.addEventListener('click', function(e) {
-        e.preventDefault(); // 🆕 ADD THIS LINE - Prevents form submission
-        addVaccinationForm.reset();
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('newVaccinationDate').value = today;
-        
-        // Reset due date to 30 days from today
-        const dueDate = new Date();
-        dueDate.setDate(dueDate.getDate() + 30);
-        document.getElementById('newVaccinationDueDate').value = dueDate.toISOString().split('T')[0];
-    });
-}
+    if (pigDetailsMenuIcon) {
+        pigDetailsMenuIcon.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (pigActionMenu) {
+                pigActionMenu.classList.toggle('active');
+            }
+        });
 
-// 🆕 NEW: Expense and Vaccination Button Listeners
-if (addExpenseBtn) {
-    addExpenseBtn.addEventListener('click', openAddExpenseModal);
-}
+        document.addEventListener('click', function() {
+            if (pigActionMenu) {
+                pigActionMenu.classList.remove('active');
+            }
+        });
+    }
 
-if (addVaccinationBtn) {
-    addVaccinationBtn.addEventListener('click', openAddVaccinationModal);
-}
+    if (editPigDetailsBtn) {
+        editPigDetailsBtn.addEventListener('click', function() {
+            if (pigActionMenu) pigActionMenu.classList.remove('active');
+            openEditPigDetailsModal();
+        });
+    }
 
-// --- 🆕 Pig Details Action Menu & Edit Modal Listeners ---
-if (pigDetailsMenuIcon) {
-    pigDetailsMenuIcon.addEventListener('click', function(e) {
-        e.stopPropagation(); // Prevents click on icon from closing the menu immediately
-        // IMPORTANT: Ensure pigActionMenu is NOT null before toggling class
-        if (pigActionMenu) {
-            pigActionMenu.classList.toggle('active');
-        }
-    });
+    if (deletePigBtn) {
+        deletePigBtn.addEventListener('click', function() {
+            if (pigActionMenu) pigActionMenu.classList.remove('active');
+            deletePig(currentDetailPigId);
+        });
+    }
 
-    // Close menu when clicking anywhere else
-    document.addEventListener('click', function() {
-        if (pigActionMenu) {
-            pigActionMenu.classList.remove('active');
-        }
-    });
-}
+    if (closeEditPigDetailsModal) {
+        closeEditPigDetailsModal.addEventListener('click', function() {
+            editPigDetailsModal.style.display = 'none';
+            detailsModal.style.display = 'flex';
+        });
+    }
 
-// Wire up Menu Buttons
-if (editPigDetailsBtn) {
-    editPigDetailsBtn.addEventListener('click', function() {
-        if (pigActionMenu) pigActionMenu.classList.remove('active');
-        openEditPigDetailsModal(); // Open the new Edit Details Modal
-    });
-}
+    if (cancelEditPigDetails) {
+        cancelEditPigDetails.addEventListener('click', function() {
+            editPigDetailsModal.style.display = 'none';
+            detailsModal.style.display = 'flex';
+        });
+    }
 
-if (deletePigBtn) {
-    deletePigBtn.addEventListener('click', function() {
-        if (pigActionMenu) pigActionMenu.classList.remove('active');
-        deletePig(currentDetailPigId); // Trigger the delete function
-    });
-}
+    if (editPigDetailsForm) {
+        editPigDetailsForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleEditPigDetailsSubmit(); 
+        });
+    }
 
-// Edit Pig Details Cancel/Close Listeners (defined earlier)
-if (closeEditPigDetailsModal) {
-    closeEditPigDetailsModal.addEventListener('click', function() {
-        editPigDetailsModal.style.display = 'none';
-        detailsModal.style.display = 'flex'; // Go back to the details modal
-    });
-}
-
-if (cancelEditPigDetails) {
-    cancelEditPigDetails.addEventListener('click', function() {
-        editPigDetailsModal.style.display = 'none';
-        detailsModal.style.display = 'flex'; // Go back to the details modal
-    });
-}
-
-// Edit Pig Details Form Submission (defined earlier)
-if (editPigDetailsForm) {
-    editPigDetailsForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        handleEditPigDetailsSubmit(); 
-    });
-}
-// --- END Pig Details Action Menu & Edit Modal Listeners ---
-
-
-    // File Input change listeners
-    if(newWeightImgInput) {
+    if (newWeightImgInput) {
         newWeightImgInput.addEventListener('change', function() {
             if(this.files && this.files.length > 0) {
                 fileNameDisplay.textContent = this.files[0].name;
@@ -1743,7 +1445,6 @@ if (editPigDetailsForm) {
         });
     }
 
-    // Main UI Buttons
     if (tabAdd) tabAdd.addEventListener('click', addNewFarm);
     if (addPigBtn) addPigBtn.addEventListener('click', openAddPigModal);
     if (notificationBtn) notificationBtn.addEventListener('click', openNotificationModal);
@@ -1754,7 +1455,6 @@ if (editPigDetailsForm) {
         }
     });
 
-    // Details Modal Tab Switching
     const detailTabs = document.querySelectorAll('.detail-tab');
     detailTabs.forEach(tab => {
         tab.addEventListener('click', function() {
@@ -1769,7 +1469,192 @@ if (editPigDetailsForm) {
         });
     });
 
-    // --- Table Filtering & Selection (UNCHANGED) ---
+    // ------------------------------------------------------------
+    // 15. EXPENSE & VACCINATION FORM HANDLERS
+    // ------------------------------------------------------------
+
+    if (addExpenseForm) {
+        addExpenseForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const dateVal = document.getElementById('newExpenseDate').value;
+            const priceVal = document.getElementById('newExpensePrice').value;
+            const categoryVal = document.getElementById('newExpenseCategory').value;
+
+            if (!dateVal || !priceVal || !categoryVal) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Information',
+                    text: 'Please enter all expense details.',
+                    showConfirmButton: true,
+                    confirmButtonColor: '#dc2626'
+                });
+                return;
+            }
+
+            const priceNumber = parseFloat(priceVal);
+            if (isNaN(priceNumber) || priceNumber <= 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Invalid Price',
+                    text: 'Please enter a valid price amount.',
+                    showConfirmButton: true,
+                    confirmButtonColor: '#dc2626'
+                });
+                return;
+            }
+
+            const currentFarm = getCurrentFarm();
+            const pig = currentFarm.pigs.find(p => p.id === currentDetailPigId);
+            if (pig) {
+                const newExpense = {
+                    date: dateVal,
+                    price: priceNumber,
+                    category: categoryVal
+                };
+
+                if (!pig.expenseRecords) {
+                    pig.expenseRecords = [];
+                }
+
+                pig.expenseRecords.push(newExpense);
+
+                addExpenseForm.reset();
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('newExpenseDate').value = today;
+
+                addExpenseModal.style.display = 'none';
+                detailsModal.style.display = 'flex';
+                
+                updateDetailsTabContent(pig, 'expenses');
+                showExpenseSuccessAlert();
+                
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Pig not found. Please try again.',
+                    showConfirmButton: true,
+                    confirmButtonColor: '#dc2626'
+                });
+                addExpenseModal.style.display = 'none';
+            }
+        });
+    }
+
+    if (addVaccinationForm) {
+        addVaccinationForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const dateVal = document.getElementById('newVaccinationDate').value;
+            const dueDateVal = document.getElementById('newVaccinationDueDate').value;
+            const typeVal = document.getElementById('newVaccinationType').value;
+
+            if (!dateVal || !dueDateVal || !typeVal) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Information',
+                    text: 'Please enter all vaccination details.',
+                    showConfirmButton: true,
+                    confirmButtonColor: '#dc2626'
+                });
+                return;
+            }
+
+            const currentFarm = getCurrentFarm();
+            const pig = currentFarm.pigs.find(p => p.id === currentDetailPigId);
+            if (pig) {
+                const newVaccination = {
+                    date: dateVal,
+                    dueDate: dueDateVal,
+                    type: typeVal
+                };
+
+                if (!pig.vaccinationRecords) {
+                    pig.vaccinationRecords = [];
+                }
+
+                pig.vaccinationRecords.push(newVaccination);
+
+                addVaccinationForm.reset();
+                
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('newVaccinationDate').value = today;
+                
+                const dueDate = new Date();
+                dueDate.setDate(dueDate.getDate() + 30);
+                document.getElementById('newVaccinationDueDate').value = dueDate.toISOString().split('T')[0];
+
+                addVaccinationModal.style.display = 'none';
+                detailsModal.style.display = 'flex';
+                
+                updateDetailsTabContent(pig, 'health');
+                showVaccinationSuccessAlert();
+                
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Pig not found. Please try again.',
+                    showConfirmButton: true,
+                    confirmButtonColor: '#dc2626'
+                });
+                addVaccinationModal.style.display = 'none';
+            }
+        });
+    }
+
+    setTimeout(() => {
+        const currentFarm = getCurrentFarm();
+        if (currentFarm) {
+            let cleaned = false;
+            currentFarm.pigs.forEach(pig => {
+                if (pig.expenseRecords) {
+                    const originalLength = pig.expenseRecords.length;
+                    pig.expenseRecords = pig.expenseRecords.filter(expense => 
+                        expense.date && expense.date !== 'Invalid Date' && 
+                        !isNaN(expense.price) && expense.price > 0
+                    );
+                    if (pig.expenseRecords.length !== originalLength) {
+                        cleaned = true;
+                    }
+                }
+            });
+            if (cleaned) {
+                loadFarmData(currentFarmId);
+            }
+        }
+    }, 1000);
+
+    function showExpenseSuccessAlert() {
+        Swal.fire({
+            title: 'Success!',
+            text: 'Expense record added successfully!',
+            icon: 'success',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#4CAF50',
+            customClass: {
+                popup: 'swal2-high-zindex'
+            }
+        });
+    }
+
+    function showVaccinationSuccessAlert() {
+        Swal.fire({
+            title: 'Success!',
+            text: 'Vaccination record added successfully!',
+            icon: 'success',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#4CAF50',
+            customClass: {
+                popup: 'swal2-high-zindex'
+            }
+        });
+    }
+
+    // ------------------------------------------------------------
+    // 16. TABLE SELECT-ALL, FILTERS, SEARCH
+    // ------------------------------------------------------------
 
     function setupSelectAllCheckbox(masterCheckbox, checkboxes) {
         if (!masterCheckbox) return;
@@ -1814,301 +1699,266 @@ if (editPigDetailsForm) {
         updateDisplayCounts(visibleCount);
     }
 
-// =========================================================================
-// ✅ Status Change Logic (UNCHANGED)
-// =========================================================================
+    function changeSelectedPigsStatus(newStatus) {
+        const selectedPigs = Array.from(pigCheckboxes)
+            .filter(checkbox => checkbox.checked)
+            .map(checkbox => parseInt(checkbox.dataset.pigId));
+        
+        if (selectedPigs.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'No Selection',
+                text: 'Please select at least one pig to change the status.',
+                showConfirmButton: false,
+                timer: 2000
+            });
+            return;
+        }
 
-function changeSelectedPigsStatus(newStatus) {
-    const selectedPigs = Array.from(pigCheckboxes)
-        .filter(checkbox => checkbox.checked)
-        .map(checkbox => parseInt(checkbox.dataset.pigId));
-    
-    // --- 1. Initial Selection Check ---
-    if (selectedPigs.length === 0) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'No Selection',
-            text: 'Please select at least one pig to change the status.',
-            showConfirmButton: false,
-            timer: 2000
-        });
-        return;
+        const executeStatusChange = (pigsToUpdate, status) => {
+            const currentFarm = getCurrentFarm();
+            let changedCount = 0;
+
+            pigsToUpdate.forEach(pigId => {
+                const pig = currentFarm.pigs.find(p => p.id === pigId);
+                if (pig && pig.status !== status && status !== 'sold') { 
+                    pig.status = status;
+                    pig.statusHistory.push({
+                        date: new Date().toISOString().split('T')[0],
+                        status: status,
+                        notes: `Status changed to ${formatStatusText(status)} via bulk action.`
+                    });
+                    changedCount++;
+                }
+            });
+
+            if (changedCount > 0) {
+                loadFarmData(currentFarmId);
+                
+                let successText = `${changedCount} pig(s) successfully changed to ${formatStatusText(status)}.`;
+                let successTitle = (status === 'deceased') ? 'Pig Status Finalized!' : 'Status Updated!';
+
+                Swal.fire({
+                    icon: 'success',
+                    title: successTitle,
+                    text: successText,
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            }
+        };
+
+        if (newStatus === 'sold') {
+            if (selectedPigs.length >= 1) {
+                openPriceInputModal(selectedPigs);
+                pigCheckboxes.forEach(checkbox => checkbox.checked = false);
+                if (selectAllCheckbox) selectAllCheckbox.checked = false;
+                if (tableSelectAllCheckbox) tableSelectAllCheckbox.checked = false;
+                return;
+            }
+        }
+
+        let titleText = '';
+        let isConfirmed = false;
+
+        if (newStatus === 'growing' || newStatus === 'tosale') {
+            titleText = `Are you sure you want to mark ${selectedPigs.length} pig(s) as "${formatStatusText(newStatus)}"?`;
+            isConfirmed = true;
+        } else if (newStatus === 'deceased') {
+            titleText = `Mark ${selectedPigs.length} pig(s) as Deceased?`;
+            isConfirmed = true;
+        }
+        
+        if (isConfirmed) {
+            Swal.fire({
+                title: titleText,
+                html: newStatus === 'deceased' ? titleText + '<br><small style="color:#888;">You won\'t be able to undo this later.</small>' : titleText,
+                icon: newStatus === 'deceased' ? 'warning' : 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#4CAF50',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, Proceed',
+                cancelButtonText: 'No'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    executeStatusChange(selectedPigs, newStatus);
+                }
+            });
+        } 
+
+        pigCheckboxes.forEach(checkbox => checkbox.checked = false);
+        if (selectAllCheckbox) selectAllCheckbox.checked = false;
+        if (tableSelectAllCheckbox) tableSelectAllCheckbox.checked = false;
     }
 
-    // --- 2. Helper function to EXECUTE the status change (Non-Sale) ---
-const executeStatusChange = (pigsToUpdate, status) => {
-    const currentFarm = getCurrentFarm();
-    let changedCount = 0;
+    // ------------------------------------------------------------
+    // 17. BULK SALE PROCESS
+    // ------------------------------------------------------------
 
-    pigsToUpdate.forEach(pigId => {
-        const pig = currentFarm.pigs.find(p => p.id === pigId);
-        
-        // Ensure we don't double-process the status
-        if (pig && pig.status !== status && status !== 'sold') { 
-            pig.status = status;
-            pig.statusHistory.push({
-                date: new Date().toISOString().split('T')[0],
-                status: status,
-                notes: `Status changed to ${formatStatusText(status)} via bulk action.`
-            });
-            changedCount++;
+    function openPriceInputModal(pigIds) {
+        currentPigsForSaleIds = pigIds;
+        calculatedTotalSalePrice = 0;
+        pricePerPigInput = 0;
+
+        const modalHeader = priceInputModal?.querySelector('.modal-header-sales h3');
+        if (modalHeader) {
+            modalHeader.textContent = `Enter Price Per Pig (for ${pigIds.length} Pig${pigIds.length > 1 ? 's' : ''})`;
         }
-    });
 
-    if (changedCount > 0) {
+        if (priceInputModal) {
+            priceInputModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+        if (priceInput) priceInput.value = '';
+    }
+
+    function showPriceConfirmation(pricePerPig) {
+        if (priceInputModal) priceInputModal.style.display = 'none';
+
+        const pigCount = currentPigsForSaleIds.length;
+        const total = calculatedTotalSalePrice;
+
+        Swal.fire({
+            title: 'Please confirm:',
+            html: `You're setting the price at ₱<b>${pricePerPig.toFixed(2)}</b> per pig, for <b>${pigCount}</b> pig(s).<br>
+                   Total calculated price: ₱<b>${total.toFixed(2)}</b>.<br><br>Do you want to proceed?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes',
+            cancelButtonText: 'No',
+            customClass: {
+                popup: 'swal2-high-zindex'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                showSoldConfirmationModal();
+            } else {
+                if (priceInputModal) priceInputModal.style.display = 'flex';
+            }
+        });
+    }
+
+    function showSoldConfirmationModal() {
+        if (priceInputModal) {
+            priceInputModal.style.display = 'none'; 
+        }
+        
+        if (finalSoldPriceDisplay) {
+            finalSoldPriceDisplay.value = `₱${calculatedTotalSalePrice.toFixed(2)}`; 
+        }
+        
+        if (soldConfirmationModal) {
+            soldConfirmationModal.style.display = 'flex'; 
+            document.body.style.overflow = 'hidden'; 
+        }
+    }
+
+    function finalizeSale(totalPrice) {
+        const pigCount = currentPigsForSaleIds.length;
+        const saleDate = new Date().toISOString().split('T')[0];
+        const avgPrice = pricePerPigInput;
+
+        if (pigCount === 0) return;
+
+        const currentFarm = getCurrentFarm();
+        let changedCount = 0;
+
+        currentPigsForSaleIds.forEach(pigId => {
+            const pig = getPigById(pigId);
+            if (pig) {
+                pig.status = 'sold';
+                pig.weight = `Sold`; 
+                
+                pig.statusHistory.push({
+                    date: saleDate,
+                    status: 'sold',
+                    notes: `Bulk sale of ${pigCount} pig(s). Total: ₱${totalPrice.toFixed(2)} (Avg. ₱${avgPrice.toFixed(2)} per pig).`
+                });
+                changedCount++;
+            }
+        });
+
         loadFarmData(currentFarmId);
         
-        let successText = `${changedCount} pig(s) successfully changed to ${formatStatusText(status)}.`;
-        let successTitle = (status === 'deceased') ? 'Pig Status Finalized!' : 'Status Updated!';
+        if (soldConfirmationModal) {
+            soldConfirmationModal.style.display = 'none'; 
+        }
+        
+        closeAllModals(); 
 
         Swal.fire({
             icon: 'success',
-            title: successTitle,
-            text: successText,
+            title: 'Bulk Sale Confirmed!',
+            text: `${changedCount} pig(s) successfully marked as sold for a total of ₱${totalPrice.toFixed(2)}.`,
             showConfirmButton: false,
-            timer: 2000
+            timer: 3000
         });
     }
-};
 
-    // --- 3. SPECIAL HANDLING FOR 'SOLD' (BULK FLOW ENABLED) ---
-    if (newStatus === 'sold') {
-        if (selectedPigs.length >= 1) { // Allows one or more pigs
-            openPriceInputModal(selectedPigs); // Pass the array of IDs
-            // Clear checkboxes regardless of outcome
-            pigCheckboxes.forEach(checkbox => checkbox.checked = false);
-            selectAllCheckbox.checked = false;
-            tableSelectAllCheckbox.checked = false;
-            return;
-        }
+    if (priceInputForm) {
+        priceInputForm.addEventListener('submit', function(e) {
+            e.preventDefault(); 
+            
+            const pricePerPig = parseFloat(priceInput.value); 
+            const pigCount = currentPigsForSaleIds.length;
+            
+            if (isNaN(pricePerPig) || pricePerPig <= 0 || pigCount === 0) {
+                Swal.fire('Error', 'Please enter a valid price per pig and ensure at least one pig is selected.', 'error');
+                return;
+            }
+
+            calculatedTotalSalePrice = pricePerPig * pigCount;
+            pricePerPigInput = pricePerPig;
+
+            showPriceConfirmation(pricePerPig); 
+        });
     }
 
-    // --- 4. Confirmation Logic Setup (Non-Sale) ---
-    let titleText = '';
-    let isConfirmed = false;
+    document.getElementById('clearPriceInput')?.addEventListener('click', function() {
+        if (priceInput) priceInput.value = ''; 
+    });
 
-    if (newStatus === 'growing' || newStatus === 'tosale') {
-        titleText = `Are you sure you want to mark ${selectedPigs.length} pig(s) as "${formatStatusText(newStatus)}"?`;
-        isConfirmed = true;
-    } else if (newStatus === 'deceased') {
-        titleText = `Mark ${selectedPigs.length} pig(s) as Deceased?`;
-        isConfirmed = true;
-    }
-    
-    // --- 5. Execute Confirmed/Default Status Changes (Non-Sale) ---
-    if (isConfirmed) {
-        Swal.fire({
-            title: titleText,
-            html: newStatus === 'deceased' ? titleText + '<br><small style="color:#888;">You won\'t be able to undo this later.</small>' : titleText,
-            icon: newStatus === 'deceased' ? 'warning' : 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#4CAF50',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, Proceed',
-            cancelButtonText: 'No'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                executeStatusChange(selectedPigs, newStatus);
+    document.getElementById('closePriceInputModal')?.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (priceInputModal) priceInputModal.style.display = 'none';
+        currentPigsForSaleIds = [];
+        calculatedTotalSalePrice = 0;
+        pricePerPigInput = 0;
+        document.body.style.overflow = 'auto';
+    });
+
+    if (confirmSoldPriceBtn) {
+        confirmSoldPriceBtn.addEventListener('click', function() {
+            if (currentPigsForSaleIds.length > 0 && calculatedTotalSalePrice > 0) {
+                finalizeSale(calculatedTotalSalePrice); 
+            } else {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Sale calculation error. Please try again.' });
+                closeAllModals();
             }
         });
-    } 
-
-    // Final Cleanup (only necessary if the function hasn't already returned)
-    pigCheckboxes.forEach(checkbox => checkbox.checked = false);
-    selectAllCheckbox.checked = false;
-    tableSelectAllCheckbox.checked = false;
-}//end of pig status
-
-
-// =========================================================================
-// 🐖 SALE PROCESS FUNCTIONS (FIXED)
-// =========================================================================
-
-// Step 1: Open the Price Input Modal (Corrected for Bulk)
-function openPriceInputModal(pigIds) {
-    currentPigsForSaleIds = pigIds;
-    calculatedTotalSalePrice = 0;
-    pricePerPigInput = 0;
-
-    // Update modal header to reflect the bulk nature
-    const modalHeader = priceInputModal.querySelector('.modal-header-sales h3');
-    if (modalHeader) {
-        modalHeader.textContent = `Enter Price Per Pig (for ${pigIds.length} Pig${pigIds.length > 1 ? 's' : ''})`;
     }
 
-    priceInputModal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-    if (priceInput) priceInput.value = '';
-}
-
-// Step 2: Confirmation based on price per pig (SweetAlert)
-function showPriceConfirmation(pricePerPig) {
-    // Hide Step 1 modal before showing SweetAlert
-    priceInputModal.style.display = 'none';
-
-    const pigCount = currentPigsForSaleIds.length;
-    const total = calculatedTotalSalePrice;
-
-    Swal.fire({
-        title: 'Please confirm:',
-        html: `You're setting the price at ₱**${pricePerPig.toFixed(2)}** per pig, for **${pigCount}** pig(s).<br>
-               Total calculated price: ₱**${total.toFixed(2)}**.<br><br>Do you want to proceed?`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Yes',
-        cancelButtonText: 'No',
-         customClass: {
-            popup: 'swal2-high-zindex' // Ensure SweetAlert is on top
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // If confirmed, proceed to the final modal (Step 3)
-            showSoldConfirmationModal();
-        } else {
-            // If canceled, go back to Step 1 modal
-            priceInputModal.style.display = 'flex';
-        }
-    });
-}
-
-// Step 3: Final Sold Confirmation Modal
-function showSoldConfirmationModal() {
-    // 1. Hide the Price Input Modal (Step 1)
-    if (priceInputModal) {
-        priceInputModal.style.display = 'none'; 
-    }
-    
-    // 2. Format and display the TOTAL price in the input field
-    if (finalSoldPriceDisplay) {
-        finalSoldPriceDisplay.value = `₱${calculatedTotalSalePrice.toFixed(2)}`; 
-    }
-    
-    // 3. Show the Sold Confirmation Modal (Step 3)
-    if (soldConfirmationModal) {
-        soldConfirmationModal.style.display = 'flex'; 
-        document.body.style.overflow = 'hidden'; 
-    }
-}
-
-// Step 4: Finalize Sale and Update Status (FIXED for Modal Closure)
-function finalizeSale(totalPrice) {
-    const pigCount = currentPigsForSaleIds.length;
-    const saleDate = new Date().toISOString().split('T')[0];
-    const avgPrice = pricePerPigInput;
-
-    if (pigCount === 0) return;
-
-    const currentFarm = getCurrentFarm();
-    let changedCount = 0;
-
-    currentPigsForSaleIds.forEach(pigId => {
-        const pig = getPigById(pigId);
-        if (pig) {
-            pig.status = 'sold';
-            // REQUIRED CHANGE: Show only 'Sold' in the table record's weight column
-            pig.weight = `Sold`; 
-            
-            pig.statusHistory.push({
-                date: saleDate,
-                status: 'sold',
-                notes: `Bulk sale of ${pigCount} pig(s). Total: ₱${totalPrice.toFixed(2)} (Avg. ₱${avgPrice.toFixed(2)} per pig).`
-            });
-            changedCount++;
-        }
+    document.getElementById('cancelSoldPrice')?.addEventListener('click', function(e) {
+        e.stopPropagation(); 
+        if (soldConfirmationModal) soldConfirmationModal.style.display = 'none';
+        currentPigsForSaleIds = [];
+        calculatedTotalSalePrice = 0;
+        pricePerPigInput = 0;
+        document.body.style.overflow = 'auto';
     });
 
-    loadFarmData(currentFarmId); // Refresh table/data
-    
-    // ✅ FIX V2: Explicitly hide the final confirmation modal first.
-    if (soldConfirmationModal) {
-        soldConfirmationModal.style.display = 'none'; 
-    }
-    
-    // Then call the generic function to clear state and restore body scrolling.
-    closeAllModals(); 
-
-    Swal.fire({
-        icon: 'success',
-        title: 'Bulk Sale Confirmed!',
-        text: `${changedCount} pig(s) successfully marked as sold for a total of ₱${totalPrice.toFixed(2)}.`,
-        showConfirmButton: false,
-        timer: 3000
+    document.getElementById('closeSoldConfirmationModal')?.addEventListener('click', function(e) {
+        e.stopPropagation(); 
+        if (soldConfirmationModal) soldConfirmationModal.style.display = 'none';
+        currentPigsForSaleIds = [];
+        calculatedTotalSalePrice = 0;
+        pricePerPigInput = 0;
+        document.body.style.overflow = 'auto';
     });
 
-    // Reset state is handled by closeAllModals
-}
-
-
-// =========================================================================
-// 👂 SALE PROCESS LISTENERS (UNCHANGED)
-// =========================================================================
-
-// --- Price Input Modal Listener (Step 1 -> Step 2) ---
-if (priceInputForm) {
-    priceInputForm.addEventListener('submit', function(e) {
-        e.preventDefault(); 
-        
-        const pricePerPig = parseFloat(priceInput.value); 
-        const pigCount = currentPigsForSaleIds.length;
-        
-        // Validation
-        if (isNaN(pricePerPig) || pricePerPig <= 0 || pigCount === 0) {
-            Swal.fire('Error', 'Please enter a valid price per pig and ensure at least one pig is selected.', 'error');
-            return;
-        }
-
-        // 1. Calculation: Price per Pig * Pig Count
-        calculatedTotalSalePrice = pricePerPig * pigCount;
-        pricePerPigInput = pricePerPig; // Store P/Pig for confirmation/notes
-
-        // 2. Proceed to Step 2: Show Price Confirmation (SweetAlert)
-        showPriceConfirmation(pricePerPig); 
-    });
-}
-
-// Utility listeners for Price Input Modal
-document.getElementById('clearPriceInput')?.addEventListener('click', function() {
-    priceInput.value = ''; 
-});
-
-// Closing the first modal
-document.getElementById('closePriceInputModal')?.addEventListener('click', function(e) {
-    e.stopPropagation();
-    closeAllModals();
-});
-
-
-// --- Sold Confirmation Modal Listeners (Step 3 -> Step 4) ---
-
-// Confirm Button: Triggers finalization (This is where the modal closes after confirmation)
-if (confirmSoldPriceBtn) {
-    confirmSoldPriceBtn.addEventListener('click', function() {
-        if (currentPigsForSaleIds.length > 0 && calculatedTotalSalePrice > 0) {
-            // Calls finalizeSale, which contains the closeAllModals() call
-            finalizeSale(calculatedTotalSalePrice); 
-        } else {
-            Swal.fire({ icon: 'error', title: 'Error', text: 'Sale calculation error. Please try again.' });
-            closeAllModals();
-        }
-    });
-}
-
-// Cancel Button
-document.getElementById('cancelSoldPrice')?.addEventListener('click', function(e) {
-    e.stopPropagation(); 
-    closeAllModals();
-});
-
-// Close Icon
-document.getElementById('closeSoldConfirmationModal')?.addEventListener('click', function(e) {
-    e.stopPropagation(); 
-    closeAllModals();
-});
-
-// =========================================================================
-// 🔄 END OF SALE PROCESS LISTENERS
-// =========================================================================
-
+    // ------------------------------------------------------------
+    // 18. COUNT UPDATES & SEARCH
+    // ------------------------------------------------------------
 
     function updatePigCounts() {
         const currentFarm = getCurrentFarm();
@@ -2150,7 +2000,6 @@ document.getElementById('closeSoldConfirmationModal')?.addEventListener('click',
         if (showingCount) showingCount.textContent = visibleCount;
     }
 
-    // Attach event listeners for tabs, filters, dropdowns, and search
     tabs.forEach(tab => {
         tab.addEventListener('click', function() {
             const farmId = parseInt(this.dataset.farm);
@@ -2229,206 +2078,200 @@ document.getElementById('closeSoldConfirmationModal')?.addEventListener('click',
         updateDisplayCounts(visibleCount);
     }
 
+    // ------------------------------------------------------------
+    // 19. FARM CONTEXT MENU
+    // ------------------------------------------------------------
 
-// 🆕 FIXED: Farm Context Menu Function
-function showFarmContextMenu(farmId, event) {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    currentContextFarmId = farmId;
-    console.log('Context menu opened for farm:', farmId, 'currentContextFarmId:', currentContextFarmId);
-    
-    const farmTab = event.target;
-    const tabRect = farmTab.getBoundingClientRect();
-    const menuWidth = 180;
-    
-    let leftPosition = tabRect.left + (tabRect.width - menuWidth) / 2;
-    const padding = 10;
-    
-    if (leftPosition + menuWidth > window.innerWidth - padding) {
-        leftPosition = window.innerWidth - menuWidth - padding;
-    }
-    
-    if (leftPosition < padding) {
-        leftPosition = padding;
-    }
-    
-    farmContextMenu.style.left = leftPosition + 'px';
-    farmContextMenu.style.top = (tabRect.bottom + window.scrollY) + 'px';
-    farmContextMenu.classList.add('active');
-    
-    // 🆕 FIX: Use a named function for proper removal
-    function closeContextMenuHandler(e) {
-        if (!farmContextMenu.contains(e.target) && !e.target.classList.contains('tab')) {
-            // 🆕 DON'T reset currentContextFarmId here - keep it until an action is taken
-            farmContextMenu.classList.remove('active');
-            document.removeEventListener('click', closeContextMenuHandler);
+    function showFarmContextMenu(farmId, event) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        currentContextFarmId = farmId;
+        
+        const farmTab = event.target.closest('.tab');
+        if (!farmTab) return;
+
+        const tabRect = farmTab.getBoundingClientRect();
+        const menuWidth = 180;
+        
+        let leftPosition = tabRect.left + (tabRect.width - menuWidth) / 2;
+        const padding = 10;
+        
+        if (leftPosition + menuWidth > window.innerWidth - padding) {
+            leftPosition = window.innerWidth - menuWidth - padding;
         }
-    }
-    
-    document.addEventListener('click', closeContextMenuHandler);
-}
-
-// 🆕 FIXED: Hide context menu (don't reset currentContextFarmId here)
-function hideFarmContextMenu() {
-    farmContextMenu.classList.remove('active');
-    // 🆕 DON'T set currentContextFarmId = null here
-}
-
-function renameFarm(farmId, newName) {
-    const farm = farms.find(f => f.id === farmId);
-    if (!farm) return;
-    
-    const trimmedName = newName.trim();
-    if (!trimmedName) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Invalid Name',
-            text: 'Farm name cannot be empty.',
-            showConfirmButton: true,
-            confirmButtonColor: '#dc2626'
-        });
-        return;
-    }
-    
-    const isDuplicate = farms.some(f => 
-        f.id !== farmId && f.name.toLowerCase() === trimmedName.toLowerCase()
-    );
-    
-    if (isDuplicate) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Duplicate Name',
-            text: 'A farm with this name already exists.',
-            showConfirmButton: true
-        });
-        return;
-    }
-    
-    farm.name = trimmedName;
-    
-    const farmTab = document.querySelector(`.tab[data-farm="${farmId}"]`);
-    if (farmTab) {
-        farmTab.textContent = trimmedName;
-    }
-    
-    renameFarmModal.style.display = 'none';
-    
-    // 🆕 RESET the currentContextFarmId only after successful rename
-    currentContextFarmId = null;
-    
-    Swal.fire({
-        icon: 'success',
-        title: 'Farm Renamed!',
-        text: `Farm has been renamed to "${trimmedName}".`,
-        showConfirmButton: false,
-        timer: 2000
-    });
-}
-
-// 🆕 NEW: Delete Farm Function
-function deleteFarm(farmId) {
-    if (farms.length <= 1) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Cannot Delete',
-            text: 'You must have at least one farm.',
-            showConfirmButton: true
-        });
-        return;
-    }
-    
-    const farm = farms.find(f => f.id === farmId);
-    if (!farm) return;
-    
-    Swal.fire({
-        title: 'Delete Farm?',
-        html: `You are about to delete <strong>"${farm.name}"</strong> and all its pigs.<br><br>This action cannot be undone!`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#4CAF50',
-        confirmButtonText: 'Yes, Delete It',
-        cancelButtonText: 'Cancel',
-        customClass: {
-            popup: 'swal2-high-zindex'
+        
+        if (leftPosition < padding) {
+            leftPosition = padding;
         }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Remove farm from array
-            farms = farms.filter(f => f.id !== farmId);
-            
-            // Remove farm tab
-            const farmTab = document.querySelector(`.tab[data-farm="${farmId}"]`);
-            if (farmTab) {
-                farmTab.remove();
+        
+        farmContextMenu.style.left = leftPosition + 'px';
+        farmContextMenu.style.top = (tabRect.bottom + window.scrollY) + 'px';
+        farmContextMenu.classList.add('active');
+        
+        function closeContextMenuHandler(e) {
+            if (!farmContextMenu.contains(e.target) && !e.target.classList.contains('tab')) {
+                farmContextMenu.classList.remove('active');
+                document.removeEventListener('click', closeContextMenuHandler);
             }
-            
-            // Switch to first available farm
-            if (farms.length > 0) {
-                switchToFarm(farms[0].id);
-            }
-            
-            hideFarmContextMenu();
-            
+        }
+        
+        document.addEventListener('click', closeContextMenuHandler);
+    }
+
+    function hideFarmContextMenu() {
+        farmContextMenu.classList.remove('active');
+    }
+
+    function renameFarm(farmId, newName) {
+        const farm = farms.find(f => f.id === farmId);
+        if (!farm) return;
+        
+        const trimmedName = newName.trim();
+        if (!trimmedName) {
             Swal.fire({
-                icon: 'success',
-                title: 'Farm Deleted!',
-                text: `"${farm.name}" and all its pigs have been removed.`,
-                showConfirmButton: false,
-                timer: 2000
+                icon: 'warning',
+                title: 'Invalid Name',
+                text: 'Farm name cannot be empty.',
+                showConfirmButton: true,
+                confirmButtonColor: '#dc2626'
             });
+            return;
         }
-    });
-}
-
-
-
-// 🆕 FIXED: Open Rename Farm Modal
-function openRenameFarmModal() {
-    console.log('Opening rename modal, currentContextFarmId:', currentContextFarmId);
-    
-    if (!currentContextFarmId) {
+        
+        const isDuplicate = farms.some(f => 
+            f.id !== farmId && f.name.toLowerCase() === trimmedName.toLowerCase()
+        );
+        
+        if (isDuplicate) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Duplicate Name',
+                text: 'A farm with this name already exists.',
+                showConfirmButton: true
+            });
+            return;
+        }
+        
+        farm.name = trimmedName;
+        
+        const farmTab = document.querySelector(`.tab[data-farm="${farmId}"]`);
+        if (farmTab) {
+            farmTab.textContent = trimmedName;
+        }
+        
+        renameFarmModal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        currentContextFarmId = null;
+        
         Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'No farm selected. Please try again.',
-            showConfirmButton: true
+            icon: 'success',
+            title: 'Farm Renamed!',
+            text: `Farm has been renamed to "${trimmedName}".`,
+            showConfirmButton: false,
+            timer: 2000
         });
-        return;
     }
-    
-    const farm = farms.find(f => f.id === currentContextFarmId);
-    if (!farm) {
+
+    function deleteFarm(farmId) {
+        if (farms.length <= 1) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Cannot Delete',
+                text: 'You must have at least one farm.',
+                showConfirmButton: true
+            });
+            return;
+        }
+        
+        const farm = farms.find(f => f.id === farmId);
+        if (!farm) return;
+        
         Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Farm not found.',
-            showConfirmButton: true
+            title: 'Delete Farm?',
+            html: `You are about to delete <strong>"${farm.name}"</strong> and all its pigs.<br><br>This action cannot be undone!`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#4CAF50',
+            confirmButtonText: 'Yes, Delete It',
+            cancelButtonText: 'Cancel',
+            customClass: {
+                popup: 'swal2-high-zindex'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                farms = farms.filter(f => f.id !== farmId);
+                
+                const farmTab = document.querySelector(`.tab[data-farm="${farmId}"]`);
+                if (farmTab) {
+                    farmTab.remove();
+                }
+                
+                if (farms.length > 0) {
+                    switchToFarm(farms[0].id);
+                }
+                
+                hideFarmContextMenu();
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Farm Deleted!',
+                    text: `"${farm.name}" and all its pigs have been removed.`,
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            }
         });
-        return;
     }
-    
-    newFarmNameInput.value = farm.name;
-    newFarmNameInput.focus();
-    
-    renameFarmModal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-}
+
+    function openRenameFarmModal() {
+        if (!currentContextFarmId) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No farm selected. Please try again.',
+                showConfirmButton: true
+            });
+            return;
+        }
+        
+        const farm = farms.find(f => f.id === currentContextFarmId);
+        if (!farm) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Farm not found.',
+                showConfirmButton: true
+            }); 
+            return;
+        }
+        
+        newFarmNameInput.value = farm.name;
+        newFarmNameInput.focus();
+        
+        renameFarmModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    // ------------------------------------------------------------
+    // 20. INIT
+    // ------------------------------------------------------------
 
     function init() {
-        // Load initial farm data
         loadFarmData(currentFarmId);
         
-        // 🆕 ADD DOUBLE-CLICK TO EXISTING FARM TABS
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('dblclick', function(e) {
                 const farmId = parseInt(this.dataset.farm);
                 showFarmContextMenu(farmId, e);
             });
         });
+
+        // 🔹 Initialize floating label behavior once on load
+        applyFloatingLabelListeners();
     }
 
-    // Start the application
     init();
 });
+
