@@ -45,7 +45,7 @@ document.getElementById('form-email').addEventListener('submit', async function(
 
     try {
         // STEP 1: Check if email exists
-        const verifyRes = await fetch('http://localhost:8080/verifyEmail', {
+        const verifyRes = await fetch('http://localhost:8080/api/auth/verify-email', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email })
@@ -59,7 +59,7 @@ document.getElementById('form-email').addEventListener('submit', async function(
         }
 
         // STEP 2: Send OTP
-        const otpRes = await fetch('http://localhost:8080/send-otp', {
+        const otpRes = await fetch('http://localhost:8080/api/auth/send-otp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email })
@@ -104,7 +104,7 @@ document.getElementById('form-code').addEventListener('submit', async function(e
     }
     try{
 
-        const verifyRes = await fetch('http://localhost:8080/confirm-OTP', {
+        const verifyRes = await fetch('http://localhost:8080/api/auth/confirm-otp', {
             method: "POST",
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: globalEmail, otp: otp })
@@ -151,7 +151,7 @@ document.getElementById('form-new-password').addEventListener('submit', async fu
     }
 
     try{
-        const res = await fetch('http://localhost:8080/Update-Password', {
+        const res = await fetch('http://localhost:8080/api/auth/update-password', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: globalEmail, newPassword: newPass })

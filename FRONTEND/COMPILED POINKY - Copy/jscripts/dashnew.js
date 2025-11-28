@@ -15,10 +15,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             const [farmsRes, pigsRes, expensesRes, remindersRes] = await Promise.all([
-                fetch('http://localhost:8080/total-farms', bodyData),
-                fetch('http://localhost:8080/total-pigs', bodyData),
-                fetch('http://localhost:8080/month-expenses', bodyData),
-                fetch('http://localhost:8080/upcoming-reminders', bodyData)
+                fetch('http://localhost:8080/api/dashboard/total-farms', bodyData),
+                fetch('http://localhost:8080/api/dashboard/total-pigs', bodyData),
+                fetch('http://localhost:8080/api/dashboard/month-expenses', bodyData),
+                fetch('http://localhost:8080/api/dashboard/upcoming-reminders', bodyData)
             ]);
 
             const farmsData = await farmsRes.json();
@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const userId = localStorage.getItem('userID');
 
          try {
-            const res = await fetch('http://localhost:8080/getChartData', {
+            const res = await fetch('http://localhost:8080/api/dashboard/chart-data', {
                  method: 'POST' ,
                  headers: {'Content-Type': 'application/json'},
                  body: JSON.stringify({userId})

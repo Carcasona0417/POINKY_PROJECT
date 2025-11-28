@@ -302,7 +302,7 @@ if (loginForm) {
 
     try {
         
-        const response = await fetch('http://localhost:8080/login', {
+        const response = await fetch('http://localhost:8080/api/auth/login', {
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
@@ -341,7 +341,7 @@ if (registerForm) {
     const email = registerForm.querySelector('input[type="email"]').value;
     const password = registerForm.querySelector('input[type="password"]').value;
     try {
-        const response = await fetch('http://localhost:8080/register', {
+        const response = await fetch('http://localhost:8080/api/auth/register', {
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, email, password })
