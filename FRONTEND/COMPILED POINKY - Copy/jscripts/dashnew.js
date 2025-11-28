@@ -397,36 +397,32 @@ class NotificationManager {
     }
 
     setupEventListeners() {
-    const icon = document.getElementById('notificationIcon');
-    const modal = document.getElementById('notificationModal');
+        const icon = document.getElementById('notificationIcon');
+        const modal = document.getElementById('notificationModal');
 
-    // Toggle modal on icon click
-    icon.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent document click closing it immediately
-        const isOpen = modal.classList.toggle('show'); // Toggle show class
-        modal.style.display = isOpen ? 'block' : 'none';
-        document.body.style.overflow = isOpen ? 'hidden' : 'auto';
-        if (isOpen) this.renderNotifications();
-    });
+        // Toggle modal on icon click
+        icon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            modal.classList.toggle('show');
+            if (modal.classList.contains('show')) {
+                this.renderNotifications();
+            }
+        });
 
-    // Close when clicking outside modal
-    document.addEventListener('click', (e) => {
-        if (!modal.contains(e.target) && !icon.contains(e.target)) {
-            modal.classList.remove('show');
-            modal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-    });
+        // Close when clicking outside modal
+        document.addEventListener('click', (e) => {
+            if (!modal.contains(e.target) && !icon.contains(e.target)) {
+                modal.classList.remove('show');
+            }
+        });
 
-    // Optional: Escape key closes modal
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            modal.classList.remove('show');
-            modal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-    });
-}
+        // Close with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                modal.classList.remove('show');
+            }
+        });
+    }
 
     renderNotifications() {
         const container = document.getElementById('notificationList');
@@ -519,25 +515,24 @@ class NotificationManager {
     }
 
     markAsRead(id) {
-    const notification = this.notifications.find(n => n.id === id);
-    if (notification && !notification.read) {
-        notification.read = true;
-        this.saveNotifications(this.notifications);
+        const notification = this.notifications.find(n => n.id === id);
+        if (notification && !notification.read) {
+            notification.read = true;
+            this.saveNotifications(this.notifications);
 
-        // Update the element immediately
-        const item = document.querySelector(`.notification-item[data-id="${id}"]`);
-        if (item) {
-            item.classList.remove('unread');
-            item.classList.add('read'); // text turns gray instantly
+            // Update the element immediately
+            const item = document.querySelector(`.notification-item[data-id="${id}"]`);
+            if (item) {
+                item.classList.remove('unread');
+                item.classList.add('read');
+            }
+
+            this.updateBadge();
         }
-
-        this.updateBadge();
     }
-}
-
 
     toggleDelete(id) {
-        if (window.innerWidth > 768) { // Only on desktop
+        if (window.innerWidth > 768) {
             const item = document.querySelector(`.notification-item[data-id="${id}"]`);
             item.classList.toggle('show-delete');
         }
@@ -553,18 +548,24 @@ class NotificationManager {
 
     updateBadge() {
         const unreadCount = this.notifications.filter(n => !n.read).length;
-            const badge = document.querySelector('.notificationBadge');
-            if (notifications.length === 0) {
-                badge.style.display = 'none';
-            } else {
-                badge.style.display = 'inline-block';
-            }
-
+        const badge = document.querySelector('.notificationBadge');
+        if (this.notifications.length === 0) {
+            badge.style.display = 'none';
+        } else {
+            badge.style.display = 'inline-block';
+        }
     }
 
     updateRemindersCount() {
         const remindersCount = document.getElementById('remindersCount');
-        remindersCount.textContent = this.notifications.length;
+        const upcomingReminders = document.getElementById('upcomingReminders');
+        
+        if (remindersCount) {
+            remindersCount.textContent = this.notifications.length;
+        }
+        if (upcomingReminders) {
+            upcomingReminders.textContent = this.notifications.length;
+        }
     }
 
     addNotification(title, message, farm, date, type = 'general') {
@@ -588,7 +589,9 @@ class NotificationManager {
 }
 
 // Initialize Notification Manager
-const notificationManager = new NotificationManager();
+document.addEventListener('DOMContentLoaded', () => {
+    window.notificationManager = new NotificationManager();
+});
 
 // Your existing chart code
 
@@ -808,32 +811,56 @@ new Chart(ctx, {
 
 //filter bar chart 
 const monthlyBtn = document.getElementById('monthlyBtn');
-    const yearlyBtn = document.getElementById('yearlyBtn');
+const yearlyBtn = document.getElementById('yearlyBtn');
 
+if (monthlyBtn && yearlyBtn) {
     monthlyBtn.addEventListener('click', () => {
         monthlyBtn.classList.add('active');
         yearlyBtn.classList.remove('active');
-        updateChart('monthly'); // call your function to load monthly data
+        updateChart('monthly');
     });
 
     yearlyBtn.addEventListener('click', () => {
         yearlyBtn.classList.add('active');
         monthlyBtn.classList.remove('active');
-        updateChart('yearly'); // call your function to load yearly data
+        updateChart('yearly');
+    });
+}
+
+function updateChart(filter) {
+    if(filter === 'monthly') {
+        chart.data.labels = ["Jan","Feb","Mar","Apr","May"];
+        chart.data.datasets[0].data = [5000,6000,5500,7000,6500];
+        chart.data.datasets[1].data = [2000,2500,2300,3000,2800];
+        chart.data.datasets[2].data = [1000,1200,1100,1300,1250];
+    } else if(filter === 'yearly') {
+        chart.data.labels = ["2021","2022","2023","2024"];
+        chart.data.datasets[0].data = [65000,70000,72000,75000];
+        chart.data.datasets[1].data = [25000,26000,27000,28000];
+        chart.data.datasets[2].data = [12000,13000,12500,14000];
+    }
+    chart.update();
+}
+
+// Profile Modal Setup
+document.addEventListener("DOMContentLoaded", () => {
+    const profileBtn = document.getElementById("profileBtn");
+    const profileModal = document.getElementById("profileModal");
+
+    if (!profileBtn || !profileModal) return;
+
+    profileBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        profileModal.classList.toggle("open");
     });
 
-    function updateChart(filter) {
-        // Example: replace chart data based on filter
-        if(filter === 'monthly') {
-            chart.data.labels = ["Jan","Feb","Mar","Apr","May"];
-            chart.data.datasets[0].data = [5000,6000,5500,7000,6500];
-            chart.data.datasets[1].data = [2000,2500,2300,3000,2800];
-            chart.data.datasets[2].data = [1000,1200,1100,1300,1250];
-        } else if(filter === 'yearly') {
-            chart.data.labels = ["2021","2022","2023","2024"];
-            chart.data.datasets[0].data = [65000,70000,72000,75000];
-            chart.data.datasets[1].data = [25000,26000,27000,28000];
-            chart.data.datasets[2].data = [12000,13000,12500,14000];
-        }
-        chart.update();
-    }
+    profileModal.addEventListener("click", (e) => e.stopPropagation());
+
+    document.addEventListener("click", () => {
+        profileModal.classList.remove("open");
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") profileModal.classList.remove("open");
+    });
+});

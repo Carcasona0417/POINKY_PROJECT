@@ -27,7 +27,7 @@
 
 body {
     font-family: 'Poppins', sans-serif;
-    background-color: var(--bg-light);
+    background-color: var(--background);
     display: flex;
     height: 100vh;
 }
@@ -194,17 +194,17 @@ body {
 }
 
 .top-bar {
-    position: fixed;                 /* 🔒 stick to top */
+    position: fixed;
     top: 0;
     right: 0;
-    left: 250px;                     /* same width as sidebar */
-    height: 60px;                    /* adjust as needed */
-    background-color: white; /* same bg color */
+    left: 250px;
+    height: 60px;
+    background-color: white;
     display: flex;
     justify-content: flex-end;
     align-items: center;
     padding: 0 25px;
-    z-index: 1000;                   /* stays above content */ 
+    z-index: 1000;
 }
 
 
@@ -249,6 +249,7 @@ body {
     position: relative;
     z-index: 1;
 }
+
 /* Top Right User Icons */
 .top-icons {
     position: absolute;
@@ -281,7 +282,7 @@ body {
 }
 
 .notification-btn {
-    position: relative; /* needed for absolute badge */
+    position: relative;
     background: none;
     border: none;
     cursor: pointer;
@@ -298,11 +299,8 @@ body {
     border-radius: 50%;
     border: 1px solid white;
     display: inline-block;
-    animation: pulse 2s infinite; /* optional */
+    animation: pulse 2s infinite;
 }
-
-
-
 
 @keyframes pulse {
     0% { transform: scale(1); }
@@ -346,7 +344,7 @@ body {
 }
 
 .search-icon {
-    color: var(--text-light);
+    color: var(--text-grey);
     position: absolute;
     right: 20px;
 }
@@ -358,15 +356,11 @@ body {
     align-items: center;
     justify-content: center;
     height: 280px;
-    background: url('../FRONTEND/COMPILED-POINKY-Copy/backgroundpics/BG.png') no-repeat center center;
+    background: url('../backgroundpics/BG.png') no-repeat center center;
     background-size: cover;
     position: relative;
     overflow: hidden;
 }
-
-
-
-/* Moving background pattern */
 .header::before {
     content: '';
     position: absolute;
@@ -560,17 +554,21 @@ body {
 
 /* Position the modal below the icon and fixed */
 .notification-modal {
-    display: none; /* hidden by default */
-    position: fixed; /* fixed to viewport */
-    top: 60px; /* adjust depending on top-bar height */
-    right: 25px; /* aligns with icon padding */
+    display: none;
+    position: fixed;
+    top: 60px;
+    right: 25px;
     width: 350px;
     max-height: 400px;
     background: var(--white);
     border-radius: 12px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
     overflow-y: auto;
     z-index: 3000;
+    pointer-events: none;
+    visibility: hidden;
+    opacity: 0;
+    transition: all 0.3s ease;
 }
 
 /* Just fill modal content normally */
@@ -583,6 +581,9 @@ body {
 
 .notification-modal.show {
     display: block;
+    pointer-events: auto;
+    visibility: visible;
+    opacity: 1;
     animation: slideDown 0.3s ease forwards;
 }
 
@@ -653,30 +654,31 @@ body {
     background: rgba(255, 107, 129, 0.05);
 }
 
+.notification-item.unread {
+    background: #ffeef0;
+}
+
 .notification-item.unread:hover {
     background: rgba(255, 107, 129, 0.12);
 }
 
-.notification-item {
-    background: #fff;
-    padding: 12px;
-    border-bottom: 1px solid #eee;
-    transition: background 0.3s;
-}
-
-.notification-item.unread {
-    background: #ffeef0;  /* highlight unread */
-}
-
 .notification-item.read {
     font-weight: 400;
-    color: #888;       /* gray text for read */
-    background: #fff;  /* normal background */
+    background: #fff;
 }
 
+.notification-item.read,
+.notification-item.read .notification-title,
+.notification-item.read .notification-title span,
+.notification-item.read .notification-message,
+.notification-item.read .notification-details,
+.notification-item.read .notification-farm,
+.notification-item.read .notification-date {
+    color: #999 !important;
+}
 
 .notification-item.read:hover {
-    background: rgba(255, 107, 129, 0.03); /* subtle hover effect */
+    background: rgba(255, 107, 129, 0.03);
 }
 
 
@@ -831,14 +833,24 @@ body {
 }
 
 @media (max-width: 480px) {
-    .header h1 { font-size: 28px; }
-    .stats-panel { flex-direction: column; }
-    .stat-box { 
-        border-right: none; 
+    .header h1 {
+        font-size: 28px;
+    }
+    
+    .stats-panel {
+        flex-direction: column;
+    }
+    
+    .stat-box {
+        border-right: none;
         border-bottom: 1px solid var(--border-light);
         min-width: auto;
     }
-    .legend { gap: 15px; }
+    
+    .legend {
+        gap: 15px;
+    }
+    
     .chart-panel {
         padding: 20px;
     }
@@ -857,14 +869,15 @@ body {
     .notification-item {
         padding: 12px 15px;
     }
-    
-/* pie chart*/
+}
+
+/* Pie Chart Styles */
 .expenses-card {
     background: #fff;
     padding: 30px;
     border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-    width: 700px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    width: 100%;
 }
 
 .chart-wrapper {
@@ -887,8 +900,6 @@ body {
     z-index: 10;
 }
 
-
-
 .expense-label {
     position: absolute;
     font-size: 14px;
@@ -901,21 +912,100 @@ body {
 }
 
 .filter-btn {
-        padding: 6px 12px;
-        border: none;
-        cursor: pointer;
-        margin-right: 5px;
-        border-radius: 4px;
-        background-color: #e0e0e0;
-        transition: 0.2s;
-    }
-    .filter-btn:hover {
-        background-color: #d0d0d0;
-    }
-    .filter-btn.active {
-        background-color: #4caf50;
-        color: white;
-    }
+    padding: 6px 12px;
+    border: none;
+    cursor: pointer;
+    margin-right: 5px;
+    border-radius: 4px;
+    background-color: #e0e0e0;
+    transition: 0.2s;
+}
 
+.filter-btn:hover {
+    background-color: #d0d0d0;
+}
 
+.filter-btn.active {
+    background-color: #4caf50;
+    color: white;
+}
+
+/* Profile Modal Styles */
+.profile-modal {
+    position: fixed;
+    top: 80px;
+    right: 25px;
+    width: 250px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 18px rgba(0, 0, 0, 0.15);
+    padding: 15px;
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: 0.25s ease;
+    pointer-events: none;
+}
+
+.profile-modal.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.profile-modal-content {
+    position: relative;
+    width: 100%;
+}
+
+.profile-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.profile-avatar {
+    font-size: 36px;
+    color: var(--primary-pink);
+    margin-bottom: 8px;
+}
+
+.profile-username {
+    font-weight: 600;
+    color: var(--text-dark);
+    margin: 0;
+    font-size: 16px;
+}
+
+.profile-item {
+    padding: 12px 15px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+    color: var(--text-dark);
+    user-select: none;
+}
+
+.profile-item:hover {
+    background: rgba(255, 107, 129, 0.08);
+    color: var(--primary-pink);
+}
+
+.profile-item.logout {
+    color: var(--chart-red);
+    margin-top: 5px;
+}
+
+.profile-item.logout:hover {
+    background: rgba(139, 36, 54, 0.1);
 }

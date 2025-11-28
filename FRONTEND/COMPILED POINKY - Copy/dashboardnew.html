@@ -15,14 +15,14 @@
 
     <div class="sidebar">
         <div class="brand"> 
-            <img src="Dash Icons/ICON.png" alt="Poinky Logo" class="brand-logo">
+            <i class="fas fa-pig" style="font-size: 32px; color: var(--primary-pink);"></i>
             <span class="brand-name">Poinky</span>
         </div>
 
         <nav class="menu">
             <ul class="menu-list">
                 <li class="menu-item active">
-                    <a href="dashboard.html" class="menu-link">
+                    <a href="dashboardnew.html" class="menu-link">
                         <i class="fa-solid fa-house menu-icon"></i>
                         <span class="menu-text">Dashboard</span>
                     </a>
@@ -60,7 +60,7 @@
                 <i class="fa-regular fa-bell notification-icon"></i>
                 <span id="notificationBadge" class="notificationBadge"></span>
             </button>
-                    <button class="user-profile-btn" aria-label="User Profile">
+                    <button id="profileBtn" class="user-profile-btn" aria-label="User Profile">
                         <i class="fa-solid fa-circle-user user-icon"></i>
                     </button>
                 </div>
@@ -140,58 +140,47 @@
 
            <!--Pie Chart-->
             <div class="chart-panel">
-                 <div class="expenses-card" style="display: flex; justify-content: space-between; align-items: center;">
-                        <h2 style="margin: 0; color: var(--primary-pink); font-size: 22px;">Monthly Expenses Breakdown</h2>
+                <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <h2 style="margin: 0; color: var(--primary-pink); font-size: 22px;">Monthly Expenses Breakdown</h2>
 
-                        <!-- Styled Dropdown Filter -->
-                        <div class="dropdown-wrapper" style="position: relative;">
-                            <select id="timeFilter" class="filter-dropdown">
-                                <option value="monthly" selected>Monthly</option>
-                                <option value="yearly">Yearly</option>
-                            </select>
-                            <i class="arrow-down"></i>
+                    <!-- Styled Dropdown Filter -->
+                    <div class="dropdown-wrapper">
+                        <select id="timeFilter" class="filter-dropdown">
+                            <option value="monthly" selected>Monthly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                        <i class="arrow-down"></i>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                    <div class="chart-wrapper" style="position: relative; width: 300px; height: 300px; margin-bottom: 30px;">
+                        <canvas id="expensesChart" width="300" height="300"></canvas>
+                        <div class="center-label">₱ 20,200</div>
+                    </div>
+
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="dot" style="background:#7c57ff;"></div> Feeds
+                        </div>
+                        <div class="legend-item">
+                            <div class="dot" style="background:#ff8686;"></div> Piglets
+                        </div>
+                        <div class="legend-item">
+                            <div class="dot" style="background:#3bc7e6;"></div> Medical
+                        </div>
+                        <div class="legend-item">
+                            <div class="dot" style="background:#ffb64d;"></div> Utilities
+                        </div>
+                        <div class="legend-item">
+                            <div class="dot" style="background:#4d78ff;"></div> Labor
+                        </div>
+                        <div class="legend-item">
+                            <div class="dot" style="background:#4cbf65;"></div> Maintenance
                         </div>
                     </div>
-                     <div class="chart-wrapper" style="position: relative; width: 300px; height: 300px; margin:auto;">
-                        <canvas id="expensesChart" width="300" height="300"></canvas>
-                            <div class="center-label" style="
-                            position: absolute;
-                            top: 50%;
-                            left: 50%;
-                            transform: translate(-50%, -50%);
-                            font-size: 24px;
-                            font-weight: bold;
-                             color: #333;
-                            text-align: center;
-                            pointer-events: none;
-                            z-index: 10;
-                            ">
-                            ₱ 20,200
-                            </div>
-                             </div>
-
-
-         <div class="legend">
-        <div class="legend-item">
-            <div class="dot" style="background:#7c57ff;"></div> Feeds
-        </div>
-        <div class="legend-item">
-            <div class="dot" style="background:#ff8686;"></div> Piglets
-        </div>
-        <div class="legend-item">
-            <div class="dot" style="background:#3bc7e6;"></div> Medical
-        </div>
-        <div class="legend-item">
-            <div class="dot" style="background:#ffb64d;"></div> Utilities
-        </div>
-        <div class="legend-item">
-            <div class="dot" style="background:#4d78ff;"></div> Labor
-        </div>
-        <div class="legend-item">
-            <div class="dot" style="background:#4cbf65;"></div> Maintenance
-        </div>
-    </div>
-</div>
+                </div>
+            </div>
 
 
 <!-- end Pie Chart-->
@@ -202,7 +191,8 @@
         <div class="notification-modal-content">
             <div class="notification-header">
                 <h2>Notifications</h2>
-               
+                <button class="close-modal" onclick="document.getElementById('notificationModal').classList.remove('show')">
+                </button>
             </div>
             <div class="notification-list" id="notificationList">
                 <!-- Notifications will be dynamically added here -->
@@ -210,8 +200,29 @@
         </div>
     </div>
 
+    <!-- Profile Modal -->
+        <div class="profile-modal" id="profileModal">
+            <div class="profile-modal-content">
+                <div class="profile-header">
+                    <i class="fa-solid fa-circle-user profile-avatar"></i>
+                    <p class="profile-username">Username</p>
+                </div>
+
+                <div class="profile-item">
+                    <i class="fa-solid fa-gear"></i> Profile Settings
+                </div>
+
+                <div class="profile-item logout">
+                    <i class="fa-solid fa-right-from-bracket"></i> Log Out
+                </div>
+            </div>
+        </div>
+
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="jscripts/dashnew.js"></script>
+
+    
 
 </body>
 </html>
