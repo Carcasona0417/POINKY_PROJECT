@@ -7,7 +7,7 @@ import {
     getUpcomingRemindersData,
     getBarChartData,
     getPieChartData
-} from '../controllers/dashboardController.js';
+} from '../Controllers/dashboardController.js';
 
 const router = express.Router();
 

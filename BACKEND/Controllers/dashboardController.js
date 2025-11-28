@@ -1,4 +1,4 @@
-import { getTotalFarms, getTotalPigs, getUpcomingReminders, getMonthExpenses, getChartData, getPieChart } from '../IrrelevantFiles/Dashboard.js';
+import { getTotalFarms, getTotalPigs, getUpcomingReminders, getMonthExpenses, getChartData, getPieChart } from '../Logic/Dashboard.js';
 
 export const getDashboardStats = async (req, res, next) => {
     try {

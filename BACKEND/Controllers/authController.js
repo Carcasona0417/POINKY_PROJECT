@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { createUser, getUserByCredentials, SendOTPEmail, updateUserPassword } from '../IrrelevantFiles/Login-register.js';
+import { createUser, getUserByCredentials, SendOTPEmail, updateUserPassword } from '../Logic/Login-register.js';
 
 let otpStore = {};
 
