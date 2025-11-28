@@ -1,0 +1,161 @@
+/* ABSOLUTE MINIMUM MODAL CSS */
+.modal-stat {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    
+    /* ADD CENTERING VIA FLEXBOX */
+    display: flex; /* This allows centering if JS sets it to 'flex' */
+    justify-content: center;
+    align-items: center;
+}
+
+/* Modal Content - ensures it fits in the center */
+.modal-content-stat {
+    background-color: #fefefe;
+    margin: auto; /* Fallback centering */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 400px; /* Keep it small */
+    position: relative;
+    border-radius: 8px;
+}
+
+/* 3. Titles and Headers */
+.swal-mimic-modal h3 {
+    font-size: 1.5em; 
+    font-weight: 600;
+    color: #333; 
+    text-align: center;
+}
+.swal-title-red {
+    color: #E74C3C !important; /* Total Price color */
+}
+
+/* 4. Input Field and Piso Sign Styling */
+
+/* Wrapper for the input field to position the Piso sign */
+.input-with-icon {
+    position: relative;
+    width: 100%;
+    margin-bottom: 1.5em;
+    height: 45px;
+}
+
+/* Piso Symbol Styling */
+.currency-symbol {
+    position: absolute;
+    left: 10px; /* Position the symbol inside */
+    top: 50%;
+    transform: translateY(-50%);
+    color: #555;
+    font-size: 1.1em;
+    font-weight: 600;
+    pointer-events: none; /* Allows clicks to pass through to the input */
+}
+
+/* General Input Field Styling */
+.swal-input {
+    width: 100%; 
+    padding: 10px 10px 10px 30px; /* IMPORTANT: Add padding for the Piso sign (30px) */
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1.1em;
+    text-align: left; /* Align text left so it starts after the Piso sign */
+    color: #555;
+    box-sizing: border-box; 
+    height: 45px;
+}
+
+.swal-input::placeholder {
+    color: #aaa;
+    /* Optional: Center placeholder text visually */
+    text-align: center;
+}
+
+/* 5. Close Icon (Top Right 'X') */
+.swal-close-icon {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 1.6em;
+    color: #E74C3C; /* Red X icon */
+    cursor: pointer;
+    opacity: 1;
+    transition: opacity 0.2s;
+}
+
+/* 6. Buttons (Matching Image Styles) */
+.swal-mimic-modal .modal-actions-inline {
+    display: flex;
+    justify-content: space-between; 
+    gap: 15px; 
+    margin-top: 1em;
+}
+
+.swal-button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    flex-grow: 1; 
+    font-weight: 500;
+}
+
+/* Primary (Confirm/Calculate) button style */
+.swal-button-primary {
+    background-color: #2ECC71; /* Green */
+    color: white;
+}
+
+/* Secondary (Clear) button style (for Price Input Modal) */
+.swal-button-secondary {
+    background-color: #DDD; /* Light Grey */
+    color: #333;
+}
+
+/* Specific styling for the RED Cancel button in the Final Confirmation (image_0d3920.png) */
+#soldConfirmationModal .swal-button-secondary {
+    background-color: #E74C3C; /* Red */
+    color: white;
+}
+
+
+/* 7. SweetAlert Overrides (Image 2 - Price Confirmation) */
+/* This targets the SweetAlert confirmation to ensure consistency */
+.swal2-popup.swal2-confirm-price { 
+    width: 90% !important;
+    max-width: 400px !important;
+    padding: 2.5em 2em !important;
+    border-radius: 10px !important;
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.5) !important;
+}
+
+.swal2-popup.swal2-confirm-price .swal2-actions {
+    margin-top: 1em;
+    gap: 15px; 
+    display: flex; 
+    justify-content: space-between;
+}
+.swal2-popup.swal2-confirm-price .swal2-title,
+.swal2-popup.swal2-confirm-price .swal2-html-container {
+    color: #333; /* Darker text */
+}
+
+.swal2-popup.swal2-confirm-price .swal2-confirm {
+    background-color: #2ECC71 !important; /* Green - Matches 'Yes' in image */
+    color: white !important;
+}
+.swal2-popup.swal2-confirm-price .swal2-cancel {
+    background-color: #E74C3C !important; /* Red - Matches 'No' in image */
+    color: white !important;
+}
