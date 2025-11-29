@@ -32,6 +32,16 @@ body {
     height: 100vh;
 }
 
+/* Page transition for menu navigation (applies only to main-content) */
+.main-content {
+    transition: none !important; /* instant */
+}
+.main-content.page-exit,
+.main-content.page-enter {
+    opacity: 1;
+    transform: none;
+}
+
 .sidebar {
     width: 250px;
     background-color: var(--sidebar-bg);
@@ -386,6 +396,26 @@ body {
     background-size: cover;
     background-position: center;
     z-index: 0;
+}
+/* Ensure dashboard sizing matches other pages (expenses, reminders, profiles) */
+.sidebar {
+    width: 250px; /* same as other pages */
+}
+
+.top-bar {
+    left: 250px; /* align top bar with sidebar */
+    height: 60px;
+}
+
+.header-bg,
+.header-content {
+    height: 360px; /* ensure consistent banner height */
+}
+
+/* Match the main content overlap/margins used on other pages */
+.data-container {
+    margin: -50px 40px 40px 40px;
+    position: relative;
 }
 /* Moving background pattern */
 .header-content::before {
