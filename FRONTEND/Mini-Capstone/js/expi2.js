@@ -129,6 +129,10 @@ document.addEventListener('DOMContentLoaded', () => {
         { dateSold: '2025-09-10', farm: 'Farm 002', pig: 'Pig 005', weight: '75kg', pricePerKg: 250, totalPrice: 18750 }
     ];
 
+    let isEditing = false;
+    let editingIndex = null;
+
+
     /* ----------------------------------------------------
        PAGINATION STATE
     ---------------------------------------------------- */
@@ -280,13 +284,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const priceCell = document.createElement('td');
             priceCell.textContent = formatCurrency(rowData.price);
 
+            // --- ACTION BUTTONS TD ---
+            const actionCell = document.createElement('td');
+            actionCell.classList.add('actions-cell');
+            actionCell.innerHTML = `
+                <button class="btn-edit" data-index="${i}"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button class="btn-delete" data-index="${i}"><i class="fa-solid fa-trash"></i></button>
+            `;
+
             tr.appendChild(dateCell);
             tr.appendChild(farmCell);
             tr.appendChild(pigCell);
             tr.appendChild(categoryCell);
             tr.appendChild(priceCell);
+            tr.appendChild(actionCell);
 
             expensesTbody.appendChild(tr);
+
         }
 
         showingCountExpenses.textContent = totalItems === 0 ? 0 : (endIndex - startIndex);
@@ -330,14 +344,25 @@ document.addEventListener('DOMContentLoaded', () => {
             const priceCell = document.createElement('td');
             priceCell.textContent = formatCurrency(rowData.totalPrice);
 
+            // --- ACTION BUTTONS TD ---
+            const actionCell = document.createElement('td');
+            actionCell.classList.add('actions-cell');
+            actionCell.innerHTML = `
+                <button class="btn-edit-sold" data-index="${i}"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button class="btn-delete-sold" data-index="${i}"><i class="fa-solid fa-trash"></i></button>
+            `;
+
             tr.appendChild(dateCell);
             tr.appendChild(farmCell);
             tr.appendChild(pigCell);
             tr.appendChild(weightCell);
             tr.appendChild(priceKgCell);
             tr.appendChild(priceCell);
+            tr.appendChild(actionCell);
 
             soldTbody.appendChild(tr);
+
+
         }
 
         showingCountSold.textContent = totalItems === 0 ? 0 : (endIndex - startIndex);
@@ -347,6 +372,94 @@ document.addEventListener('DOMContentLoaded', () => {
         prevSoldBtn.disabled = currentSoldPage === 1 || totalItems === 0;
         nextSoldBtn.disabled = currentSoldPage === totalPages || totalItems === 0;
     }
+
+    // HANDLE EDIT / DELETE FOR EXPENSES
+document.addEventListener("click", function (e) {
+    if (e.target.closest(".btn-edit")) {
+        const index = e.target.closest(".btn-edit").dataset.index;
+        editExpense(index);
+    }
+    if (e.target.closest(".btn-delete")) {
+        const index = e.target.closest(".btn-delete").dataset.index;
+        deleteExpense(index);
+    }
+});
+
+function editExpense(index) {
+    const item = expensesData[index];
+
+    // Fill modal
+    dateInput.value = item.date;
+    farmSelect.value = item.farm;
+    pigSelect.value  = item.pig;
+    categorySelect.value = item.category;
+    priceInput.value = item.price;
+
+    // Trigger floating labels
+    dateWrapper.classList.add('has-value');
+    toggleHasValue(farmSelect);
+    toggleHasValue(pigSelect);
+    toggleHasValue(categorySelect);
+    toggleHasValue(priceInput);
+
+    // Set editing state
+    isEditing = true;
+    editingIndex = index;
+
+    // Open modal and tell it this is NOT a new entry
+    openModal(false);
+}
+
+
+
+function deleteExpense(index) {
+    Swal.fire({
+        icon: 'warning',
+        title: 'Delete this expense?',
+        showCancelButton: true,
+        confirmButtonText: 'Delete'
+    }).then(res => {
+        if (res.isConfirmed) {
+            expensesData.splice(index, 1);
+            renderExpensesTable();
+        }
+    });
+}
+
+
+// SOLD EDIT / DELETE
+function editSold(index) {
+    const item = soldData[index];
+    Swal.fire("Edit sold item clicked for: " + item.pig);
+}
+
+function deleteSold(index) {
+    Swal.fire({
+        icon: 'warning',
+        title: 'Delete this record?',
+        showCancelButton: true,
+        confirmButtonText: 'Delete'
+    }).then(res => {
+        if (res.isConfirmed) {
+            soldData.splice(index, 1);
+            renderSoldTable();
+        }
+    });
+}
+
+
+// HANDLE EDIT / DELETE FOR SOLD DATA
+document.addEventListener("click", function (e) {
+    if (e.target.closest(".btn-edit-sold")) {
+        const index = e.target.closest(".btn-edit-sold").dataset.index;
+        editSold(index);
+    }
+    if (e.target.closest(".btn-delete-sold")) {
+        const index = e.target.closest(".btn-delete-sold").dataset.index;
+        deleteSold(index);
+    }
+});
+
 
     /* ----------------------------------------------------
        PAGINATION BUTTON EVENTS
@@ -386,11 +499,35 @@ document.addEventListener('DOMContentLoaded', () => {
        MODAL OPEN / CLOSE
     ---------------------------------------------------- */
 
-    function openModal() {
-        if (!addRemModal) return;
-        addRemModal.classList.add('show');
-        document.body.style.overflow = 'hidden';
+function openModal(isNew = true) {
+    if (!addRemModal) return;
+
+    addRemModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+
+    if (isNew) {
+        // Reset editing state
+        isEditing = false;
+        editingIndex = null;
+
+        // Clear inputs for new expense
+        if (dateInput) dateInput.value = '';
+        if (farmSelect) farmSelect.value = '';
+        if (pigSelect) pigSelect.value = '';
+        if (categorySelect) categorySelect.value = '';
+        if (priceInput) priceInput.value = '';
+
+        // Update floating labels
+        updateDateWrapperState();
+        toggleHasValue(farmSelect);
+        toggleHasValue(pigSelect);
+        toggleHasValue(categorySelect);
+        toggleHasValue(priceInput);
     }
+}
+
+
+
 
     function closeModal() {
         if (!addRemModal) return;
@@ -398,7 +535,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.style.overflow = '';
     }
 
-    if (addPigBtn)  addPigBtn.addEventListener('click', openModal);
+if (addPigBtn) {
+    addPigBtn.addEventListener('click', () => openModal(true));
+}
     if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
 
     if (addRemModal) {
@@ -423,52 +562,84 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (saveBtn) {
-        saveBtn.addEventListener('click', () => {
-            const dateVal      = dateInput ? dateInput.value : '';
-            const farmVal      = farmSelect ? farmSelect.value : '';
-            const pigVal       = pigSelect ? pigSelect.value : '';
-            const categoryVal  = categorySelect ? categorySelect.value : '';
-            const priceVal     = priceInput ? priceInput.value : '';
+if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+        const priceVal    = priceInput ? priceInput.value : '';
+        const categoryVal = categorySelect ? categorySelect.value : '';
 
-            if (!dateVal || !farmVal || !pigVal || !categoryVal || !priceVal) {
-                if (window.Swal) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Missing information',
-                        text: 'Please fill out all fields before saving.'
-                    });
-                } else {
-                    alert('Please fill out all fields before saving.');
-                }
-                return;
-            }
+        const priceError    = document.getElementById('priceError');
+        const categoryError = document.getElementById('categoryError');
 
+        // reset errors
+        priceError.style.display = 'none';
+        categoryError.style.display = 'none';
+
+        let hasError = false;
+
+        if (!priceVal) {
+            priceError.textContent = 'Price is required';
+            priceError.style.display = 'block';
+            hasError = true;
+        }
+
+        if (!categoryVal) {
+            categoryError.textContent = 'Category is required';
+            categoryError.style.display = 'block';
+            hasError = true;
+        }
+
+        if (hasError) return;
+
+        // ----------------------------
+        // Save or Update
+        // ----------------------------
+        if (isEditing && editingIndex !== null) {
+            // Update existing
+            expensesData[editingIndex] = {
+                date: dateInput.value,
+                farm: farmSelect.value,
+                pig: pigSelect.value,
+                category: categoryVal,
+                price: Number(priceVal)
+            };
+            Swal.fire({
+                icon: 'success',
+                title: 'Expense updated',
+                showConfirmButton: false,
+                timer: 1500
+            });
+        } else {
+            // Add new
             expensesData.push({
-                date: dateVal,
-                farm: farmVal,
-                pig: pigVal,
+                date: dateInput.value,
+                farm: farmSelect.value,
+                pig: pigSelect.value,
                 category: categoryVal,
                 price: Number(priceVal)
             });
+            Swal.fire({
+                icon: 'success',
+                title: 'Expense added',
+                showConfirmButton: false,
+                timer: 1500
+            });
+        }
 
-            currentExpensesPage = Math.ceil(expensesData.length / PAGE_SIZE_EXPENSES);
+        // Refresh table
+        currentExpensesPage = Math.ceil(expensesData.length / PAGE_SIZE_EXPENSES);
+        renderExpensesTable();
 
-            renderExpensesTable();
+        // Reset modal
+        if (clearBtn) clearBtn.click();
+        closeModal();
 
-            if (clearBtn) clearBtn.click();
-            closeModal();
+        // Reset editing state
+        isEditing = false;
+        editingIndex = null;
+    });
+}
 
-            if (window.Swal) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Expense added',
-                    showConfirmButton: false,
-                    timer: 1500
-                });
-            }
-        });
-    }
+
 
     /* ----------------------------------------------------
        FILTER DROPDOWN SCRIPT

@@ -253,6 +253,7 @@
                     <th>Pig Name/ID</th>
                     <th>Category</th>
                     <th>Price</th>
+                    <th style="text-align: center;">Actions</th>
                 </tr>
             </thead>
             <tbody id="expensesTableBody">
@@ -292,6 +293,7 @@
                     <th>Weight</th>
                     <th>Price / kg</th>
                     <th>Price</th>
+                    <th style="text-align: center;">Actions</th>
                 </tr>
             </thead>
             <tbody id="soldTableBody">
@@ -322,7 +324,7 @@
     </div>
 
 
-    <!-- ADD Reminder FORM MODAL -->
+    <!-- ADD expenses FORM MODAL -->
     <div class="page-wrapper" id="addRem">
         <div class="dialog">
             <button type="button" class="btn-close" id="CloseModal">×</button>
@@ -365,28 +367,33 @@
             </div>
 
             <!-- Price (uses weight-wrapper for focus + unit-box) -->
-            <div class="form-group">
-                <div class="input-wrapper weight-wrapper">
-                    <input type="number" step="0.01" placeholder="">
-                    <div class="unit-box">₱</div>
-                    <label>Price</label>
-                </div>
-            </div>
+<div class="form-group">
+    <div class="input-wrapper weight-wrapper">
+        <input type="number" step="0.01" placeholder="">
+        <div class="unit-box">₱</div>
+        <label>Price</label>
+    </div>
+            <span class="error-message" id="priceError" style="color:#a41d13; font-size:0.85em; display:none;"></span>
 
-            <!-- Category -->
-            <div class="form-group">
-                <div class="input-wrapper">
-                    <select class="form-select">
-                        <option value=""></option>
-                        <option>Feed</option>
-                        <option>Medicine</option>
-                        <option>Vaccination</option>
-                        <option>Labor</option>
-                        <option>Others</option>
-                    </select>
-                    <label>Category</label>
-                </div>
-            </div>
+</div>
+
+<!-- Category -->
+<div class="form-group">
+    <div class="input-wrapper">
+        <select class="form-select">
+            <option value=""></option>
+            <option>Feed</option>
+            <option>Medicine</option>
+            <option>Vaccination</option>
+            <option>Labor</option>
+            <option>Others</option>
+        </select>
+        <label>Category</label>
+    </div>
+            <span class="error-message" id="categoryError" style="color:#a41d13; font-size:0.85em; display:none;"></span>
+
+</div>
+
 
             
 
@@ -397,6 +404,74 @@
             </div>
         </div>
     </div>
+
+    <!-- EDIT PIG SOLD MODAL -->
+<div class="page-wrapper" id="editSoldModal" style="display:none;">
+    <div class="dialog">
+        <button type="button" class="btn-close" id="closeEditSoldModal">×</button>
+
+        <h2 class="dialog-title">Edit Sold Pig</h2>
+
+        <!-- Date Sold -->
+        <div class="form-group">
+            <div class="input-wrapper date-wrapper">
+                <input id="editDateSold" type="date">
+                <label>Date Sold</label>
+            </div>
+        </div>
+
+        <!-- Farm Name (readonly) -->
+        <div class="form-group">
+            <div class="input-wrapper">
+                <input id="editFarmName" type="text" readonly>
+                <label>Farm</label>
+            </div>
+        </div>
+
+        <!-- Pig Name/ID (readonly) -->
+        <div class="form-group">
+            <div class="input-wrapper">
+                <input id="editPigName" type="text" readonly>
+                <label>Pig Name/ID</label>
+            </div>
+        </div>
+
+        <!-- Weight Sold -->
+        <div class="form-group">
+            <div class="input-wrapper weight-wrapper">
+                <input id="editWeightSold" type="number" step="0.01">
+                <div class="unit-box">kg</div>
+                <label>Weight Sold</label>
+            </div>
+        </div>
+
+        <!-- Price per kg -->
+        <div class="form-group">
+            <div class="input-wrapper weight-wrapper">
+                <input id="editPricePerKg" type="number" step="0.01">
+                <div class="unit-box">₱</div>
+                <label>Price per kg</label>
+            </div>
+        </div>
+
+        <!-- Total Price (auto-calc) -->
+        <div class="form-group">
+            <div class="input-wrapper weight-wrapper">
+                <input id="editTotalPrice" type="text" readonly>
+                <div class="unit-box">₱</div>
+                <label>Total Price</label>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="dialog-footer">
+            <button type="button" class="btn btn-clear" id="cancelEditSold">Cancel</button>
+            <button type="button" class="btn btn-save" id="saveEditSold">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+
 
     <!-- Profile Modal -->
         <div class="profile-modal" id="profileModal">
