@@ -1,0 +1,991 @@
+/* =========================================
+   GLOBAL VARIABLES & RESETS
+========================================= */
+
+/* --- CSS Variables: Colors & Theme Tokens --- */
+:root {
+    --primary-pink: #F08080; /* Main brand pink */
+    --primary-pink-dark: #E57373; /* Darker pink for hover/active */
+    --sidebar-bg: #FFF0F5; /* Very light pink sidebar background */
+    --header-overlay: rgba(240, 128, 128, 0.6); /* Overlay tint for header image */
+    --text-dark: #444;   /* Main text */
+    --text-light: #888;  /* Secondary text */
+    --bg-light: #F9F9F9; /* Page background */
+    
+    /* Status colors for pigs */
+    --status-growing: #F4A261;
+    --status-tosale: #2A9D8F;
+    --status-sold: #457B9D;
+    --status-deceased: #888888;
+}
+
+/* Reset margin/padding and use border-box layout */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Main layout: sidebar + content */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--bg-light);
+    display: flex;
+    height: 100vh;
+    overflow: hidden; /* Prevent body-level scroll (scroll stays in main-content) */
+}
+
+/* =========================================
+   SIDEBAR STYLES
+========================================= */
+
+.sidebar {
+    width: 250px;
+    background-color: var(--sidebar-bg);
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0; /* Prevent sidebar from shrinking */
+}
+
+/* Brand (logo + name) at the top of sidebar */
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 50px;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-pink);
+}
+
+.brand-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.brand-name {
+    font-weight: 700;
+}
+
+/* Sidebar menu list */
+.menu-list {
+    list-style: none;
+}
+
+.menu-item {
+    margin-bottom: 15px;
+}
+
+/* Individual menu link item */
+.menu-link {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    color: var(--primary-pink);
+    font-weight: 600;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+/* Icons inside menu items */
+.menu-link .menu-icon {
+    margin-right: 15px;
+    font-size: 20px;
+    width: 25px;
+    text-align: center;
+}
+
+/* Active menu + hover state */
+.menu-item.active .menu-link,
+.menu-link:hover {
+    background-color: var(--primary-pink);
+    color: white;
+}
+
+/* =========================================
+   MAIN CONTENT WRAPPER
+========================================= */
+
+.main-content {
+    flex-grow: 1;
+    overflow-y: auto; /* Scrollable area */
+    position: relative;
+}
+
+/* =========================================
+   HEADER SECTION (BACKGROUND + TOP BAR)
+========================================= */
+
+/* Main header (with background image) */
+.header-bg {
+    background-image: url('../assets/background-images/BG.png');
+    background-size: cover;
+    background-position: center;
+    height: 280px;
+    padding: 20px 40px;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Animated overlay pattern on top of header-bg */
+.header-bg::before {
+    content: '';
+    position: absolute;
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+    animation: float 20s infinite linear;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Simple floating animation for header pattern */
+@keyframes float {
+    0% { transform: translateX(0) translateY(0); }
+    100% { transform: translateX(-100px) translateY(-100px); }
+}
+
+/* Ensure content stays above overlay */
+.top-bar,
+.header-content {
+    position: relative;
+    z-index: 1;
+}
+
+/* Top bar aligned to the right (profile + bell) */
+.top-bar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 30px;
+}
+
+.user-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Buttons for notification & profile */
+.notification-btn,
+.user-profile-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    position: relative;
+    padding: 5px;
+    transition: transform 0.3s ease;
+}
+
+/* Small scale hover effect */
+.notification-btn:hover,
+.user-profile-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Red notification badge count */
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -8px;
+    background-color: var(--primary-pink);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 50%;
+    border: 2px solid white;
+    min-width: 18px;
+    text-align: center;
+}
+
+/* Page title + search aligned in center */
+.header-content {
+    text-align: center;
+    margin-top: auto;
+    margin-bottom: 50px;
+}
+
+.page-title {
+    font-size: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.page-icon {
+    width: 70px;
+    height: 70px;
+}
+
+/* Search bar container */
+.search-container {
+    background: white;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    border-radius: 30px;
+    position: relative;
+}
+
+/* Search input only */
+.search-input {
+    border: none;
+    outline: none;
+    flex-grow: 1;
+    font-size: 16px;
+    font-family: 'Poppins', sans-serif;
+    padding-right: 30px;
+}
+
+/* Search icon inside search box (right side) */
+.search-icon {
+    color: var(--text-light);
+    position: absolute;
+    right: 20px;
+}
+
+/* =========================================
+   DATA CONTAINER (WHITE CARD AREA)
+========================================= */
+
+.data-container {
+    margin: -50px 40px 40px 40px; /* Overlaps header (card effect) */
+    position: relative;
+    z-index: 10;
+}
+
+/* =========================================
+   FARM TABS (Farm 1, Farm 2, etc.)
+========================================= */
+
+.tabs-header {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    position: relative; /* so dropdown anchored inside */
+}
+
+/* Regular farm tab button */
+.tab {
+    padding: 12px 30px;
+    background-color: #EFA7A7;
+    color: white;
+    font-weight: 600;
+    border-radius: 15px 15px 0 0;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Active tab (selected farm) */
+.tab.active {
+    background-color: white;
+    color: var(--primary-pink);
+}
+
+/* Hover effect for non-active tabs */
+.tab:hover:not(.active) {
+    background-color: #E59595;
+}
+
+/* Round button for + Add Farm */
+.tab-add {
+    color: white;
+    background-color: #EFA7A7;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    border: none;
+    transition: background-color 0.3s ease;
+}
+
+.tab-add:hover {
+    background-color: #E59595;
+}
+
+/* =========================================
+   TABLE WRAPPER CARD
+========================================= */
+
+.table-content-box {
+    background: white;
+    border-radius: 0 15px 15px 15px;
+    padding: 30px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+}
+
+/* Header above the table (title + Add Pig) */
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 25px;
+}
+
+/* Title + subtitle text */
+.title-section h2,
+.section-title {
+    color: var(--primary-pink);
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+
+.section-subtitle {
+    color: var(--text-light);
+    font-size: 14px;
+}
+
+/* "Add Pig" main button */
+.btn-add-pig {
+    background-color: var(--primary-pink);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.3s;
+}
+
+.btn-add-pig i {
+    font-size: 14px;
+}
+
+.btn-add-pig:hover {
+    background-color: var(--primary-pink-dark);
+}
+
+/* =========================================
+   ACTION BAR (Bulk, Filters, Dropdown)
+========================================= */
+
+.actions-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    color: var(--text-light);
+    font-weight: 500;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+/* "Select all" + Dropdown group */
+.bulk-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.bulk-select {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Select all checkbox */
+.select-all-checkbox {
+    accent-color: var(--primary-pink);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+/* Status dropdown (Change Status) */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+/* Button that opens dropdown menu */
+.dropdown-toggle {
+    background: none;
+    border: 1px solid #ddd;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.dropdown-toggle:hover {
+    border-color: var(--primary-pink);
+}
+
+/* Small chevron icon inside dropdown */
+.dropdown-icon {
+    font-size: 12px;
+    transition: transform 0.3s ease;
+}
+
+/* Rotate icon when open */
+.dropdown.active .dropdown-icon {
+    transform: rotate(180deg);
+}
+
+/* Dropdown menu list */
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    min-width: 150px;
+    z-index: 1000;
+    display: none;
+}
+
+/* Show dropdown when active */
+.dropdown.active .dropdown-menu {
+    display: block;
+}
+
+/* Each item inside dropdown menu */
+.dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 10px 15px;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    transition: background-color 0.3s ease;
+    font-size: 14px;
+}
+
+.dropdown-item:hover {
+    background-color: #f5f5f5;
+}
+
+/* =========================================
+   STATUS FILTER BUTTONS (All, Growing...)
+========================================= */
+
+.status-filters {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+/* Filter tabs (All, Growing, etc.) */
+.filter-item {
+    background: none;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    font-family: 'Poppins', sans-serif;
+    color: var(--text-light);
+    font-weight: 500;
+    padding: 5px 0;
+    transition: color 0.3s ease;
+    font-size: 14px;
+}
+
+/* Active filter highlight */
+.filter-item.active {
+    color: var(--primary-pink);
+    font-weight: 700;
+}
+
+/* Underline bar for active filter */
+.filter-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: var(--primary-pink);
+    border-radius: 2px;
+}
+
+/* Small rounded count badge beside filter label */
+.filter-count {
+    background-color: #eee;
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 5px;
+}
+
+/* Active filter count uses pink bg */
+.filter-item.active .filter-count {
+    background-color: var(--primary-pink);
+    color: white;
+}
+
+/* =========================================
+   TABLE STYLES (Pigs List)
+========================================= */
+
+.table-container {
+    overflow-x: auto; /* Horizontal scroll if table too wide */
+}
+
+.pigs-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 800px; /* Prevent table from being too narrow */
+}
+
+/* Table header cells */
+.pigs-table th {
+    background-color: #FFB6C1;
+    color: var(--text-dark);
+    font-weight: 600;
+    padding: 15px;
+    text-align: left;
+    border-bottom: 2px solid #FFB6C1;
+}
+
+/* Rounded table header corners */
+.pigs-table th:first-child { border-top-left-radius: 10px; }
+.pigs-table th:last-child  { border-top-right-radius: 10px; }
+
+/* Table body cells */
+.pigs-table td {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    color: var(--text-dark);
+    vertical-align: middle;
+}
+
+/* Checkbox column */
+.col-checkbox,
+.checkbox-cell {
+    width: 40px;
+    text-align: center;
+}
+
+/* Checkboxes for each row/header */
+.header-checkbox,
+.pig-checkbox {
+    accent-color: var(--primary-pink);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+/* Disabled row checkbox */
+.pig-checkbox:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Small colored badge for PigID */
+.pig-id-badge {
+    background-color: #FFC0CB;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    color: var(--text-dark);
+    display: inline-block;
+    min-width: 60px;
+    text-align: center;
+    margin-right: 8px;
+}
+
+/* Clickable pig badge */
+.clickable-badge {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    border: 1px solid transparent;
+}
+
+/* Slight hover animation for clickable id */
+.clickable-badge:hover {
+    transform: scale(1.1);
+    background-color: #ff9eb5; /* Slightly darker pink on hover */
+    box-shadow: 0 2px 8px rgba(240, 128, 128, 0.4);
+    border-color: #F08080;
+}
+
+/* Faded fullname text under ID (if used) */
+.pig-fullname {
+    color: var(--text-light);
+    font-size: 14px;
+}
+
+/* Gender icon a bit colored */
+.gender-icon {
+    margin-right: 8px;
+    font-size: 14px;
+}
+
+.gender-icon.female {
+    color: #E91E63;
+}
+
+.gender-icon.male {
+    color: #2196F3;
+}
+
+/* Status pill badges */
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 12px;
+    display: inline-block;
+    min-width: 80px;
+    text-align: center;
+}
+
+/* Status colors using subtle backgrounds */
+.status-growing {
+    background-color: rgba(244, 162, 97, 0.1);
+    color: var(--status-growing);
+    border: 1px solid var(--status-growing);
+}
+
+.status-tosale {
+    background-color: rgba(42, 157, 143, 0.1);
+    color: var(--status-tosale);
+    border: 1px solid var(--status-tosale);
+}
+
+.status-sold {
+    background-color: rgba(69, 123, 157, 0.1);
+    color: var(--status-sold);
+    border: 1px solid var(--status-sold);
+}
+
+.status-deceased {
+    background-color: rgba(136, 136, 136, 0.1);
+    color: var(--status-deceased);
+    border: 1px solid var(--status-deceased);
+}
+
+/* Column widths */
+.col-name  { width: 250px; }
+.col-age   { width: 200px; }
+.col-weight{ width: 200px; }
+.col-gender{ width: 200px; }
+
+/* =========================================
+   EMPTY STATE (When no pigs yet)
+========================================= */
+
+.empty-farm {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-light);
+}
+
+.empty-farm-icon {
+    font-size: 48px;
+    color: #ddd;
+    margin-bottom: 20px;
+}
+
+.empty-farm-message {
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.empty-farm-submessage {
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+/* =========================================
+   TABLE FOOTER (Pagination)
+========================================= */
+
+.table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    color: var(--text-light);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.pagination-info {
+    font-size: 14px;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Prev/Next arrow buttons */
+.pagination-btn {
+    background: none;
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--text-dark);
+}
+
+.pagination-btn:hover:not(:disabled) {
+    border-color: var(--primary-pink);
+    color: var(--primary-pink);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-page {
+    font-weight: 600;
+    padding: 0 10px;
+}
+
+/* =========================================
+   FARM CONTEXT MENU (Right-click on tabs)
+========================================= */
+
+.farm-context-menu {
+    display: none;
+    position: fixed; /* Use fixed so it can be placed relative to viewport */
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    padding: 6px 0;
+    min-width: 180px;
+    z-index: 10000; /* High z-index so it shows above everything */
+    animation: dropdownFadeIn 0.2s ease;
+    margin-top: 4px; /* Small gap from the tab */
+    max-width: calc(100vw - 20px);
+}
+
+/* Show context menu when active class is added via JS */
+.farm-context-menu.active {
+    display: block;
+}
+
+/* Small triangle arrow pointing to the tab */
+.farm-context-menu::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 20px;
+    width: 12px;
+    height: 12px;
+    background: white;
+    border-left: 1px solid #e5e7eb;
+    border-top: 1px solid #e5e7eb;
+    transform: rotate(45deg);
+}
+
+/* Buttons inside context menu (rename, delete) */
+.context-menu-item {
+    background: none;
+    border: none;
+    padding: 10px 16px;
+    text-align: left;
+    cursor: pointer;
+    font-size: 14px;
+    color: #4b5563;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+}
+
+.context-menu-item:hover {
+    background-color: #f8fafc;
+    color: #1f2937;
+}
+
+/* Icon inside context item */
+.context-menu-item i {
+    margin-right: 12px;
+    width: 16px;
+    text-align: center;
+    font-size: 13px;
+}
+
+/* Rename item colors */
+.context-menu-item.rename-item {
+    color: #4b5563;
+}
+
+.context-menu-item.rename-item:hover {
+    color: #059669;
+}
+
+/* Delete item colors */
+.context-menu-item.delete-item {
+    color: #dc2626;
+    border-top: 1px solid #f3f4f6;
+}
+
+.context-menu-item.delete-item:hover {
+    background-color: #fef2f2;
+    color: #dc2626;
+}
+
+/* Simple fade-in animation for context menu */
+@keyframes dropdownFadeIn {
+    from { 
+        opacity: 0; 
+        transform: translateY(-8px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+/* =========================================
+   RENAME FARM MODAL
+========================================= */
+
+#renameFarmModal {
+    display: none;
+    position: fixed;
+    z-index: 3000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Dark transparent overlay */
+    align-items: center;
+    justify-content: center;
+}
+
+/* Inner content of rename modal */
+#renameFarmModal .modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 350px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Title style of rename modal */
+#renameFarmModal .weight-modal-header h3 {
+    color: #F08080;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* =========================================
+   RESPONSIVE ADJUSTMENTS
+========================================= */
+
+@media (max-width: 768px) {
+    /* Hide sidebar on small screens (mobile layout) */
+    .sidebar {
+        display: none;
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+
+    .data-container {
+        margin: -30px 20px 20px 20px;
+    }
+    
+    .header-bg {
+        padding: 20px;
+        height: auto;
+        min-height: 250px;
+    }
+    
+    /* Stack actions bar vertically */
+    .actions-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .status-filters {
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .content-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    .table-footer {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Smaller title on extra small screens */
+    .header-content h1,
+    .page-title {
+        font-size: 24px;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .tabs-header {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    .tab {
+        padding: 10px 20px;
+        font-size: 14px;
+    } 
+    
+    .table-content-box {
+        padding: 20px;
+    }
+
+    .pigs-table {
+        min-width: 600px;
+    }
+}

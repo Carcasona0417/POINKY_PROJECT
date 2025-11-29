@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pig Details - Poinky</title>
+
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+/* WRAPPER */
+body {
+    margin: 0;
+    font-family: "Poppins", sans-serif;
+}
+
+/* MAIN LAYOUT */
+.pig-details-wrapper {
+    display: flex;
+    gap: 20px;
+    background: white;
+    padding: 25px;
+    border-radius: 14px;
+    border: 2px solid #f3a4a4;
+    max-width: 1100px;
+}
+
+/* LEFT PANEL */
+.left-panel {
+    width: 35%;
+    background: #FFE4E8;
+    padding: 22px;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.left-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    position: relative;
+    color: #F08080;
+}
+
+.pig-icon {
+    width: 45px;
+}
+
+.actions {
+    margin-left: auto;
+    position: relative;
+}
+
+.actions-icon {
+    cursor: pointer;
+    font-size: 20px;
+}
+
+/* DROPDOWN */
+.actions-dropdown {
+    position: absolute;
+    right: 0;
+    top: 120%;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #ffcbcb;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+    display: none;
+    overflow: hidden;
+    width: 150px;
+    z-index: 10;
+}
+
+.actions-dropdown button {
+    width: 100%;
+    padding: 10px 15px;
+    border: none;
+    background: white;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.actions-dropdown button:hover {
+    background: #ffecef;
+}
+
+.actions-dropdown .delete {
+    color: #d32f2f;
+}
+
+/* LEFT INFO ITEMS */
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid #f1b4b4;
+    padding-bottom: 5px;
+}
+
+.info-item label {
+    font-size: 14px;
+    color: #555;
+}
+
+.info-item span {
+    font-weight: 600;
+    color: #F08080;
+}
+
+/* RIGHT PANEL */
+.right-panel {
+    width: 65%;
+    background: white;
+    padding: 20px;
+    border-radius: 14px;
+    border: 2px solid #f3bcbc;
+    display: flex;
+    flex-direction: column;
+}
+
+/* TAB BUTTONS */
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.tab-btn {
+    width: 50px;
+    height: 45px;
+    border-radius: 8px;
+    border: 1px solid #ffd0d5;
+    background: #ffecef;
+    color: #F08080;
+    font-size: 18px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.tab-btn.active {
+    background: #F08080;
+    color: white;
+    border-color: #F08080;
+}
+
+/* TAB CONTENT */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.tab-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.tab-header h4 {
+    color: #F08080;
+    margin: 0;
+}
+
+.add-btn {
+    background: #F08080;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+/* TABLES */
+.records-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #444;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.records-table th {
+    background: #F7A3A3;
+    padding: 10px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.records-table td {
+    padding: 10px;
+    text-align: center;
+    border-top: 1px solid #e7e7e7;
+}
+
+.empty-row {
+    text-align: center;
+    font-style: italic;
+    color: #999;
+}
+
+.pig-thumb {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    .pig-details-wrapper {
+        flex-direction: column;
+    }
+    .left-panel, .right-panel {
+        width: 100%;
+    }
+}
+</style>
+
+</head>
+<body>
+
+<div class="pig-details-wrapper">
+
+    <!-- LEFT SIDE -->
+    <div class="left-panel">
+
+        <div class="left-header">
+            <img src="Dash Icons/WPig.png" alt="Pig Icon" class="pig-icon">
+            <h3>Pig Details</h3>
+
+            <div class="actions">
+                <i class="fas fa-ellipsis-v actions-icon" id="detailsOptionsBtn"></i>
+
+                <div class="actions-dropdown" id="detailsDropdown">
+                    <button id="btnEditPig"><i class="fas fa-edit"></i> Edit Pig</button>
+                    <button id="btnDeletePig" class="delete"><i class="fas fa-trash-alt"></i> Delete Pig</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-item"><label>Pig ID:</label><span id="pd-name">-</span></div>
+        <div class="info-item"><label>Breed:</label><span id="pd-breed">-</span></div>
+        <div class="info-item"><label>Gender:</label><span id="pd-gender">-</span></div>
+        <div class="info-item"><label>Date Acquired:</label><span id="pd-date">-</span></div>
+        <div class="info-item"><label>Initial Weight:</label><span id="pd-iw">-</span></div>
+        <div class="info-item"><label>Current Weight:</label><span id="pd-cw">-</span></div>
+        <div class="info-item"><label>Status:</label><span id="pd-status">-</span></div>
+
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="right-panel">
+
+        <!-- TAB BUTTONS -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="weight"><i class="fa-solid fa-scale-balanced"></i></button>
+            <button class="tab-btn" data-tab="expenses"><i class="fa-solid fa-book-open"></i></button>
+            <button class="tab-btn" data-tab="health"><i class="fa-solid fa-syringe"></i></button>
+        </div>
+
+        <!-- TAB: WEIGHT -->
+        <div class="tab-content active" id="tab-weight">
+            <div class="tab-header">
+                <h4>Weight Records</h4>
+                <button class="add-btn" id="btnAddWeight">
+                    <i class="fa-solid fa-plus"></i> Add Weight
+                </button>
+            </div>
+
+            <table class="records-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Weight</th>
+                        <th>Picture</th>
+                    </tr>
+                </thead>
+                <tbody id="weightBody"></tbody>
+            </table>
+        </div>
+
+        <!-- TAB: EXPENSES -->
+        <div class="tab-content" id="tab-expenses">
+            <div class="tab-header">
+                <h4>Expenses Records</h4>
+                <button class="add-btn" id="btnAddExpense">
+                    <i class="fa-solid fa-plus"></i> Add Expense
+                </button>
+            </div>
+
+            <table class="records-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Expense</th>
+                        <th>Category</th>
+                    </tr>
+                </thead>
+                <tbody id="expenseBody"></tbody>
+            </table>
+        </div>
+
+        <!-- TAB: HEALTH -->
+        <div class="tab-content" id="tab-health">
+            <div class="tab-header">
+                <h4>Vaccination Records</h4>
+                <button class="add-btn" id="btnAddVaccine">
+                    <i class="fa-solid fa-plus"></i> Add Vaccine
+                </button>
+            </div>
+
+            <table class="records-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Due Date</th>
+                        <th>Vaccine</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="healthBody"></tbody>
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+// =======================================
+// TAB SWITCHING
+// =======================================
+document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+    });
+});
+
+// =======================================
+// DROPDOWN
+// =======================================
+const optionsBtn = document.getElementById("detailsOptionsBtn");
+const dropdown = document.getElementById("detailsDropdown");
+
+optionsBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+});
+
+document.addEventListener("click", () => dropdown.style.display = "none");
+
+// =======================================
+// DATA + PARENT COMMUNICATION
+// =======================================
+(function () {
+
+    const params = new URLSearchParams(window.location.search);
+    const pigId  = params.get("id");
+    const farmId = params.get("farm");
+
+    const nameEl   = document.getElementById("pd-name");
+    const breedEl  = document.getElementById("pd-breed");
+    const genderEl = document.getElementById("pd-gender");
+    const dateEl   = document.getElementById("pd-date");
+    const iwEl     = document.getElementById("pd-iw");
+    const cwEl     = document.getElementById("pd-cw");
+    const statusEl = document.getElementById("pd-status");
+
+    const weightBody  = document.getElementById("weightBody");
+    const expenseBody = document.getElementById("expenseBody");
+    const healthBody  = document.getElementById("healthBody");
+
+    const btnAddWeight  = document.getElementById("btnAddWeight");
+    const btnAddExpense = document.getElementById("btnAddExpense");
+    const btnAddVaccine = document.getElementById("btnAddVaccine");
+    const btnEditPig    = document.getElementById("btnEditPig");
+
+    let pigLoadedFromMessage = false;
+
+    // =======================================================
+    // CALL PARENT ACTION SAFE (TRY DIRECT → FALLBACK POSTMESSAGE)
+    // =======================================================
+    function callParentAction(label, fnName) {
+
+        let canDirect = false;
+
+        try {
+            canDirect = !!(window.parent && typeof window.parent[fnName] === "function");
+        } catch (err) { canDirect = false; }
+
+        if (canDirect) {
+            try {
+                window.parent[fnName](pigId, farmId);
+                return;
+            } catch (err) {}
+        }
+
+        // fallback
+        window.parent.postMessage(
+            { type: "openAction", action: fnName, pigId, farmId },
+            "*"
+        );
+    }
+
+    // =======================================================
+    // BUTTON HANDLERS
+    // =======================================================
+    btnAddWeight.addEventListener("click", () => {
+        callParentAction("Add Weight", "openAddWeightFromDetails");
+    });
+
+    btnAddExpense.addEventListener("click", () => {
+        callParentAction("Add Expense", "openAddExpenseFromDetails");
+    });
+
+    btnAddVaccine.addEventListener("click", () => {
+        callParentAction("Add Vaccination", "openAddVaccinationFromDetails");
+    });
+
+        // DELETE PIG — ask parent to open delete-pig confirmation
+        const btnDeletePigEl = document.getElementById('btnDeletePig');
+        if (btnDeletePigEl) {
+            btnDeletePigEl.addEventListener('click', () => {
+                callParentAction('Delete Pig', 'openDeletePigFromDetails');
+            });
+        }
+
+    // ⭐ NEW: EDIT PIG
+    btnEditPig.addEventListener("click", () => {
+        dropdown.style.display = "none";
+        callParentAction("Edit Pig", "openEditPigDetails");
+    });
+
+    // =======================================================
+    // RECEIVE pigData FROM PARENT
+    // =======================================================
+    window.addEventListener("message", (ev) => {
+        const data = ev.data;
+        if (!data || data.type !== "pigData") return;
+        pigLoadedFromMessage = true;
+        renderPig(data.pig);
+    });
+
+    function formatStatus(s) {
+        return {
+            growing: "Growing",
+            tosale: "To Sale",
+            sold: "Sold",
+            deceased: "Deceased"
+        }[s] || s;
+    }
+
+    function emptyRow(body, cols, msg) {
+        body.innerHTML = `<tr><td colspan="${cols}" class="empty-row">${msg}</td></tr>`;
+    }
+
+    // =======================================================
+    // RENDER PIG DATA
+    // =======================================================
+    function renderPig(pig) {
+        nameEl.textContent   = pig.name;
+        breedEl.textContent  = pig.breed;
+        genderEl.textContent = pig.gender;
+        dateEl.textContent   = pig.date;
+
+        iwEl.textContent = pig.weightHistory?.[0]?.weight
+            ? pig.weightHistory[0].weight + " kg" : "-";
+
+        cwEl.textContent = pig.weight ? pig.weight : "-";
+        statusEl.textContent = formatStatus(pig.status);
+
+        // WEIGHT TABLE
+        weightBody.innerHTML = "";
+        if (!pig.weightHistory?.length) {
+            emptyRow(weightBody, 3, "No weight records.");
+        } else {
+            [...pig.weightHistory].reverse().forEach(rec => {
+                weightBody.innerHTML += `
+                    <tr>
+                        <td>${rec.date}</td>
+                        <td>${rec.weight} kg</td>
+                        <td><img src="${rec.img}" class="pig-thumb"></td>
+                    </tr>`;
+            });
+        }
+
+        // EXPENSES TABLE
+        expenseBody.innerHTML = "";
+        if (!pig.expenses?.length) {
+            emptyRow(expenseBody, 3, "No expenses.");
+        } else {
+            pig.expenses.forEach(exp => {
+                expenseBody.innerHTML += `
+                    <tr>
+                        <td>${exp.date}</td>
+                        <td>${exp.price}</td>
+                        <td>${exp.category}</td>
+                    </tr>`;
+            });
+        }
+
+        // VACCINES
+        healthBody.innerHTML = "";
+        if (!pig.vaccinations?.length) {
+            emptyRow(healthBody, 4, "No vaccination records.");
+        } else {
+            pig.vaccinations.forEach(v => {
+                healthBody.innerHTML += `
+                    <tr>
+                        <td>${v.date}</td>
+                        <td>${v.dueDate}</td>
+                        <td>${v.type}</td>
+                        <td>${formatStatus(v.status)}</td>
+                    </tr>`;
+            });
+        }
+    }
+
+    // =======================================================
+    // INITIAL: TRY DIRECT READ FROM PARENT
+    // =======================================================
+    function tryLoad(attempt=1) {
+        if (pigLoadedFromMessage) return;
+
+        try {
+            if (window.parent && typeof window.parent.getPigDataById === "function") {
+                const pig = window.parent.getPigDataById(pigId, farmId);
+                if (pig) return renderPig(pig);
+            }
+        } catch (err) {}
+
+        if (attempt < 10) setTimeout(()=> tryLoad(attempt+1), 150);
+    }
+
+    tryLoad();
+})();
+</script>
+
+</body>
+</html>
