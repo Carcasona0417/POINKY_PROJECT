@@ -25,6 +25,16 @@ body {
     overflow: hidden;
 }
 
+/* Page transition for menu navigation (applies only to main-content) */
+.main-content {
+    transition: none !important; /* instant */
+}
+.main-content.page-exit,
+.main-content.page-enter {
+    opacity: 1;
+    transform: none;
+}
+
 /* =========================
    SIDEBAR
 ========================= */

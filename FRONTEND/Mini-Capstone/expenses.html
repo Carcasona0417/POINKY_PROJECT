@@ -47,7 +47,7 @@
         </nav>
     </div>
 
-    <div class="main-content">
+    <div class="main-content page-enter">
         <div class="header-bg">
             <div class="top-bar">
                 <div class="user-actions">
@@ -406,7 +406,7 @@
     </div>
 
     <!-- EDIT PIG SOLD MODAL -->
-<div class="page-wrapper" id="editSoldModal" style="display:none;">
+<div class="page-wrapper" id="editSoldModal">
     <div class="dialog">
         <button type="button" class="btn-close" id="closeEditSoldModal">×</button>
 
@@ -415,7 +415,8 @@
         <!-- Date Sold -->
         <div class="form-group">
             <div class="input-wrapper date-wrapper">
-                <input id="editDateSold" type="date">
+                 <input id="editDateSold" type="text" readonly>
+                <span class="calendar-icon"></span>
                 <label>Date Sold</label>
             </div>
         </div>
@@ -505,7 +506,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <script src="js/expi2.js"></script>
+    <script src="js/nav-transition.js"></script>
 </body>
 </html>

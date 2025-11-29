@@ -26,6 +26,16 @@ body {
     overflow: hidden;
 }
 
+/* Page transition for menu navigation (applies only to main-content) */
+.main-content {
+    transition: none !important; /* instant */
+}
+.main-content.page-exit,
+.main-content.page-enter {
+    opacity: 1;
+    transform: none;
+}
+
 /* ----------------------------------------- */
 /*                 SIDEBAR                   */
 /* ----------------------------------------- */
@@ -601,6 +611,32 @@ body {
     z-index: 2000 !important;  /* HIGHER THAN TOP BAR */
 }
 
+#editSoldModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(5px);
+    display: none;  /* hidden by default */
+    justify-content: center;
+    align-items: center;
+    z-index: 2000 !important;
+}
+
+#editSoldModal.show {
+    display: flex;
+}
+
+#editSoldModal .dialog {
+    position: relative;
+    background: #fff;
+    border-radius: 12px;
+    padding: 30px;
+    z-index: 2100;
+}
+
 #addRem.show {
     display: flex;
 }
@@ -929,6 +965,8 @@ a.profile-item {
 
 /* Delete button - red text/icon */
 .actions-cell .btn-delete,
+
+.actions-cell .btn-delete,
 .actions-cell .btn-delete-sold {
     color: #dc3545; /* red */
     background: none;
@@ -938,8 +976,42 @@ a.profile-item {
     transition: color 0.2s;
 }
 
+/* Cancel button for sold table */
+.actions-cell .btn-cancel-sold {
+    color: #ff9800; /* orange */
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    transition: color 0.2s;
+}
+.actions-cell .btn-cancel-sold:hover {
+    color: #e65100; /* darker orange on hover */
+}
+
 .actions-cell .btn-delete:hover,
 .actions-cell .btn-delete-sold:hover {
     color: #c82333; /* darker red on hover */
+}
+
+/* Make readonly inputs gray and visually uneditable */
+input[readonly] {
+    background-color: #f0f0f0;
+    color: #888;
+    border: 1px solid #ccc;
+    cursor: not-allowed;
+}
+
+/* Improve date input visibility */
+input[type="date"] {
+    background-color: #fff;
+    border: 1px solid #888;
+    color: #333;
+    padding: 8px 12px;
+    border-radius: 4px;
+}
+input[type="date"]:focus {
+    border-color: #4a90e2;
+    outline: none;
 }
 

@@ -216,6 +216,13 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchExpensesTable();
     fetchSoldTable();
 
+<<<<<<< HEAD
+    let soldData = [
+        { dateSold: '2025-09-19', farm: 'Farm 001', pig: 'Pig 003', weight: '82kg', pricePerKg: 260, totalPrice: 21320, cancelled: false },
+        { dateSold: '2025-09-10', farm: 'Farm 002', pig: 'Pig 005', weight: '75kg', pricePerKg: 250, totalPrice: 18750, cancelled: false }
+    ];
+=======
+>>>>>>> 1976bf7bb647a1b5ecee405fff2a39dfe4749393
 
     let isEditing = false;
     let editingIndex = null;
@@ -339,6 +346,71 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ----------------------------------------------------
+       EDIT SOLD MODAL - FLOATING LABELS SETUP
+    ---------------------------------------------------- */
+    const editSoldModalElement = document.getElementById('editSoldModal');
+    if (editSoldModalElement) {
+        const editSoldDateInput = document.getElementById('editDateSold');
+        const editSoldWeightInput = document.getElementById('editWeightSold');
+        const editSoldPriceInput = document.getElementById('editPricePerKg');
+        const editSoldTotalPriceInput = document.getElementById('editTotalPrice');
+
+        // Handle date wrapper for edit modal
+        if (editSoldDateInput) {
+            const editDateWrapper = editSoldDateInput.closest('.date-wrapper');
+            if (editDateWrapper) {
+                const updateEditDateWrapperState = () => {
+                    if (editSoldDateInput.value) {
+                        editDateWrapper.classList.add('has-value');
+                    } else {
+                        editDateWrapper.classList.remove('has-value');
+                    }
+                };
+
+                editSoldDateInput.addEventListener('focus', () => {
+                    editDateWrapper.classList.add('is-focused');
+                });
+                editSoldDateInput.addEventListener('blur', () => {
+                    editDateWrapper.classList.remove('is-focused');
+                    updateEditDateWrapperState();
+                });
+                editSoldDateInput.addEventListener('change', updateEditDateWrapperState);
+                updateEditDateWrapperState();
+            }
+        }
+
+        // Handle weight and price inputs for floating labels
+        const editWeightInputs = editSoldModalElement.querySelectorAll('.weight-wrapper input');
+        editWeightInputs.forEach(inp => {
+            if (!inp.readOnly) {
+                const updateHasValue = () => {
+                    if (inp.value && inp.value.toString().trim() !== '') {
+                        inp.classList.add('has-value');
+                    } else {
+                        inp.classList.remove('has-value');
+                    }
+                };
+
+                updateHasValue();
+                inp.addEventListener('input', updateHasValue);
+                inp.addEventListener('change', updateHasValue);
+                inp.addEventListener('blur', updateHasValue);
+
+                // Focus state for unit-box
+                const weightWrapper = inp.closest('.weight-wrapper');
+                if (weightWrapper) {
+                    inp.addEventListener('focus', () => {
+                        weightWrapper.classList.add('is-focused');
+                    });
+                    inp.addEventListener('blur', () => {
+                        weightWrapper.classList.remove('is-focused');
+                    });
+                }
+            }
+        });
+    }
+
+    /* ----------------------------------------------------
        RENDER TABLES
     ---------------------------------------------------- */
 
@@ -400,7 +472,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderSoldTable() {
-        const totalItems = soldData.length;
+        // Filter out cancelled records
+        const activeSoldData = soldData.filter(record => !record.cancelled);
+        const totalItems = activeSoldData.length;
         const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE_SOLD));
 
         if (currentSoldPage > totalPages) currentSoldPage = totalPages;
@@ -411,7 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
         soldTbody.innerHTML = '';
 
         for (let i = startIndex; i < endIndex; i++) {
-            const rowData = soldData[i];
+            const rowData = activeSoldData[i];
             const tr = document.createElement('tr');
 
             const dateCell = document.createElement('td');
@@ -433,12 +507,14 @@ document.addEventListener('DOMContentLoaded', () => {
             priceCell.textContent = formatCurrency(rowData.totalPrice);
 
             // --- ACTION BUTTONS TD ---
+            // Find the actual index in the soldData array
+            const actualIndex = soldData.findIndex(record => record === rowData);
             const actionCell = document.createElement('td');
             actionCell.classList.add('actions-cell');
-            actionCell.innerHTML = `
-                <button class="btn-edit-sold" data-index="${i}"><i class="fa-solid fa-pen-to-square"></i></button>
-                <button class="btn-delete-sold" data-index="${i}"><i class="fa-solid fa-trash"></i></button>
-            `;
+                actionCell.innerHTML = `
+                    <button class="btn-edit-sold" data-index="${actualIndex}"><i class="fa-solid fa-pen-to-square"></i></button>
+                    <button class="btn-cancel-sold" data-index="${actualIndex}"><i class="fa-solid fa-ban"></i></button>
+                `;
 
             tr.appendChild(dateCell);
             tr.appendChild(farmCell);
@@ -518,19 +594,69 @@ function deleteExpense(index) {
 // SOLD EDIT / DELETE
 function editSold(index) {
     const item = soldData[index];
-    Swal.fire("Edit sold item clicked for: " + item.pig);
+    const editSoldModal = document.getElementById('editSoldModal');
+    
+    if (!editSoldModal) return;
+
+    // Store the editing index
+    editSoldModal.dataset.editingIndex = index;
+
+    // Populate the modal with current data
+    const editDateSold = document.getElementById('editDateSold');
+    const editFarmName = document.getElementById('editFarmName');
+    const editPigName = document.getElementById('editPigName');
+    const editWeightSold = document.getElementById('editWeightSold');
+    const editPricePerKg = document.getElementById('editPricePerKg');
+    const editTotalPrice = document.getElementById('editTotalPrice');
+
+    if (editDateSold) editDateSold.value = item.dateSold;
+    if (editFarmName) editFarmName.value = item.farm;
+    if (editPigName) editPigName.value = item.pig;
+    if (editWeightSold) editWeightSold.value = item.weight.replace('kg', '').trim();
+    if (editPricePerKg) editPricePerKg.value = item.pricePerKg;
+    if (editTotalPrice) editTotalPrice.value = formatCurrency(item.totalPrice);
+
+    // Update floating labels
+    if (editDateSold) toggleHasValue(editDateSold);
+    if (editWeightSold) toggleHasValue(editWeightSold);
+    if (editPricePerKg) toggleHasValue(editPricePerKg);
+
+    // Show the modal
+    editSoldModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
 }
 
 function deleteSold(index) {
     Swal.fire({
         icon: 'warning',
-        title: 'Delete this record?',
+        title: 'Cancel this record? This pig will be mark back as To Sale.',
         showCancelButton: true,
-        confirmButtonText: 'Delete'
+        confirmButtonText: 'Yes',
+        cancelButtonText: 'No'
     }).then(res => {
         if (res.isConfirmed) {
-            soldData.splice(index, 1);
+            soldData[index].cancelled = true;
             renderSoldTable();
+            // Show success alert with an Undo option
+            Swal.fire({
+                icon: 'success',
+                title: 'Record cancelled',
+                showCancelButton: true,
+                confirmButtonText: 'Undo',
+                cancelButtonText: 'Close'
+            }).then(choice => {
+                if (choice.isConfirmed) {
+                    // User clicked Undo — restore the sold record
+                    soldData[index].cancelled = false;
+                    renderSoldTable();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Record restored',
+                        showConfirmButton: false,
+                        timer: 1200
+                    });
+                }
+            });
         }
     });
 }
@@ -542,12 +668,165 @@ document.addEventListener("click", function (e) {
         const index = e.target.closest(".btn-edit-sold").dataset.index;
         editSold(index);
     }
+    if (e.target.closest(".btn-cancel-sold")) {
+        const index = e.target.closest(".btn-cancel-sold").dataset.index;
+        cancelSold(index);
+    }
     if (e.target.closest(".btn-delete-sold")) {
         const index = e.target.closest(".btn-delete-sold").dataset.index;
         deleteSold(index);
     }
 });
 
+function cancelSold(index) {
+    Swal.fire({
+        icon: 'warning',
+        title: 'Cancel this record?',
+        showCancelButton: true,
+        confirmButtonText: 'Yes',
+        cancelButtonText: 'No'
+    }).then(res => {
+        if (res.isConfirmed) {
+            soldData[index].cancelled = true;
+            renderSoldTable();
+            // Show success alert with an Undo option
+            Swal.fire({
+                icon: 'success',
+                title: 'Record cancelled',
+                showCancelButton: true,
+                confirmButtonText: 'Undo',
+                cancelButtonText: 'Close'
+            }).then(choice => {
+                if (choice.isConfirmed) {
+                    // User clicked Undo — restore the sold record
+                    soldData[index].cancelled = false;
+                    renderSoldTable();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Record restored',
+                        showConfirmButton: false,
+                        timer: 1200
+                    });
+                }
+            });
+        }
+    });
+}
+
+    /* ----------------------------------------------------
+       EDIT SOLD MODAL - OPEN / CLOSE / SAVE
+    ---------------------------------------------------- */
+    const editSoldModal = document.getElementById('editSoldModal');
+    const closeEditSoldModalBtn = document.getElementById('closeEditSoldModal');
+    const cancelEditSoldBtn = document.getElementById('cancelEditSold');
+    const saveEditSoldBtn = document.getElementById('saveEditSold');
+
+    const editDateSold = document.getElementById('editDateSold');
+    const editWeightSold = document.getElementById('editWeightSold');
+    const editPricePerKg = document.getElementById('editPricePerKg');
+    const editTotalPrice = document.getElementById('editTotalPrice');
+
+    // Close modal button
+    if (closeEditSoldModalBtn) {
+        closeEditSoldModalBtn.addEventListener('click', () => {
+            editSoldModal.classList.remove('show');
+            document.body.style.overflow = '';
+        });
+    }
+
+    // Cancel button
+    if (cancelEditSoldBtn) {
+        cancelEditSoldBtn.addEventListener('click', () => {
+            editSoldModal.classList.remove('show');
+            document.body.style.overflow = '';
+        });
+    }
+
+    // Close when clicking outside the dialog
+    if (editSoldModal) {
+        editSoldModal.addEventListener('click', (e) => {
+            if (e.target === editSoldModal) {
+                editSoldModal.classList.remove('show');
+                document.body.style.overflow = '';
+            }
+        });
+    }
+
+    // Auto-calculate total price when weight or price changes
+    if (editWeightSold && editPricePerKg && editTotalPrice) {
+        const calculateTotalPrice = () => {
+            const weight = parseFloat(editWeightSold.value) || 0;
+            const pricePerKg = parseFloat(editPricePerKg.value) || 0;
+            const total = weight * pricePerKg;
+            editTotalPrice.value = formatCurrency(total);
+        };
+
+        editWeightSold.addEventListener('input', calculateTotalPrice);
+        editPricePerKg.addEventListener('input', calculateTotalPrice);
+    }
+
+    // Save changes button
+    if (saveEditSoldBtn) {
+        saveEditSoldBtn.addEventListener('click', () => {
+            const editingIndex = editSoldModal.dataset.editingIndex;
+            
+            if (editingIndex === undefined) return;
+
+            const dateSoldVal = editDateSold ? editDateSold.value : '';
+            const weightVal = editWeightSold ? editWeightSold.value : '';
+            const pricePerKgVal = editPricePerKg ? editPricePerKg.value : '';
+
+            // Validate required fields
+            if (!dateSoldVal) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Date is required',
+                    showConfirmButton: true
+                });
+                return;
+            }
+
+            if (!weightVal) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Weight is required',
+                    showConfirmButton: true
+                });
+                return;
+            }
+
+            if (!pricePerKgVal) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Price per kg is required',
+                    showConfirmButton: true
+                });
+                return;
+            }
+
+            // Update the data
+            const idx = parseInt(editingIndex);
+            soldData[idx].dateSold = dateSoldVal;
+            soldData[idx].weight = weightVal + 'kg';
+            soldData[idx].pricePerKg = parseFloat(pricePerKgVal);
+            soldData[idx].totalPrice = parseFloat(weightVal) * parseFloat(pricePerKgVal);
+
+            // Show success message
+            Swal.fire({
+                icon: 'success',
+                title: 'Sold record updated',
+                showConfirmButton: false,
+                timer: 1500
+            });
+
+            // Refresh table
+            renderSoldTable();
+
+            // Close modal
+            editSoldModal.classList.remove('show');
+            document.body.style.overflow = '';
+        });
+    }
 
     /* ----------------------------------------------------
        PAGINATION BUTTON EVENTS
