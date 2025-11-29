@@ -216,13 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchExpensesTable();
     fetchSoldTable();
 
-<<<<<<< HEAD
-    let soldData = [
-        { dateSold: '2025-09-19', farm: 'Farm 001', pig: 'Pig 003', weight: '82kg', pricePerKg: 260, totalPrice: 21320, cancelled: false },
-        { dateSold: '2025-09-10', farm: 'Farm 002', pig: 'Pig 005', weight: '75kg', pricePerKg: 250, totalPrice: 18750, cancelled: false }
-    ];
-=======
->>>>>>> 1976bf7bb647a1b5ecee405fff2a39dfe4749393
 
     let isEditing = false;
     let editingIndex = null;
