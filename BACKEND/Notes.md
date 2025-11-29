@@ -37,6 +37,10 @@
 - username should not store number
 - condition for 8 characters 1 special and 1 uppercase (password)
 
+--------SUMMARY FOR EXPENSES-------------------
+- Add Estimated_income logic and integrate to front end
+- Add Project Profit logic and integrate to front end
+- add breakdown logic and integrate it 
 
 # WHAT WAS DONE? ( DESCRIPTION )
 - Done With the logic for the login and successful message in the login page
@@ -57,7 +61,10 @@
 
 - Added farm logic for adding farms
 - added pigs logic for adding 
+- done with the bar chart in expenses in expenses reports
+- done with the PIG sold and Expense table in expense reports
 
+ 
 
 # CHANGES 
 - I change the API instead of /login-register I change it into /login for login and /register for register because it's the url of each pages

@@ -63,3 +63,15 @@ export async function getSoldTable(userId) {
 
         return rows;
 }
+
+// SUMMARY CALCULATION
+export async function getTotalExpenses(userId) {
+    const [rows] = await pool.query(`
+        SELECT
+        SUM (Amount) AS TotalExpense
+        FROM expenses e
+        WHERE UserID = ? AND Category != 'Sold'
+        `,[userId]);
+
+        return rows;
+}

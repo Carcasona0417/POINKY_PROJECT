@@ -41,10 +41,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const ctx   = document.getElementById('chart').getContext('2d');
 
 
+    /* ----------------------------------------------------
+       SUMMARY AND BREAKDOWN CALCULATION
+        (for display only!!)
+    ---------------------------------------------------- */
+
+    async function fetchTotalExpenseData() {
+        const userId = localStorage.getItem('userID');
+
+        const res = await fetch('http://localhost:8080/api/expenses-records/Total-Expenses', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({userId})
+        })
+
+        const result = await res.json();
+  
+        const raw = result?.TotalExpense?.[0].TotalExpense || "0";
+        const num = Number(raw?.toString().trim()) || 0;
+
+        document.getElementById('Total_Expenses').textContent = 
+        '₱' + num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    }
+    fetchTotalExpenseData();
+
 
    /* ----------------------------------------------------
        Chart for income and expenses
-       (static data for now)
     ---------------------------------------------------- */
 
     async function fetchExpenseIncome(){
@@ -141,12 +165,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // END OF THE BARCHART
 
-
-
-
     /* ----------------------------------------------------
-       SIMPLE DATA SOURCES
-       (Replace with DB or backend data later)
+       TABLE FOR EXPENSE LIST AND PIG SOLD
     ---------------------------------------------------- */
 
     let expensesData = [];

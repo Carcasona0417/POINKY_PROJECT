@@ -1,4 +1,4 @@
-import { getUserExpenses, getUserExpensesTable, getSoldTable } from "../Logic/ExpensesIncome.js";
+import { getUserExpenses, getUserExpensesTable, getSoldTable, getTotalExpenses } from "../Logic/ExpensesIncome.js";
 
 // BAR CHART
 export const getUserExpensesData = async(req, res, next) => {
@@ -28,6 +28,17 @@ export const getSoldTabledata = async(req, res, next) => {
         const {userId} = req.body;
         const rows = await getSoldTable(userId);
         res.send({SoldTable: rows})
+    } catch (err){
+        next(err);
+    }
+}
+
+// SUMMARY FOR EXPENSES REPORTS
+export const getTotalExpensesData = async(req, res, next) => {
+    try{
+        const {userId} = req.body;
+        const rows = await getTotalExpenses(userId);
+        res.send({TotalExpense: rows})
     } catch (err){
         next(err);
     }
