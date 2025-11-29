@@ -1,169 +1,264 @@
-/* ==========================================================================
-   SOLD MODAL STYLING (Custom Classes)
-   ========================================================================== */
-
-/* 1. Modal Overlay and Centering */
-.modal-stat {
-    /* CRITICAL: Must be fixed to the viewport to ignore page scrolling */
-    position: fixed; 
-    top: 0;
-    left: 0;
-    width: 100%; 
-    height: 100%; 
+/* ============================================================
+   PRICE INPUT MODAL — BACKDROP
+============================================================ */
+/* Price input modal: hidden by default. JS will set display to 'flex' when opening. */
+#priceInputModal.modal-stat.swal-mimic-modal {
+    display: none;                 /* JS controls this */
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(2px);
+    z-index: 3000;
     
-    /* CRITICAL: Centering via Flexbox */
-    display: flex; 
+    /* center content - display set by JS when opening */
+    align-items: center;
     justify-content: center;
-    align-items: center; 
-    
-    background-color: rgba(0, 0, 0, 0.8); /* Dark background overlay */
-    z-index: 99999; /* High Z-index */
-    overflow: hidden; 
+    animation: fadeBackdrop 0.25s ease-out;
 }
 
-/* 2. Modal Content (The White Box) */
-.modal-content-stat {
-    background-color: #fff;
-    border-radius: 10px;
-    box-shadow: 0 0 25px rgba(0, 0, 0, 0.5); /* Shadow to match image */
-    padding: 2.5em 2em; 
-    width: 90%;
-    max-width: 400px; 
-    text-align: center;
-    position: relative; /* For positioning the close button */
-    box-sizing: border-box;
+@keyframes fadeBackdrop {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 
-/* 3. Titles and Headers */
-.modal-header h3 {
-    font-size: 1.5em; 
-    font-weight: 600;
-    color: #333; 
-    margin: 0 0 1em 0; 
-}
-.title-red {
-    color: #E74C3C !important; /* Total Price color */
+/* ============================================================
+   SMALL MODAL BOX
+============================================================ */
+.modal-content-stat.small-modal {
+    width: 100%;
+    max-width: 360px;
+    background: #fff;
+    border-radius: 15px;
+    padding: 28px 24px 24px;
+    position: relative;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    animation: modalFadeIn 0.25s ease-out;
+    font-family: "Poppins", sans-serif;
 }
 
-/* 4. Close Icon (Top Right 'X') */
-.close-stat {
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ============================================================
+   CLOSE ICON
+============================================================ */
+.swal-close-icon {
     position: absolute;
     top: 10px;
-    right: 15px;
-    font-size: 1.6em;
-    color: #E74C3C; /* Red X icon */
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: var(--primary-pink);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    opacity: 1;
-    transition: opacity 0.2s;
-}
-.close-stat:hover {
-    opacity: 0.8;
+    font-size: 14px;
 }
 
-/* 5. Input Field and Piso Sign Styling */
+/* ============================================================
+   HEADER
+============================================================ */
+.modal-header-sales {
+    margin-bottom: 20px;
+    padding-top: 10px;
+    text-align: left;
+}
 
-/* Wrapper for the input field to position the Piso sign */
-.input-with-icon {
+.modal-header-sales .weight-title,
+.modal-header-sales h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary-pink);
+}
+
+/* ============================================================
+   FLOATING LABEL INPUT + ₱ BOX
+============================================================ */
+.weight-form-group {
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.input-wrapper {
     position: relative;
     width: 100%;
-    margin-bottom: 1.5em;
-    height: 45px;
 }
 
-/* Piso Symbol Styling */
-.currency-symbol {
+.input-wrapper input[type="number"] {
+    width: 100%;
+    padding: 14px 14px;
+    font-size: 15px;
+    border-radius: 10px;
+    border: 1.5px solid #ccc;
+    outline: none;
+    background: #fff;
+    font-family: "Poppins", sans-serif;
+    transition: border-color 0.2s;
+}
+
+/* focus border */
+.input-wrapper input[type="number"]:focus {
+    border-color: var(--primary-pink);
+}
+
+/* floating label */
+.input-wrapper label {
     position: absolute;
-    left: 10px; 
+    left: 14px;
+    top: 14px;
+    font-size: 15px;
+    color: #888;
+    background: #fff;
+    padding: 0 4px;
+    pointer-events: none;
+    transition: 0.2s ease;
+}
+
+/* when has value or focus */
+.input-wrapper input[type="number"]:not(:placeholder-shown) + label,
+.input-wrapper input[type="number"]:focus + label {
+    top: -8px;
+    font-size: 12px;
+    color: var(--primary-pink);
+}
+
+/* ₱ suffix style (shares style with kg in weight modals) */
+.weight-input-wrapper input {
+    padding-right: 52px; /* space for ₱ box */
+}
+
+.weight-input-wrapper .weight-suffix {
+    position: absolute;
+    right: 14px;
     top: 50%;
     transform: translateY(-50%);
-    color: #555;
-    font-size: 1.1em;
-    font-weight: 600;
+    font-size: 15px;
+    color: #666;
     pointer-events: none;
 }
 
-/* General Input Field Styling */
-.input-stat {
-    width: 100%; 
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 1.1em;
-    color: #555;
-    box-sizing: border-box; 
-    height: 45px;
-    text-align: center; /* Default for non-Piso inputs (like final price) */
-}
-
-/* Specific styling for the input containing the Piso sign */
-.input-stat.input-no-padding-left {
-    padding: 10px 10px 10px 30px; /* Adjust padding for the ₱ symbol */
-    text-align: left; /* Text starts after the symbol */
-}
-
-.input-stat::placeholder {
-    color: #aaa;
-    /* Center placeholder text for inputs without the Piso sign */
-    text-align: center; 
-}
-
-
-/* 6. Buttons (Matching Image Styles) */
-.modal-actions-inline {
+/* ============================================================
+   ACTION BUTTONS
+============================================================ */
+.weight-modal-actions {
     display: flex;
-    justify-content: space-between; 
-    gap: 15px; 
-    margin-top: 1em;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 8px;
 }
 
-.button-stat {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    font-size: 1.1em;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    flex-grow: 1; 
-    font-weight: 500;
-    /* Default is Green (Calculate/Confirm/Yes) */
-    background-color: #2ECC71; 
-    color: white;
-}
-
-/* Secondary (Clear) button style */
-.button-stat:not(.red-cancel-btn) {
-    background-color: #DDD; /* Light Grey for Clear button */
+.btn-gray {
+    background: #e0e0e0;
     color: #333;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: "Poppins", sans-serif;
+    transition: 0.2s;
 }
 
-/* Specific styling for the RED Cancel button in the Final Confirmation */
-.button-stat.red-cancel-btn {
-    background-color: #E74C3C; /* Red */
-    color: white;
-}
-.button-stat.red-cancel-btn:hover {
-    background-color: #C0392B; 
+.btn-gray:hover {
+    background: #A3A1A1; /* requested hover */
 }
 
+.btn-green {
+    background: #4CAF50;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: "Poppins", sans-serif;
+    transition: 0.2s;
+}
 
-/* 7. SweetAlert Overrides (For the Price Confirmation - image_0d393f.png) */
-/* Requires the 'swal2-confirm-price' class to be added in your JS */
-.swal2-popup.swal2-confirm-price { 
-    width: 90% !important;
-    max-width: 400px !important;
-    padding: 2.5em 2em !important;
-    border-radius: 10px !important;
-    box-shadow: 0 0 25px rgba(0, 0, 0, 0.5) !important;
+.btn-green:hover {
+    background: #439A46; /* requested hover */
 }
-/* Ensure the buttons match the image colors (Red 'No', Green 'Yes') */
-.swal2-popup.swal2-confirm-price .swal2-confirm {
-    background-color: #2ECC71 !important; 
-    color: white !important;
+
+.btn-red {
+    background: #D64343; /* cancel / no */
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: "Poppins", sans-serif;
+    transition: 0.2s;
 }
-.swal2-popup.swal2-confirm-price .swal2-cancel {
-    background-color: #E74C3C !important; 
-    color: white !important;
+
+.btn-red:hover {
+    background: #BE4040; /* requested hover */
 }
-.swal2-popup.swal2-confirm-price .swal2-actions {
-    justify-content: space-between;
+
+/* Wrapper */
+.input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+/* Base input */
+.input-wrapper input[type="number"] {
+    width: 100%;
+    padding: 15px 14px;
+    padding-right: 50px; /* space for ₱ suffix */
+    font-size: 15px;
+    border: 1.5px solid #ccc;
+    border-radius: 10px;
+    background: #fff;
+    outline: none;
+    font-family: "Poppins", sans-serif;
+    transition: border-color 0.2s ease;
+}
+
+/* Pink outline on focus */
+.input-wrapper input[type="number"]:focus {
+    border-color: var(--primary-pink);
+}
+
+/* Floating label */
+.input-wrapper label {
+    position: absolute;
+    left: 14px;
+    top: 15px;
+    font-size: 15px;
+    color: #888;
+    background: #fff;
+    padding: 0 4px;
+    pointer-events: none;
+    transition: 0.2s ease;
+}
+
+/* Float when focused or has value */
+.input-wrapper input[type="number"]:focus + label,
+.input-wrapper input[type="number"]:not(:placeholder-shown) + label {
+    top: -8px;
+    font-size: 12px;
+    color: var(--primary-pink);
+}
+
+/* ₱ suffix */
+.weight-input-wrapper .weight-suffix {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 15px;
+    color: #666;
+    pointer-events: none;
 }

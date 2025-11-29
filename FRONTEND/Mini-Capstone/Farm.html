@@ -399,7 +399,7 @@
         <div class="success-circle">
             <i class="fas fa-check"></i>
         </div>
-        <p class="success-message">Pig added successfully!</p>
+        <p id="successModalMessage" class="success-message">Pig added successfully!</p>
     </div>
 </div>
 
@@ -729,21 +729,32 @@
     <div class="modal-content weight-modal-content">
 
         <div class="weight-modal-header">
-            <h3>Edit Record</h3>
-            <button class="modal-close-red" id="closeEditWeightModal"><i class="fas fa-times"></i></button>
+            <h3 class="weight-title">Edit Record</h3>
+            <button class="modal-close-red" id="closeEditWeightModal">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
 
         <form id="editWeightForm">
 
+            <!-- DATE (FLOATING LABEL) -->
             <div class="weight-form-group">
-                <input type="date" id="editWeightDate" required>
+                <div class="input-wrapper">
+                    <input type="date" id="editWeightDate" placeholder=" " required>
+                    <label for="editWeightDate">Date</label>
+                </div>
             </div>
 
-            <div class="weight-form-group weight-input-wrapper">
-                <input type="number" id="editWeightValue" placeholder="Weight" step="0.1" required>
-                <span class="weight-suffix">kg</span>
+            <!-- WEIGHT (FLOATING LABEL + KG SUFFIX) -->
+            <div class="weight-form-group">
+                <div class="input-wrapper weight-input-wrapper">
+                    <input type="number" id="editWeightValue" placeholder=" " step="0.1" required>
+                    <label for="editWeightValue">Weight</label>
+                    <span class="weight-suffix">kg</span>
+                </div>
             </div>
 
+            <!-- FILE UPLOAD (MAINTAINS YOUR ORIGINAL STYLE) -->
             <div class="weight-form-group">
                 <label for="editWeightImg" class="file-label">
                     <span id="editFileNameDisplay">Upload Image</span>
@@ -752,6 +763,7 @@
                 <input type="file" id="editWeightImg" accept="image/*" hidden>
             </div>
 
+            <!-- ACTION BUTTONS -->
             <div class="weight-modal-actions">
                 <button type="button" class="btn-gray" id="btnCancelEditWeight">Cancel</button>
                 <button type="submit" class="btn-green">Save</button>
@@ -762,36 +774,51 @@
     </div>
 </div>
 
+
 <!-- =====================================
      SOLD PRICE INPUT MODAL
 ===================================== -->
 <div id="priceInputModal" class="modal-stat swal-mimic-modal" style="display:none;" role="dialog" aria-modal="true">
     <div class="modal-content-stat small-modal">
 
+        <!-- Close Button -->
         <span class="close swal-close-icon" id="closePriceInputModal">
             <i class="fas fa-times"></i>
         </span>
 
+        <!-- Header -->
         <div class="modal-header-sales">
-            <h3>Enter price of your pig</h3>
+            <h3 class="weight-title">Enter Pig Price (per kg)</h3>
         </div>
 
         <form id="priceInputForm">
 
-            <div class="input-with-icon">
-                <span class="currency-symbol">₱</span>
-                <input type="number" id="priceInput" placeholder="Price" step="0.01" required>
+            <!-- Floating Label + Currency Box -->
+            <div class="weight-form-group">
+                <div class="input-wrapper weight-input-wrapper">
+                    <input type="number" id="priceInput" placeholder=" " step="0.01" required>
+                    <label for="priceInput">Price</label>
+                    <span class="weight-suffix">₱</span>
+                </div>
             </div>
 
-            <div class="modal-actions-inline">
-                <button type="button" class="swal-button swal-button-secondary clear-btn-gray" id="clearPriceInput">Clear</button>
-                <button type="submit" class="swal-button swal-button-primary" id="calculatePrice">Calculate</button>
+            <!-- Action Buttons -->
+            <div class="weight-modal-actions">
+                <button type="button" class="btn-gray" id="clearPriceInput">Clear</button>
+                <button type="submit" class="btn-green" id="calculatePrice">Calculate</button>
             </div>
 
         </form>
 
     </div>
 </div>
+ <style>
+
+
+
+
+
+ </style>
 
 <!-- =====================================
      SOLD CONFIRMATION MODAL
@@ -808,14 +835,39 @@
         </div>
 
         <input type="text" id="finalSoldPriceDisplay" readonly class="swal-input">
+        <!-- Details area for confirmation text (per-kg info, pig count) -->
+        <div id="soldConfirmationDetails" class="sold-details" style="margin-top:12px; color:#333; font-size:14px; text-align:left;"></div>
 
         <div class="modal-actions-inline">
-            <button type="button" class="swal-button swal-button-secondary red-cancel-btn" id="cancelSoldPrice">Cancel</button>
-            <button type="button" class="swal-button swal-button-primary" id="confirmSoldPrice">Confirm</button>
+            <button type="button" class="btn-red" id="cancelSoldPrice">Cancel</button>
+            <button type="button" class="btn-green" id="confirmSoldPrice">Confirm</button>
         </div>
 
     </div>
 </div>
+
+    <!-- =====================================
+         GENERIC CUSTOM CONFIRM MODAL
+         (used instead of SweetAlert for confirmations)
+    ===================================== -->
+    <div id="customConfirmModal" class="modal-stat swal-mimic-modal" style="display:none;" role="dialog" aria-modal="true">
+        <div class="modal-content-stat small-modal">
+            <span class="close swal-close-icon" id="closeCustomConfirm">
+                <i class="fas fa-times"></i>
+            </span>
+
+            <div class="modal-header-sales">
+                <h3 class="weight-title" id="customConfirmTitle">Confirm</h3>
+            </div>
+
+            <div id="customConfirmMessage" style="color:#333; font-size:14px; min-height:48px; margin-bottom:18px; text-align:left;"></div>
+
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button type="button" class="btn-red" id="customConfirmCancel">No</button>
+                <button type="button" class="btn-green" id="customConfirmConfirm">Yes</button>
+            </div>
+        </div>
+    </div>
 
 <!-- =====================================
      EDIT PIG DETAILS MODAL
