@@ -497,5 +497,12 @@ input[type="date"] { -moz-appearance: textfield; }
 
 
 
+.error-message {
+    display: block;
+    font-size: 0.85rem;
+    color: #a41d13; /* red */
+    margin-top: 2px;
+    height: 16px; /* keep space even when empty */
+}
 
 

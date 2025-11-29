@@ -374,13 +374,19 @@ body {
     align-items: center;
     justify-content: center;
     height: 360px;
-    background-image: url('../backgroundpics/BG.png');
+     background-image: url('../backgroundpics/BG.png');
     background-size: cover;
     background-position: center;
     position: relative;
     overflow: hidden;
 }
-
+.header-bg {
+    
+    background-image: url('../backgroundpics/BG.png');
+    background-size: cover;
+    background-position: center;
+    z-index: 0;
+}
 /* Moving background pattern */
 .header-content::before {
     content: '';
