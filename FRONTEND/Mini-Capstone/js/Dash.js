@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         barPercentage: 0.65,
                         categoryPercentage: 0.8,
                         borderRadius: 4
-                    },
+                    }
                     // Feed expenses are aggregated under Farm Expenses and not shown separately
                 ]
             };

@@ -32,9 +32,7 @@
 
 - Notification should be able to fetch data from the reminders
 - Integrate backend logic for Reminders
-- Integrate backend logic for farm - this will be including CRUD !!!
 - Integrate backedn logic  for expenses - this will be including CRUD !!!
-
 - email should only recieve @gmail none other
 - username should not store number
 - condition for 8 characters 1 special and 1 uppercase (password)
@@ -56,6 +54,9 @@
 - done with the OTP for forget password using SMTP (nodemailer.js)
 - done wtih the statistic count for each user
 - done with fixing of the chart and also done with integrating the new chart which is the 
+
+- Added farm logic for adding farms
+- added pigs logic for adding 
 
 
 # CHANGES 

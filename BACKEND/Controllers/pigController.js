@@ -1,5 +1,6 @@
-import * as pigService from "../Logic/Pig.js"
+import * as pigService from "../Logic/Add-Pig.js"
 
+// Condition for AGE depending on months
 function getPigInfoByAge(age) {
 
     let PigType = "Piglet";
@@ -21,7 +22,6 @@ function getPigInfoByAge(age) {
     return { PigType, PigStatus }
 
 }
-
 export const addPig = async (req,res) => {
     try{
         const data = req.body;
@@ -38,7 +38,18 @@ export const addPig = async (req,res) => {
 
     } catch (err) {
         console.error(err);
-        res.status(500).send({ success: false, message: "Error adding pig" });
+      res.status(500).send({ success: false, message: "Error adding pig" });
 
+    }
+}
+
+export const getAllPigs = async (req, res, next) => {
+    try{
+        const { farmId } = req.body;
+        const rows = await getPigs(farmId);
+        res.json(rows);
+
+    }catch(err){
+        next(err);
     }
 }

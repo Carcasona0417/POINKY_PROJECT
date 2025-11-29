@@ -34,3 +34,4 @@
  - Feed expenses was deleted from both html and js along with the legend-items
  - I deleted the extra codes in the dash.js and eliminate double code
  - It is fully integrated except for the notification
+ - added static data for the expenses BAR CHART

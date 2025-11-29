@@ -35,7 +35,85 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalCountSold    = document.getElementById('totalCountSold');
     const prevSoldBtn       = document.getElementById('prevSold');
     const nextSoldBtn       = document.getElementById('nextSold');
-    const pageSoldLabel     = document.getElementById('pageSold');
+    const pageSoldLabel     = document.getElementById('pageSold');    
+
+    // Setup the Chart Context
+    const ctx   = document.getElementById('chart').getContext('2d');
+   /* ----------------------------------------------------
+       Chart for income and expenses
+       (static data for now)
+    ---------------------------------------------------- */
+
+    const data ={
+        labels: [
+            'Jan','Feb','Mar','Apr',
+            'May','Jun','Jul','Aug',
+            'Sep','Oct','Nov','Dec'
+        ],
+        datasets: [
+            {
+                label: 'Income',
+                data: [5000,6000,8000,4000,7000,3000,10000,9000,8500,9500,11000,13000],
+                backgroundColor: '#5dd05d',
+                hoverBackgroundColor: '#7dde7d',
+                barPercentage: 0.65,
+                categoryPercentage: 0.8,
+                borderRadius: 4
+            },
+              {
+                label: 'Expenses',
+                data: [3000,3500,5000,2000,4500,1500,7000,6000,5000,6500,7000,9000],
+                backgroundColor: '#F16877',
+                hoverBackgroundColor: '#F16877',
+                barPercentage: 0.65,
+                categoryPercentage: 0.8,
+                borderRadius: 4
+            }
+        ]
+    };
+    // Create the Income & Expenses Bar Chart
+    
+
+const incomeExpensesChart = new Chart(ctx, {
+    type: 'bar',
+    data: data,
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+            tooltip: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                    label: function(context) {
+                        const value = context.raw || 0;
+                        return context.dataset.label + ': ₱' + value.toLocaleString('en-PH');
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                stacked: false,
+            },
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return '₱' + value.toLocaleString('en-PH');
+                    }
+                }
+            }
+        }
+    }
+});
+
+
+
+   
+
 
     /* ----------------------------------------------------
        SIMPLE DATA SOURCES
