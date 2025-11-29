@@ -27,7 +27,7 @@ export async function getMonthExpenses(userId) {
          FROM expenses e
          JOIN pig p ON e.PigID = p.PigID
          JOIN farm f ON p.FarmID = f.FarmID
-         WHERE f.UserID = ?
+         WHERE f.UserID = ? AND Category != 'Sold'
          AND MONTH(e.Date) = MONTH(CURRENT_DATE())
          AND YEAR(e.Date) = YEAR(CURRENT_DATE())`,
         [userId]
