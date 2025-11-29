@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poinky - Upcoming Task</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/rem.css">
+    <link rel="stylesheet" href="css/modalstyles.css">
+</head>
+<body>
+ 
+    <div class="sidebar">
+        <div class="brand"> 
+            <img src="assets/dash-icons/ICON.png" alt="Poinky Logo" class="brand-logo">
+            <span class="brand-name">Poinky</span>
+        </div>
+
+        <nav class="menu">
+            <ul class="menu-list">
+                <li class="menu-item">
+                    <a href="dashboardnew.html" class="menu-link">
+                        <i class="fa-solid fa-house menu-icon"></i>
+                        <span class="menu-text">Dashboard</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="farm.html" class="menu-link">
+                        <i class="fas fa-warehouse menu-icon"></i>
+                        <span class="menu-text">Farm</span>
+                    </a>
+                </li> 
+                <li class="menu-item">
+                    <a href="expenses.html" class="menu-link">
+                        <i class="fas fa-file-invoice-dollar menu-icon"></i>
+                        <span class="menu-text">Expenses & Reports</span>
+                    </a>
+                </li>
+                <li class="menu-item active">
+                    <a href="reminders.html" class="menu-link">
+                        <i class="fa-solid fa-bell menu-icon"></i>
+                        <span class="menu-text">Reminders</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="header-bg">
+            <div class="top-bar">
+                <div class="user-actions">
+                <button type="button" class="notification-btn" id="notificationIcon">
+                <i class="fa-regular fa-bell notification-icon"></i>
+                <span id="notificationBadge" class="notificationBadge"></span>
+            </button>
+                    <button id="profileBtn" class="user-profile-btn" aria-label="User Profile">
+                        <i class="fa-solid fa-circle-user user-icon"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="header-content">
+                <h1 class="page-title">
+                    <i class="fa-solid fa-bell" style="color: white; margin-right: 8px;"></i>
+                    Upcoming Tasks
+                </h1>
+                <div class="search-container">
+                    <input type="search" placeholder="Search" class="search-input" id="searchInput">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                </div>
+            </div>
+        </div>
+
+        <main class="data-container">
+            
+            
+
+            <div class="table-content-box"> 
+                <div class="content-header">
+                    <div class="title-section">
+                        <h2 class="section-title">To do List (<span id="activetodoList">0</span>)</h2>
+                        <p class="section-subtitle">Upcoming tasks and need to accomplish</p>
+                    </div>
+                    <button class="btn-add-rem" id="addPigBtn">
+                        <i class="fa-solid fa-plus"></i> 
+                        <span>Add Reminders</span>
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="rem-table" id="remTable">
+                        <thead>
+                            <tr>
+                                <th class="col-date">Date</th>
+                                <th class="col-task">Task</th>
+                                <th class="col-farm">Farm</th>
+                                <th class="col-pigname">Pig Name / ID</th>
+                                <th class="col-addnotes">Additional Notes</th>
+                                <th class="col-actions">Actions</th>
+                            </tr>
+                        </thead>
+
+
+                        <tbody id="ReminderTable">
+                            <!-- Pig rows will be populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+
+
+                <div class="table-footer">
+                    <div class="pagination-info">
+                        Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> Reminders
+                    </div>
+                    <div class="pagination-controls">
+                        <button class="pagination-btn prev-btn" disabled>
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <span class="pagination-page">Page 1</span>
+                        <button class="pagination-btn next-btn" disabled>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+
+        <!-- ADD TASK FORM MODAL -->
+    <div class="page-wrapper" id="addRem">
+        <div class="dialog">
+            <button type="button" class="btn-close" id="CloseModal">×</button>
+
+            <h2 class="dialog-title">Add Task</h2>
+
+            <!-- Date -->
+            <div class="form-group">
+                <div class="input-wrapper date-wrapper">
+                    <!-- keep same ID so JS still works -->
+                    <input id="pigDate" type="date" placeholder="dd/mm/yyyy">
+                    <span class="calendar-icon"></span>
+                    <label>Date</label>
+                   
+                </div>
+                 
+            </div>
+            <span class="error-message"></span>
+
+            <!-- Task / Title -->
+            <div class="form-group">
+                <div class="input-wrapper">
+                    <input type="text" placeholder="">
+                    <label>Task / Title</label>
+                    
+                </div>
+                
+            </div>
+            <span class="error-message"></span>
+
+            
+
+            <!-- Farm -->
+            <div class="form-group">
+                <div class="input-wrapper">
+                    <select class="form-select">
+                        <option value=""></option>
+                        <option>Farm 1</option>
+                        <option>Farm 2</option>
+                        <option>Farm 3</option>
+                    </select>
+                    <label>Farm</label>
+                </div>
+            </div>
+
+            <!-- Pig Name -->
+            <div class="form-group">
+                <div class="input-wrapper">
+                    <select class="form-select">
+                        <option value=""></option>
+                        <option>Pig 001</option>
+                        <option>Pig 002</option>
+                        <option>Pig 003</option>
+                    </select>
+                    <label>Pig Name</label>
+                </div>
+            </div>
+
+            <!-- Additional Note (textarea) -->
+            <div class="form-group">
+                <div class="input-wrapper">
+                    <textarea rows="4" placeholder=""></textarea>
+                    <label>Additional Note</label>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="dialog-footer">
+                <button type="button" class="btn btn-clear">Clear</button>
+                <button type="button" class="btn btn-save">Save</button>
+            </div>
+        </div>
+
+
+    <!-- SUCCESS MODAL -->
+    <div class="modal-overlay" id="successModal">
+        <div class="success-modal">
+            <div class="success-circle">
+                <div class="success-check"></div>
+            </div>
+            <p class="success-text">Task added successfully!</p>
+        </div>
+    </div>
+    </div>
+
+    <!-- Profile Modal -->
+        <div class="profile-modal" id="profileModal">
+            <div class="profile-modal-content">
+                <div class="profile-header">
+                    <i class="fa-solid fa-circle-user profile-avatar"></i>
+                    <p class="profile-username">Username</p>
+                </div>
+
+                <a href="ProfileSettings.html" class="profile-item profile-settings-link">
+                    <i class="fa-solid fa-gear"></i> Profile Settings
+                </a>
+
+                <div class="profile-item logout" id="logoutBtn">
+                    <i class="fa-solid fa-right-from-bracket"></i> Log Out
+                </div>
+            </div>
+        </div>
+
+        <!-- Logout Modal -->
+        <div class="logout-modal" id="logoutModal" aria-hidden="true">
+            <div class="logout-modal-dialog">
+                <h2>Confirm Logout</h2>
+                <p>Are you sure you want to log out?</p>
+                <div class="logout-modal-buttons">
+                    <button class="logout-cancel-btn" id="logoutCancelBtn">No</button>
+                    <button class="logout-confirm-btn" id="logoutConfirmBtn">Yes</button>
+                </div>
+            </div>
+        </div>
+
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/rem.js"></script>
+</body>
+</html>

@@ -60,14 +60,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const priceInputModal = document.getElementById('priceInputModal');
     const soldConfirmationModal = document.getElementById('soldConfirmationModal');
     const priceInputForm = document.getElementById('priceInputForm');
-    const priceInput = document.getElementById('priceInput'); // User enters Price PER PIG
+    const priceInput = document.getElementById('priceInput'); // User enters price (interpreted as price per kg)
     const finalSoldPriceDisplay = document.getElementById('finalSoldPriceDisplay');
     const confirmSoldPriceBtn = document.getElementById('confirmSoldPrice');
 
     // Global State Variables (for BULK SALE)
     let currentPigsForSaleIds = [];   // IDs of pigs involved in current bulk sale
     let calculatedTotalSalePrice = 0; // PricePerPig * count
-    let pricePerPigInput = 0;         // Value user entered (per pig)
+    let pricePerPigInput = 0;         // Value user entered (per kg)
     let currentPigForSaleId = null;   // Reserved for single-sale use (not used in bulk)
 
     // --- Edit Weight Modal elements ---
@@ -483,6 +483,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
         detailsModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
+
+        // if pig is sold/deceased, remove/hide edit button and disable add actions
+        const locked = pig.status === 'sold' || pig.status === 'deceased';
+        const editBtn = document.getElementById('editPigDetailsBtn');
+        if (editBtn) editBtn.style.display = locked ? 'none' : '';
+
+        // Hide/disable the generic 'Add' button if the pig is sold/deceased
+        const btnOpenAddWeight = document.querySelector('.btn-add-record');
+        if (btnOpenAddWeight) btnOpenAddWeight.style.display = locked ? 'none' : btnOpenAddWeight.style.display;
     };
 
     function updateDetailsTabContent(pig, tabId) {
@@ -517,11 +526,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     let actionIconHTML = '';
 
-                    if (rec === sortedHistory[0]) {
-                        actionIconHTML = `<i class="fas fa-edit action-icon edit-icon" data-record-index="${originalIndex}"></i>`;
-                    } else {
-                        actionIconHTML = `<i class="fas fa-trash-alt action-icon delete-icon" data-record-index="${originalIndex}"></i>`;
-                    }
+                        const locked = pig.status === 'sold' || pig.status === 'deceased';
+                        if (rec === sortedHistory[0]) {
+                            // only show edit icon when not locked
+                            actionIconHTML = locked ? '' : `<i class="fas fa-edit action-icon edit-icon" data-record-index="${originalIndex}"></i>`;
+                        } else {
+                            actionIconHTML = `<i class="fas fa-trash-alt action-icon delete-icon" data-record-index="${originalIndex}"></i>`;
+                        }
 
                     tr.innerHTML = `
                         <td>${dateString}</td>
@@ -698,21 +709,42 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update header "Add" button behavior
         if (tabId === 'weight') {
             if (btnOpenAddWeight) {
+                const locked = pig.status === 'sold' || pig.status === 'deceased';
                 btnOpenAddWeight.textContent = 'Add Weight';
-                btnOpenAddWeight.onclick = openAddWeightModal;
-                btnOpenAddWeight.style.display = 'inline-block';
+                btnOpenAddWeight.onclick = () => {
+                    if (locked) {
+                        Swal.fire('Not allowed', 'Cannot add weight to a sold or deceased pig.', 'warning');
+                        return;
+                    }
+                    openAddWeightModal();
+                };
+                btnOpenAddWeight.style.display = locked ? 'none' : 'inline-block';
             }
         } else if (tabId === 'expenses') {
             if (btnOpenAddWeight) {
+                const locked = pig.status === 'sold' || pig.status === 'deceased';
                 btnOpenAddWeight.textContent = 'Add Expenses';
-                btnOpenAddWeight.onclick = openAddExpenseModal;
-                btnOpenAddWeight.style.display = 'inline-block';
+                btnOpenAddWeight.onclick = () => {
+                    if (locked) {
+                        Swal.fire('Not allowed', 'Cannot add expense to a sold or deceased pig.', 'warning');
+                        return;
+                    }
+                    openAddExpenseModal();
+                };
+                btnOpenAddWeight.style.display = locked ? 'none' : 'inline-block';
             }
         } else if (tabId === 'health') {
             if (btnOpenAddWeight) {
+                const locked = pig.status === 'sold' || pig.status === 'deceased';
                 btnOpenAddWeight.textContent = 'Add Vaccination';
-                btnOpenAddWeight.onclick = openAddVaccinationModal;
-                btnOpenAddWeight.style.display = 'inline-block';
+                btnOpenAddWeight.onclick = () => {
+                    if (locked) {
+                        Swal.fire('Not allowed', 'Cannot add vaccination to a sold or deceased pig.', 'warning');
+                        return;
+                    }
+                    openAddVaccinationModal();
+                };
+                btnOpenAddWeight.style.display = locked ? 'none' : 'inline-block';
             }
         } else if (btnOpenAddWeight) {
             btnOpenAddWeight.style.display = 'none';
@@ -764,6 +796,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function openAddExpenseModal() {
         if (!currentDetailPigId) return;
+        // pig already retrieved and validated above
+        if (pig.status === 'sold' || pig.status === 'deceased') {
+            Swal.fire('Not allowed', 'Cannot add expense to a sold or deceased pig.', 'warning');
+            return;
+        }
         detailsModal.style.display = 'none';
         addExpenseModal.style.display = 'flex';
 
@@ -773,6 +810,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function openAddVaccinationModal() {
         if (!currentDetailPigId) return;
+        // pig already retrieved above
+        if (pig.status === 'sold' || pig.status === 'deceased') {
+            Swal.fire('Not allowed', 'Cannot add vaccination to a sold or deceased pig.', 'warning');
+            return;
+        }
         detailsModal.style.display = 'none';
         addVaccinationModal.style.display = 'flex';
 
@@ -790,9 +832,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function openEditPigDetailsModal() {
         if (!currentDetailPigId) return;
-
         const pig = getCurrentFarm()?.pigs.find(p => p.id === currentDetailPigId);
         if (!pig) return;
+
+        if (pig.status === 'sold' || pig.status === 'deceased') {
+            Swal.fire('Not allowed', 'This pig is sold or deceased — details cannot be edited.', 'warning');
+            return;
+        }
+
+        // pig already retrieved and validated above
 
         editPigNameInput.value = pig.name;
         editPigGenderInput.value = pig.gender;
@@ -858,33 +906,20 @@ document.addEventListener('DOMContentLoaded', function() {
     function deletePig(pigId) {
         if (!pigId) return;
 
-        Swal.fire({
-            title: 'Delete Pig?',
-            text: "You are about to permanently remove this pig record. This cannot be undone!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#4CAF50',
-            confirmButtonText: 'Yes, Delete It',
-            customClass: {
-                popup: 'swal2-high-zindex'
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const currentFarm = getCurrentFarm();
-                if (currentFarm) {
-                    const pigIndex = currentFarm.pigs.findIndex(p => p.id === pigId);
-                    
-                    if (pigIndex > -1) {
-                        currentFarm.pigs.splice(pigIndex, 1);
-                        closeAllModals();
-                        loadFarmData(currentFarmId);
-
-                        Swal.fire('Deleted!', 'The pig record has been successfully removed.', 'success');
-                    }
+        openCustomConfirm('Delete Pig?', `You are about to permanently remove this pig record. This cannot be undone!`, function() {
+            const currentFarm = getCurrentFarm();
+            if (currentFarm) {
+                const pigIndex = currentFarm.pigs.findIndex(p => p.id === pigId);
+                if (pigIndex > -1) {
+                    currentFarm.pigs.splice(pigIndex, 1);
+                    closeAllModals();
+                    loadFarmData(currentFarmId);
+                    openSuccessModal('The pig record has been successfully removed.');
                 }
             }
-        });
+        }, function() {
+            // cancelled - do nothing
+        }, 'Yes, Delete It', 'No');
     }
 
     // ------------------------------------------------------------
@@ -893,6 +928,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function openAddWeightModal() {
         if (!currentDetailPigId) return;
+        const pig = getCurrentFarm()?.pigs.find(p => p.id === currentDetailPigId);
+        if (!pig) return;
+        if (pig.status === 'sold' || pig.status === 'deceased') {
+            Swal.fire('Not allowed', 'Cannot add weight to a sold or deceased pig.', 'warning');
+            return;
+        }
         detailsModal.style.display = 'none';
         addWeightModal.style.display = 'flex';
 
@@ -907,8 +948,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function openEditWeightModal(recordIndex) {
         if (!currentDetailPigId) return;
-
         const pig = getCurrentFarm()?.pigs.find(p => p.id === currentDetailPigId);
+        if (!pig) return;
+        if (pig.status === 'sold' || pig.status === 'deceased') {
+            Swal.fire('Not allowed', 'Cannot edit weight for a sold or deceased pig.', 'warning');
+            return;
+        }
+
         if (!pig || !pig.weightHistory || recordIndex >= pig.weightHistory.length) return;
 
         currentEditWeightRecordIndex = recordIndex;
@@ -973,6 +1019,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeAddPigModalBtn = document.getElementById('closeAddPigModal');
     const clearAddPigFormBtn  = document.getElementById('clearAddPigForm');
     const successModal        = document.getElementById('successModal');
+    const successModalMessage = document.getElementById('successModalMessage');
+    // custom confirm modal elements (replaces SweetAlert confirmations)
+    const customConfirmModal = document.getElementById('customConfirmModal');
+    const customConfirmTitle = document.getElementById('customConfirmTitle');
+    const customConfirmMessage = document.getElementById('customConfirmMessage');
+    const customConfirmCancel = document.getElementById('customConfirmCancel');
+    const customConfirmConfirm = document.getElementById('customConfirmConfirm');
+    const closeCustomConfirm = document.getElementById('closeCustomConfirm');
 
     function openAddPigModal() {
         if (addPigModal) {
@@ -1002,9 +1056,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.overflow = 'auto';
     }
 
-    function openSuccessModal() {
+    function openSuccessModal(message) {
         if (!successModal) return;
-        successModal.display = 'flex';
+        if (successModalMessage && message) successModalMessage.textContent = message;
         successModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     }
@@ -1014,6 +1068,46 @@ document.addEventListener('DOMContentLoaded', function() {
         successModal.style.display = 'none';
         document.body.style.overflow = 'auto';
     }
+
+    // Reusable custom confirmation dialog helper
+    let __customConfirm_onConfirm = null;
+    let __customConfirm_onCancel = null;
+
+    function openCustomConfirm(title, message, onConfirm, onCancel, confirmText = 'Yes', cancelText = 'No') {
+        if (!customConfirmModal) return;
+        if (customConfirmTitle) customConfirmTitle.textContent = title || 'Confirm';
+        if (customConfirmMessage) customConfirmMessage.innerHTML = message || '';
+
+        // set button labels
+        if (customConfirmConfirm) customConfirmConfirm.textContent = confirmText || 'Yes';
+        if (customConfirmCancel) customConfirmCancel.textContent = cancelText || 'No';
+
+        // assign handlers
+        __customConfirm_onConfirm = onConfirm;
+        __customConfirm_onCancel = onCancel;
+
+        customConfirmModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeCustomConfirmModal() {
+        if (!customConfirmModal) return;
+        customConfirmModal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        __customConfirm_onConfirm = null;
+        __customConfirm_onCancel = null;
+    }
+
+    // wire confirm/cancel buttons
+    if (customConfirmCancel) customConfirmCancel.addEventListener('click', function() {
+        if (__customConfirm_onCancel) __customConfirm_onCancel();
+        closeCustomConfirmModal();
+    });
+    if (customConfirmConfirm) customConfirmConfirm.addEventListener('click', function() {
+        if (__customConfirm_onConfirm) __customConfirm_onConfirm();
+        closeCustomConfirmModal();
+    });
+    if (closeCustomConfirm) closeCustomConfirm.addEventListener('click', closeCustomConfirmModal);
 
     function resetAddPigFormFloatingStates() {
         if (!addPigForm) return;
@@ -1361,11 +1455,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (addExpenseBtn) {
-        addExpenseBtn.addEventListener('click', openAddExpenseModal);
+        addExpenseBtn.addEventListener('click', function() {
+            // check current pig status first
+            const pig = getCurrentFarm()?.pigs.find(p => p.id === currentDetailPigId);
+            if (!pig) return;
+            if (pig.status === 'sold' || pig.status === 'deceased') {
+                Swal.fire('Not allowed', 'Cannot add expense to a sold or deceased pig.', 'warning');
+                return;
+            }
+            openAddExpenseModal();
+        });
     }
 
     if (addVaccinationBtn) {
-        addVaccinationBtn.addEventListener('click', openAddVaccinationModal);
+        addVaccinationBtn.addEventListener('click', function() {
+            const pig = getCurrentFarm()?.pigs.find(p => p.id === currentDetailPigId);
+            if (!pig) return;
+            if (pig.status === 'sold' || pig.status === 'deceased') {
+                Swal.fire('Not allowed', 'Cannot add vaccination to a sold or deceased pig.', 'warning');
+                return;
+            }
+            openAddVaccinationModal();
+        });
     }
 
     if (pigDetailsMenuIcon) {
@@ -1386,6 +1497,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (editPigDetailsBtn) {
         editPigDetailsBtn.addEventListener('click', function() {
             if (pigActionMenu) pigActionMenu.classList.remove('active');
+            const pig = getCurrentFarm()?.pigs.find(p => p.id === currentDetailPigId);
+            if (!pig) return;
+            if (pig.status === 'sold' || pig.status === 'deceased') {
+                Swal.fire('Not allowed', 'This pig is sold or deceased — details cannot be edited.', 'warning');
+                return;
+            }
             openEditPigDetailsModal();
         });
     }
@@ -1802,7 +1919,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const modalHeader = priceInputModal?.querySelector('.modal-header-sales h3');
         if (modalHeader) {
-            modalHeader.textContent = `Enter Price Per Pig (for ${pigIds.length} Pig${pigIds.length > 1 ? 's' : ''})`;
+            // Treat the price input as price per kilogram (kg)
+            modalHeader.textContent = `Enter Price Per kg (for ${pigIds.length} Pig${pigIds.length > 1 ? 's' : ''})`;
         }
 
         if (priceInputModal) {
@@ -1818,24 +1936,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const pigCount = currentPigsForSaleIds.length;
         const total = calculatedTotalSalePrice;
 
-        Swal.fire({
-            title: 'Please confirm:',
-            html: `You're setting the price at ₱<b>${pricePerPig.toFixed(2)}</b> per pig, for <b>${pigCount}</b> pig(s).<br>
-                   Total calculated price: ₱<b>${total.toFixed(2)}</b>.<br><br>Do you want to proceed?`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Yes',
-            cancelButtonText: 'No',
-            customClass: {
-                popup: 'swal2-high-zindex'
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                showSoldConfirmationModal();
-            } else {
-                if (priceInputModal) priceInputModal.style.display = 'flex';
-            }
-        });
+        const message = `You're setting the price at ₱<b>${pricePerPig.toFixed(2)}</b> per kg for <b>${pigCount}</b> pig(s).<br>
+                         Total calculated price: ₱<b>${total.toFixed(2)}</b>.<br><br>Do you want to proceed?`;
+
+        // show our in-app confirm modal instead of SweetAlert
+        openCustomConfirm('Please confirm:', message, function() {
+            // confirmed
+            showSoldConfirmationModal();
+        }, function() {
+            // cancelled - reopen price modal
+            if (priceInputModal) priceInputModal.style.display = 'flex';
+        }, 'Yes', 'No');
     }
 
     function showSoldConfirmationModal() {
@@ -1845,6 +1956,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (finalSoldPriceDisplay) {
             finalSoldPriceDisplay.value = `₱${calculatedTotalSalePrice.toFixed(2)}`; 
+        }
+        // set details (per kg and pig count) if available
+        const detailsEl = document.getElementById('soldConfirmationDetails');
+        const pigCount = currentPigsForSaleIds.length;
+        if (detailsEl) {
+            detailsEl.innerHTML = `Price per kg: ₱<b>${pricePerPigInput.toFixed(2)}</b> — for <b>${pigCount}</b> pig(s).`;
         }
         
         if (soldConfirmationModal) {
@@ -1856,7 +1973,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function finalizeSale(totalPrice) {
         const pigCount = currentPigsForSaleIds.length;
         const saleDate = new Date().toISOString().split('T')[0];
-        const avgPrice = pricePerPigInput;
+        const avgPrice = pigCount ? (totalPrice / pigCount) : 0; // average total per pig
 
         if (pigCount === 0) return;
 
@@ -1867,8 +1984,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const pig = getPigById(pigId);
             if (pig) {
                 pig.status = 'sold';
-                pig.weight = `Sold`; 
-                
+                pig.weight = `Sold`;
+
+                // record the per-pig sold price calculated from pricePerPigInput (per kg) × pig weight
+                let pigWeight = 0;
+                if (pig.weightHistory) pigWeight = getNewestWeight(pig.weightHistory);
+                else if (pig.weightRecords && pig.weightRecords.length) pigWeight = pig.weightRecords[pig.weightRecords.length - 1].weight;
+                else if (typeof pig.weightKg !== 'undefined') pigWeight = pig.weightKg;
+
+                pig.soldPrice = (Number(pigWeight) || 0) * pricePerPigInput;
+
                 pig.statusHistory.push({
                     date: saleDate,
                     status: 'sold',
@@ -1899,15 +2024,32 @@ document.addEventListener('DOMContentLoaded', function() {
         priceInputForm.addEventListener('submit', function(e) {
             e.preventDefault(); 
             
-            const pricePerPig = parseFloat(priceInput.value); 
+            // priceInput is price per kilogram — we'll compute per-pig totals by multiplying by each pig's weight
+            const pricePerPig = parseFloat(priceInput.value);
             const pigCount = currentPigsForSaleIds.length;
-            
+
             if (isNaN(pricePerPig) || pricePerPig <= 0 || pigCount === 0) {
-                Swal.fire('Error', 'Please enter a valid price per pig and ensure at least one pig is selected.', 'error');
+                Swal.fire('Error', 'Please enter a valid price per kg and ensure at least one pig is selected.', 'error');
                 return;
             }
 
-            calculatedTotalSalePrice = pricePerPig * pigCount;
+            // Sum (pricePerKg * pigWeight) for each selected pig
+            let total = 0;
+            currentPigsForSaleIds.forEach(pid => {
+                const p = getPigById(pid);
+                if (!p) return;
+
+                // support different weight fields used across the project
+                let weight = 0;
+                if (p.weightHistory) weight = getNewestWeight(p.weightHistory);
+                else if (p.weightRecords && p.weightRecords.length) weight = p.weightRecords[p.weightRecords.length - 1].weight;
+                else if (typeof p.weightKg !== 'undefined') weight = p.weightKg;
+                else if (typeof p.weight !== 'undefined' && !isNaN(parseFloat(p.weight))) weight = parseFloat(p.weight);
+
+                total += pricePerPig * (Number(weight) || 0);
+            });
+
+            calculatedTotalSalePrice = total;
             pricePerPigInput = pricePerPig;
 
             showPriceConfirmation(pricePerPig); 

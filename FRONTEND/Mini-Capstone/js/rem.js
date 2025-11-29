@@ -26,6 +26,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const searchInput    = document.getElementById('searchInput');
 
     let reminders = []; 
+    let editingIndex = null; // null = adding new, number = editing
+
 
     /* ---------- MODAL HANDLERS ---------- */
     function openModal() {
@@ -153,66 +155,221 @@ document.addEventListener('DOMContentLoaded', function () {
     clearBtn?.addEventListener('click', clearForm);
 
     /* ---------- TABLE RENDERING ---------- */
-    function renderTable(filteredList = null) {
-        const list = filteredList || reminders;
-        if (!tableBody) return;
+function renderTable(filteredList = null) {
+    const list = filteredList || reminders;
+    if (!tableBody) return;
 
-        tableBody.innerHTML = '';
+    tableBody.innerHTML = '';
 
-        list.forEach(rem => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${rem.date  || '-'}</td>
-                <td>${rem.task  || '-'}</td>
-                <td>${rem.farm  || '-'}</td>
-                <td>${rem.pig   || '-'}</td>
-                <td>${rem.notes || '-'}</td>
-            `;
-            tableBody.appendChild(tr);
+    list.forEach((rem, index) => { // <-- keep track of index for edit/delete
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${rem.date  || '-'}</td>
+            <td>${rem.task  || '-'}</td>
+            <td>${rem.farm  || '-'}</td>
+            <td>${rem.pig   || '-'}</td>
+            <td>${rem.notes || '-'}</td>
+            <td>
+                <button class="edit-btn" data-index="${index}" title="Edit">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button class="delete-btn" data-index="${index}" title="Delete">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tableBody.appendChild(tr);
+
+        // Edit button
+        tr.querySelector('.edit-btn').addEventListener('click', () => {
+            editReminder(index);
         });
 
-        const total   = reminders.length;
-        const showing = list.length;
+        // Delete button
+        tr.querySelector('.delete-btn').addEventListener('click', () => {
+            deleteReminder(index);
+        });
+    });
 
-        if (activeTodoSpan) activeTodoSpan.textContent = total;
-        if (totalCount)     totalCount.textContent     = total;
-        if (showingCount)   showingCount.textContent   = showing;
-    }
+    const total   = reminders.length;
+    const showing = list.length;
 
-    /* ---------- SAVE BUTTON ---------- */
-    saveBtn?.addEventListener('click', () => {
-        const task  = taskInput ? taskInput.value.trim() : '';
-        const date  = dateInput ? dateInput.value : '';
-        const farm  = farmSelect ? farmSelect.value : '';
-        const pig   = pigSelect ? pigSelect.value : '';
-        const notes = notesInput ? notesInput.value.trim() : '';
+    if (activeTodoSpan) activeTodoSpan.textContent = total;
+    if (totalCount)     totalCount.textContent     = total;
+    if (showingCount)   showingCount.textContent   = showing;
+}
 
-        // Validation
-        if (!task || !date) {
-            if (window.Swal) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Missing fields',
-                    text: 'Please fill in at least the Task and Date.',
-                    customClass: {
-                        popup: 'swal2-high-zindex'
-                    }
-                });
-            } else {
-                alert('Please fill in at least the Task and Date.');
-            }
-            return;
-        }
+/* ---------- EDIT REMINDER ---------- */
+function editReminder(index) {
+    const rem = reminders[index];
+    if (!rem) return;
 
-        // Add to list
-        reminders.push({ task, date, farm, pig, notes });
+     editingIndex = index;
 
-        // Re-render table + update counts
+    // Pre-fill modal inputs
+    dateInput.value   = rem.date;
+    taskInput.value   = rem.task;
+    farmSelect.value  = rem.farm;
+    pigSelect.value   = rem.pig;
+    notesInput.value  = rem.notes;
+
+    toggleHasValue(taskInput);
+    toggleHasValue(farmSelect);
+    toggleHasValue(pigSelect);
+    toggleHasValue(notesInput);
+    updateDateWrapperState();
+
+    // Open modal
+    modalWrapper.classList.add('show');
+
+    // Change save button behavior temporarily
+    saveBtn.onclick = () => {
+        // Update the reminder
+        rem.date  = dateInput.value;
+        rem.task  = taskInput.value.trim();
+        rem.farm  = farmSelect.value;
+        rem.pig   = pigSelect.value;
+        rem.notes = notesInput.value.trim();
+
         renderTable();
         showSuccess();
         clearForm();
         closeModal();
-    });
+
+        // Restore save button for adding new
+        saveBtn.onclick = saveNewReminder;
+    };
+}
+
+/* ---------- DELETE REMINDER ---------- */
+function deleteReminder(index) {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "This will permanently delete the task.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                reminders.splice(index, 1);
+                renderTable();
+                Swal.fire('Deleted!', 'Reminder has been deleted.', 'success');
+            }
+        });
+    } else {
+        if (confirm("Are you sure you want to delete this reminder?")) {
+            reminders.splice(index, 1);
+            renderTable();
+        }
+    }
+}
+
+/* ---------- SAVE BUTTON ---------- */
+function saveNewReminder() {
+    const task  = taskInput ? taskInput.value.trim() : '';
+    const date  = dateInput ? dateInput.value : '';
+    const farm  = farmSelect ? farmSelect.value : '';
+    const pig   = pigSelect ? pigSelect.value : '';
+    const notes = notesInput ? notesInput.value.trim() : '';
+
+    // Validation
+    if (!task || !date) {
+        if (window.Swal) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Missing fields',
+                text: 'Please fill in at least the Task and Date.',
+                customClass: {
+                    popup: 'swal2-high-zindex'
+                }
+            });
+        } else {
+            alert('Please fill in at least the Task and Date.');
+        }
+        return;
+    }
+
+    // Add new reminder
+    reminders.push({ task, date, farm, pig, notes });
+
+    renderTable();
+    showSuccess();
+    clearForm();
+    closeModal();
+}
+
+// Attach saveNewReminder to save button initially
+saveBtn?.addEventListener('click', () => {
+    const task  = taskInput.value.trim();
+    const date  = dateInput.value;
+    const farm  = farmSelect.value;
+    const pig   = pigSelect.value;
+    const notes = notesInput.value.trim();
+
+    // Function to show error under an input
+    function showError(input, message) {
+    // Check if an error container exists; if not, create one after .input-wrapper
+    let errorContainer = input.parentElement.nextElementSibling;
+    if (!errorContainer || !errorContainer.classList.contains('error-message')) {
+        errorContainer = document.createElement('span');
+        errorContainer.classList.add('error-message');
+        errorContainer.style.color = 'red';
+        errorContainer.style.fontSize = '0.85rem';
+        errorContainer.style.display = 'block';
+        errorContainer.style.marginTop = '4px';
+        // Insert after the input wrapper
+        input.parentElement.parentElement.insertBefore(errorContainer, input.parentElement.nextSibling);
+    }
+    errorContainer.textContent = message;
+}
+
+// Clear previous errors
+document.querySelectorAll('.error-message').forEach(span => span.remove());
+
+    let valid = true;
+
+    // Validate Task
+    if (!task) {
+        showError(taskInput, 'Task is required');
+        valid = false;
+    }
+
+    // Validate Date
+    if (!date) {
+        showError(dateInput, 'Date is required');
+        valid = false;
+    } else {
+        const selectedDate = new Date(date);
+        const today = new Date();
+        today.setHours(0,0,0,0); // remove time
+        if (selectedDate < today) {
+            showError(dateInput, 'Date must be today or in the future');
+            valid = false;
+        }
+    }
+
+    if (!valid) return; // stop if validation fails
+
+    // Add or edit reminder
+    if (editingIndex !== null) {
+        reminders[editingIndex] = { task, date, farm, pig, notes };
+        editingIndex = null;
+    } else {
+        reminders.push({ task, date, farm, pig, notes });
+    }
+
+    renderTable();
+    showSuccess();
+    clearForm();
+    closeModal();
+});
+
+
+
+
 
     /* ---------- SEARCH / FILTER ---------- */
     searchInput?.addEventListener('input', (e) => {
@@ -236,3 +393,64 @@ document.addEventListener('DOMContentLoaded', function () {
     /* ---------- INITIAL RENDER ---------- */
     renderTable();
 });
+
+
+// Profile Modal Setup
+document.addEventListener("DOMContentLoaded", () => {
+    const profileBtn = document.getElementById("profileBtn");
+    const profileModal = document.getElementById("profileModal");
+
+    if (!profileBtn || !profileModal) return;
+
+    profileBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        profileModal.classList.toggle("open");
+    });
+
+    profileModal.addEventListener("click", (e) => e.stopPropagation());
+
+    document.addEventListener("click", () => {
+        profileModal.classList.remove("open");
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") profileModal.classList.remove("open");
+    });
+
+    // Logout modal handling
+    const logoutBtn = document.getElementById('logoutBtn');
+    const logoutModal = document.getElementById('logoutModal');
+    const logoutConfirmBtn = document.getElementById('logoutConfirmBtn');
+    const logoutCancelBtn = document.getElementById('logoutCancelBtn');
+
+    if (logoutBtn && logoutModal) {
+        logoutBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            profileModal.classList.remove('open');
+            logoutModal.classList.add('open');
+            logoutModal.setAttribute('aria-hidden', 'false');
+        });
+
+        if (logoutConfirmBtn) {
+            logoutConfirmBtn.addEventListener('click', () => {
+                window.location.href = 'index.html';
+            });
+        }
+
+        if (logoutCancelBtn) {
+            logoutCancelBtn.addEventListener('click', () => {
+                logoutModal.classList.remove('open');
+                logoutModal.setAttribute('aria-hidden', 'true');
+            });
+        }
+
+        logoutModal.addEventListener('click', (e) => {
+            if (e.target === logoutModal) {
+                logoutModal.classList.remove('open');
+                logoutModal.setAttribute('aria-hidden', 'true');
+            }
+        });
+    }
+});
+
+
