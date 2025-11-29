@@ -63,6 +63,7 @@
 - I change the API instead of /login-register I change it into /login for login and /register for register because it's the url of each pages
 - password length from 50 to 255 to integrate bcrypt
 - I clean the backend codes and segregate it -- folders Controllers for all logic, Middleware is for error handling and other, and routes
+- I change the condition in the total expenses count (excluded the sold)
 
 # WHAT IS NEED TO BE CHANGE
 - Change the alert into a modern success message

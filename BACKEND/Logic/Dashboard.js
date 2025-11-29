@@ -70,7 +70,7 @@ export async function getChartData(userId) {
         result.push({
             month: m,
             income: row?.income || 0,
-            farm_expenses: row?.farm_expenses || 0,
+            farm_expenses: row?.farm_expenses || 0
         });
     }
 

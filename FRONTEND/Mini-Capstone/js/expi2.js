@@ -39,76 +39,107 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Setup the Chart Context
     const ctx   = document.getElementById('chart').getContext('2d');
+
+
+
    /* ----------------------------------------------------
        Chart for income and expenses
        (static data for now)
     ---------------------------------------------------- */
 
-    const data ={
-        labels: [
-            'Jan','Feb','Mar','Apr',
-            'May','Jun','Jul','Aug',
-            'Sep','Oct','Nov','Dec'
-        ],
-        datasets: [
-            {
-                label: 'Income',
-                data: [5000,6000,8000,4000,7000,3000,10000,9000,8500,9500,11000,13000],
-                backgroundColor: '#5dd05d',
-                hoverBackgroundColor: '#7dde7d',
-                barPercentage: 0.65,
-                categoryPercentage: 0.8,
-                borderRadius: 4
-            },
-              {
-                label: 'Expenses',
-                data: [3000,3500,5000,2000,4500,1500,7000,6000,5000,6500,7000,9000],
-                backgroundColor: '#F16877',
-                hoverBackgroundColor: '#F16877',
-                barPercentage: 0.65,
-                categoryPercentage: 0.8,
-                borderRadius: 4
-            }
-        ]
-    };
-    // Create the Income & Expenses Bar Chart
-    
+    async function fetchExpenseIncome(){
+        const userId = localStorage.getItem('userID');
+        //console.log('userId:', userId)
+        try{
+            const res = await fetch('http://localhost:8080/api/expenses-records/Expenses-Income', {
+               method: 'POST',
+               headers: {'Content-Type': 'application/json'},
+               body: JSON.stringify({userId})
+            });
 
-        const incomeExpensesChart = new Chart(ctx, {
-            type: 'bar',
-            data: data,
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                        callbacks: {
-                            label: function(context) {
-                                const value = context.raw || 0;
-                                return context.dataset.label + ': ₱' + value.toLocaleString('en-PH');
+            const result = await res.json();
+            const EIData = result.EIData; // EI means Expenses and Incomes
+
+            const incomeData = Array(12).fill(0);
+            const expenseData = Array(12).fill(0);
+
+            EIData.forEach(d => {
+                const monthIndex = d.month - 1;
+                incomeData[monthIndex] = d.income || 0;
+                expenseData[monthIndex] = d.expenses || 0;
+            })
+        
+        const data ={
+            labels: [
+                'Jan','Feb','Mar','Apr',
+                'May','Jun','Jul','Aug',
+                'Sep','Oct','Nov','Dec'
+            ],
+            datasets: [
+                {
+                    label: 'Income',
+                    data: incomeData,
+                    backgroundColor: '#5dd05d',
+                    hoverBackgroundColor: '#7dde7d',
+                    barPercentage: 0.65,
+                    categoryPercentage: 0.8,
+                    borderRadius: 4
+                },
+                {
+                    label: 'Expenses',
+                    data: expenseData,
+                    backgroundColor: '#F16877',
+                    hoverBackgroundColor: '#F16877',
+                    barPercentage: 0.65,
+                    categoryPercentage: 0.8,
+                    borderRadius: 4
+                }
+            ]
+        };
+        // Create the Income & Expenses Bar Chart
+            const incomeExpensesChart = new Chart(ctx, {
+                type: 'bar',
+                data: data,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw || 0;
+                                    return context.dataset.label + ': ₱' + value.toLocaleString('en-PH');
+                                }
                             }
                         }
-                    }
-                },
-                scales: {
-                    x: {
-                        stacked: false,
                     },
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return '₱' + value.toLocaleString('en-PH');
+                    scales: {
+                        x: {
+                            stacked: false,
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '₱' + value.toLocaleString('en-PH');
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
+            });
+        } catch (error) {
+            console.error('Error fetching chart data:', error);
+        }
+        
+    } 
+    fetchExpenseIncome();
+
+        // END OF THE BARCHART
 
 
 
@@ -118,16 +149,60 @@ document.addEventListener('DOMContentLoaded', () => {
        (Replace with DB or backend data later)
     ---------------------------------------------------- */
 
-    let expensesData = [
-        { date: '2025-09-20', farm: 'Farm 001', pig: 'Pig 001', category: 'Feed',     price: 900 },
-        { date: '2025-09-18', farm: 'Farm 002', pig: 'Pig 004', category: 'Medicine', price: 350 },
-        { date: '2025-09-15', farm: 'Farm 001', pig: 'Pig 002', category: 'Labor',    price: 500 }
-    ];
+    let expensesData = [];
+    let soldData = [];
 
+    //list for all expenses
+    async function fetchExpensesTable(){
+        
+        const userId = localStorage.getItem('userID');
+        
+        try{
+            const res = await fetch('http://localhost:8080/api/expenses-records/Expenses-Table',{
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({userId})
+            });
+
+            const result = await res.json();
+            expensesData = result.ExpenseTable || 0;
+            renderExpensesTable();
+
+        } catch (error) {
+            console.error('Error fetching table data:', error);
+        }
+    }
+    
+    // list for all pig solds
+     async function fetchSoldTable(){
+
+        const userId = localStorage.getItem('userID');      
+        
+        try{
+            const res = await fetch('http://localhost:8080/api/expenses-records/PigSold-Table', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({userId})
+            });
+            
+            const result = await res.json();
+            soldData = result.SoldTable || 0;
+            renderSoldTable();
+
+        } catch (error) {
+            console.error('Error fetching table data: ', error)
+        }
+     }
+    fetchExpensesTable();
+    fetchSoldTable();
+
+<<<<<<< HEAD
     let soldData = [
         { dateSold: '2025-09-19', farm: 'Farm 001', pig: 'Pig 003', weight: '82kg', pricePerKg: 260, totalPrice: 21320, cancelled: false },
         { dateSold: '2025-09-10', farm: 'Farm 002', pig: 'Pig 005', weight: '75kg', pricePerKg: 250, totalPrice: 18750, cancelled: false }
     ];
+=======
+>>>>>>> 1976bf7bb647a1b5ecee405fff2a39dfe4749393
 
     let isEditing = false;
     let editingIndex = null;
