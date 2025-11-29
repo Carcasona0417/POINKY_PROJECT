@@ -41,6 +41,9 @@
 - Add Estimated_income logic and integrate to front end
 - Add Project Profit logic and integrate to front end
 - add breakdown logic and integrate it 
+- Add logic for creating expenses
+- add logic for deleting and updating expenses
+- add logic for filtering the tables and chart monthly and yearly
 
 # WHAT WAS DONE? ( DESCRIPTION )
 - Done With the logic for the login and successful message in the login page
