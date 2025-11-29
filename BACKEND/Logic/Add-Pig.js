@@ -24,3 +24,13 @@ export async function addPig(data) {
 
     return result;
 }
+
+// TO DISPLAY THE PIGS BASED ON THE FARM
+export async function getPigs(farmId){
+    const [rows] = await pool.query (`
+        SELECT * FROM pig WHERE FarmID = ?
+        `, [farmId]);
+        return rows;
+    }
+
+// ADD delete and edit

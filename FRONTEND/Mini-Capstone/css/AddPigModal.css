@@ -1,4 +1,4 @@
-/* --- Add Pig Modal Specific Styles --- */
+/* --- Add Pig Modal Specific Styles (matching Image 1) --- */
 .modal-content.add-pig-modal-content {
     width: 100%;
     max-width: 450px;
@@ -16,14 +16,14 @@
     color: var(--primary-pink);
     margin-bottom: 25px;
     font-weight: 700;
-    text-align: left;
+    text-align: left; /* Align title left */
 }
 
 .add-pig-modal-content .close-button {
     position: absolute;
     top: 20px;
     right: 20px;
-    background-color: var(--primary-pink);
+    background-color: var(--primary-pink); /* Pink background for close button */
     color: white;
     border: none;
     border-radius: 5px;
@@ -46,186 +46,101 @@
     text-align: left;
 }
 
-/* ------------ FLOATING INPUTS (SAME STYLE AS PREVIOUS MODAL) ------------ */
 
-.add-pig-modal-content .input-wrapper {
-    position: relative;
+.add-pig-modal-content input[type="text"],
+.add-pig-modal-content input[type="date"],
+.add-pig-modal-content input[type="number"],
+.add-pig-modal-content select {
     width: 100%;
-}
-
-.add-pig-modal-content .input-wrapper input,
-.add-pig-modal-content .input-wrapper select {
-    width: 100%;
-    height: 46px;
-    padding: 12px 14px;
-    padding-right: 60px;
-    border: 1px solid #dcdcdc;
-    border-radius: 6px;
-    font-size: 14px;
-    outline: none;
-    background: #fff;
-    transition: border-color .2s ease, box-shadow .2s ease;
-}
-
-/* Focus state */
-.add-pig-modal-content .input-wrapper input:focus,
-.add-pig-modal-content .input-wrapper select:focus {
-    border-color: #ff4861;
-    box-shadow: 0 0 0 1px rgba(255,72,97,0.15);
-}
-
-/* Floating label base */
-.add-pig-modal-content .input-wrapper label {
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #777;
-    font-size: 12px;
-    pointer-events: none;
-    transition: .25s ease;
-    background: #fff;
-    padding: 0 4px;
-}
-
-/* FLOAT LABEL — TEXT & NUMBER */
-.add-pig-modal-content .input-wrapper input[type="text"]:focus ~ label,
-.add-pig-modal-content .input-wrapper input[type="text"]:not(:placeholder-shown) ~ label,
-.add-pig-modal-content .input-wrapper input[type="number"]:focus ~ label,
-.add-pig-modal-content .input-wrapper input[type="number"]:not(:placeholder-shown) ~ label {
-    top: -8px;
-    transform: translateY(-10%);
-    font-size: 12px;
-    color: #ff4861;
-}
-
-/* FLOAT LABEL — SELECT (FIXED) */
-.add-pig-modal-content .input-wrapper select:focus ~ label,
-.add-pig-modal-content .input-wrapper.has-value label {
-    top: -8px;
-    transform: translateY(-10%);
-    font-size: 12px;
-    color: #ff4861;
-}
-
-/* Custom arrow for selects (same style as old form) */
-.add-pig-modal-content select.form-select {
-    appearance: none;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    color: var(--text-dark);
+    background-color: #fcfcfc;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    appearance: none; /* Remove default select arrow */
     -webkit-appearance: none;
     -moz-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23666' stroke-width='1.3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
-    background-size: 12px;
 }
 
-/* ------------ WEIGHT FIELD (KG BOX) ------------ */
+.add-pig-modal-content input:focus,
+.add-pig-modal-content select:focus {
+    border-color: var(--primary-pink);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(240, 128, 128, 0.2);
+}
 
-.add-pig-modal-content .weight-wrapper {
+/* Custom select dropdown arrow */
+.select-wrapper {
     position: relative;
 }
 
-.add-pig-modal-content .weight-wrapper .unit-box {
+.select-wrapper select {
+    padding-right: 40px; /* Make space for the custom arrow */
+}
+
+.select-wrapper::after {
+    content: '\f078'; /* Unicode for solid angle-down icon */
+    font-family: "Font Awesome 6 Free"; /* Use "Font Awesome 6 Free" for free icons */
+    font-weight: 900; /* For 'solid' style */
     position: absolute;
-    top: 0;
-    right: 0;
-    width: 55px;
-    height: 100%;
-    background: #e9e9e9;
-    border-left: 1px solid #dcdcdc;
-    border-radius: 0 6px 6px 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #555;
-    font-size: 14px;
-    padding-right: 6px;
-    box-sizing: border-box;
-}
-
-.add-pig-modal-content .weight-wrapper.is-focused .unit-box {
-    background: #ffe5ea;
-    border-left-color: #ff4861;
-}
-
-/* ------------ DATE FIELD (DATE ACQUIRED) ------------ */
-
-.add-pig-modal-content .date-wrapper {
-    position: relative;
-}
-
-.add-pig-modal-content .date-wrapper::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 55px;
-    height: 100%;
-    background: #e9e9e9;
-    border-left: 1px solid #dcdcdc;
-    border-radius: 0 6px 6px 0;
-    pointer-events: none;
-    transition: .2s ease;
-}
-
-.add-pig-modal-content .calendar-icon {
-    position: absolute;
-    right: 18px;
+    right: 15px;
     top: 50%;
     transform: translateY(-50%);
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    background-size: 18px;
-    background-repeat: no-repeat;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
-    z-index: 2;
+    pointer-events: none;
+    color: var(--text-light);
+    font-size: 14px;
 }
 
-/* Hide native icon */
-.add-pig-modal-content input[type="date"]::-webkit-calendar-picker-indicator { 
-    display: none; 
-}
-.add-pig-modal-content input[type="date"] { 
-    -moz-appearance: textfield; 
-}
-
-/* Date text hidden until value chosen */
-.add-pig-modal-content .date-wrapper input[type="date"] {
-    color: transparent;
-    caret-color: transparent;
+/* Input with icon (for date) */
+.input-with-icon {
+    position: relative;
+    display: flex; /* Ensures icon is properly aligned vertically if input height changes */
+    align-items: center;
 }
 
-.add-pig-modal-content .date-wrapper.has-value input[type="date"] {
-    color: #000;
-    caret-color: auto;
+.input-with-icon input {
+    flex-grow: 1; /* Allows input to take up available space */
+    padding-right: 40px; /* Space for the icon */
 }
 
-/* Float label for date */
-.add-pig-modal-content .date-wrapper.is-focused label,
-.add-pig-modal-content .date-wrapper.has-value label {
-    top: -8px;
-    transform: translateY(-10%);
-    font-size: 12px;
-    color: #ff4861;
+.input-with-icon .icon {
+    position: absolute; /* Keep it absolute for precise positioning */
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-light);
+    pointer-events: none; /* Make icon not interfere with input clicks */
+    font-size: 16px; /* Ensure icon size is good */
 }
 
-/* Focus border + right box */
-.add-pig-modal-content .date-wrapper.is-focused input {
-    border-color: #ff4861;
-    box-shadow: 0 0 0 1px rgba(255,72,97,0.15);
+/* Input with suffix (for weight) */
+.input-with-suffix {
+    position: relative;
+    display: flex; /* Align input and suffix */
+    align-items: center;
 }
 
-.add-pig-modal-content .date-wrapper.is-focused::after {
-    background: #ffe5ea;
-    border-left-color: #ff4861;
+.input-with-suffix input {
+    padding-right: 55px; /* Adjust padding for suffix */
 }
 
-/* ------------ BUTTONS ------------ */
+/* Fix: Ensure the suffix text is rendered as plain text, overriding any unintended Font Awesome inheritance. */
+.input-with-suffix .suffix {
+    /* Positioning (Keep existing styles): */
+    position: absolute;
+    right: 40px;
+    color: var(--text-light);
+    font-weight: 500;
+    font-size: 16px;
+    font-family: Arial, sans-serif !important; 
+    font-style: normal !important;
+}
 
 .add-pig-modal-content .modal-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-end; /* Align buttons to the right */
     gap: 15px;
     margin-top: 30px;
 }
@@ -238,7 +153,6 @@
     cursor: pointer;
     transition: all 0.2s ease;
     min-width: 100px;
-    border: none;
 }
 
 .add-pig-modal-content .btn-clear {
@@ -253,8 +167,9 @@
 }
 
 .add-pig-modal-content .btn-save {
-    background-color: #4CAF50;
+    background-color: #4CAF50; /* Green */
     color: white;
+    border: none;
 }
 
 .add-pig-modal-content .btn-save:hover {
