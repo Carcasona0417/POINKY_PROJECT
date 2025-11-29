@@ -8,6 +8,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+    AOS.init({
+        once: true, // animation triggers only once when scrolling down
+        duration: 1000 // smooth timing
+    });
+</script>
+
+
 </head>
 <body>
     <header class="navbar">
@@ -37,6 +47,10 @@
             <div class="auth-container" id="authContainer">
                 <div class="form-container sign-up">
                     <form>
+                         <div class="logo-wrapper">
+                            <a href="#first-page"><img src="assets/Icons/Icon.png" alt="Poinky Logo"></a>
+                            <span class="logo-text">Poinky</span>
+                        </div>
                         <h1>Create Account</h1>
                         <input type="text" placeholder="Name">
                         <input type="email" placeholder="Email">
@@ -50,16 +64,20 @@
                 </div>
                 <div class="form-container sign-in">
                     <form>
+                        <div class="logo-wrapper">
+                            <a href="#first-page"><img src="assets/Icons/Icon.png" alt="Poinky Logo"></a>
+                            <span class="logo-text">Poinky</span>
+                        </div>
                         <h1>Log In</h1>
                         <input type="email" placeholder="Email" required>
                         <input type="password" placeholder="Password" required>
                         <a href="#">Forget Your Password?</a>
                         <button>Log In</button>
-                        <!-- Mobile toggle text for Sign In form -->
                         <p class="auth-toggle-text">
                             Don't have an account? <a onclick="showSignUp()">Sign Up</a>
                         </p>
                     </form>
+
                 </div>
                 <div class="toggle-container">
                     <div class="toggle">
@@ -162,7 +180,7 @@
                         <button class="btn btn-sign-up-bottom triggerBtn" id="triggerModalBottom">Sign Up</button>
                     </div>
                     <div class="join-image">
-                        <img src="../Icons/Community.png" alt="Happy Pig illustration">
+                        <img src="assets/Icons/Footer.png" alt="Happy Pig illustration">
                     </div>
                 </div>
             </div>
@@ -172,7 +190,7 @@
     <footer id="contact" class="footer">
         <div class="container">
             <div class="footer-logo">
-                <img src="assets/Icons/Footer.png" alt="Poinky Logo">
+                <img src="assets/Icons/Community.png" alt="Poinky Logo">
                 <span class="logo-text">Poinky</span>
             </div>
             <div class="footer-columns">
@@ -200,6 +218,80 @@
     </footer>
 
     <script src="js/script.js"></script>
+    <script>
+document.addEventListener("DOMContentLoaded", function() {
+    const items = document.querySelectorAll(".feature-item");
+
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if(entry.isIntersecting){
+                entry.target.classList.add("reveal");
+                observer.unobserve(entry.target); // animate once
+            }
+        });
+    }, { threshold: 0.2 });
+
+    items.forEach(item => observer.observe(item));
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const aboutItems = document.querySelectorAll("#about .about-image, #about .about-text");
+
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if(entry.isIntersecting){
+                entry.target.classList.add("reveal");
+                observer.unobserve(entry.target); // animate only once
+            }
+        });
+    }, { threshold: 0.3 });
+
+    aboutItems.forEach(i => observer.observe(i));
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const manualItems = document.querySelectorAll(".manual-list li");
+    const poinkyItems = document.querySelectorAll(".poinky-list li");
+
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if(entry.isIntersecting){
+                const listItems = entry.target.querySelectorAll("li");
+                listItems.forEach((li, index) => {
+                    setTimeout(() => {
+                        li.classList.add("reveal");
+                    }, index * 150); // stagger 150ms each
+                });
+                observer.unobserve(entry.target); // animate only once
+            }
+        });
+    }, { threshold: 0.3 });
+
+    // Observe both lists
+    document.querySelectorAll(".manual-list, .poinky-list").forEach(list => observer.observe(list));
+});
+
+// Select all nav links
+const navLinks = document.querySelectorAll(".navbar .nav-links a");
+
+navLinks.forEach(link => {
+    link.addEventListener("click", function() {
+        // Remove "active" from all links
+        navLinks.forEach(l => l.classList.remove("active"));
+        // Add "active" to the clicked link
+        this.classList.add("active");
+    });
+});
+
+</script>
+
+
+
+
     
 </body>
 </html>

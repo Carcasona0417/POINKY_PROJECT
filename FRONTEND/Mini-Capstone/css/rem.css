@@ -187,57 +187,83 @@ body {
 }
 
 .header-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 360px;
-    background-image: url('../backgroundpics/BG.png');
-    background-size: cover;
-    background-position: center;
-    position: relative;
-    overflow: hidden;
+    text-align: center;
+    margin-top: auto;
+    margin-bottom: 50px;
+    z-index: 1;
 }
 
-.page-title {
-    font-size: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-}
 
 .page-icon {
     width: 70px;
     height: 70px;
 }
 
+/* ===== SEARCH CONTAINER LIKE FILTER ===== */
 .search-container {
-    background: white;
-    width: 100%;
-    max-width: 500px;
-    margin: 0 auto;
+    position: relative;            /* like filter container */
     display: flex;
     align-items: center;
-    padding: 12px 20px;
-    border-radius: 30px;
-    position: relative;
+    justify-content: flex-end;     /* float to right */
+    background: #ffffff;
+    border: 1px solid #dcdcdc;
+    border-radius: 999px;          /* rounded like filter */
+    padding: 10px 16px;
+    max-width: 350px;              /* same as filter toggle */
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #333;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+    margin-top: 20px;              /* adjust vertical position */
+    margin-left: auto;             /* push to right */
 }
+
+.search-container:hover {
+    border-color: #ff4861;
+    transform: translateY(-1px);
+}
+
+.page-title {
+      font-size: 32px;
+      display: flex;
+      align-items: center;       /* vertically center icon and text */
+      justify-content: center;   /* horizontally center the whole title */
+      gap: 8px;                  /* moderate spacing */
+      color: white;
+      line-height: 1;            /* consistent line-height */
+      margin-bottom: 70px;       /* keep existing margin */
+  }
+  /* Updated .page-icon styles (now a span wrapper) */
+  .page-title .page-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;               /* fixed width for consistency */
+      height: 36px;              /* fixed height for consistency */
+      font-size: 36px;           /* icon size */
+      line-height: 1;            /* remove extra line height */
+      vertical-align: middle;    /* baseline alignment */
+  }
+
 
 .search-input {
     border: none;
     outline: none;
-    flex-grow: 1;
-    font-size: 16px;
+    flex: 1;
+    font-size: 13px;
     font-family: 'Poppins', sans-serif;
-    padding-right: 30px;
+    color: #333;
+    background: transparent;
 }
 
 .search-icon {
-    color: var(--text-light);
-    position: absolute;
-    right: 20px;
+    font-size: 14px;
+    color: #ff4861;
+    margin-left: 8px;
 }
+
 
 /* Remove default icon */
 input[type="search"]::-webkit-search-cancel-button {
@@ -254,6 +280,7 @@ input[type="search"]::-webkit-search-cancel-button {
 /* --- Data Container (The White Card) --- */
 .data-container {
     margin: -50px 40px 40px 40px;
+     border-radius: 15px 15px 15px 15px;
     position: relative;
     z-index: 10;
 }
@@ -476,17 +503,6 @@ input[type="search"]::-webkit-search-cancel-button {
     }
 }
 
-@media (max-width: 480px) {
-    .page-title {
-        font-size: 24px;
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    .table-content-box {
-        padding: 20px;
-    }
-}
 
 
 
