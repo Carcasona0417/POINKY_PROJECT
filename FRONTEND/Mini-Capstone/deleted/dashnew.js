@@ -15,10 +15,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             const [farmsRes, pigsRes, expensesRes, remindersRes] = await Promise.all([
-                fetch('http://localhost:8080/api/dashboard/total-farms', bodyData),
-                fetch('http://localhost:8080/api/dashboard/total-pigs', bodyData),
-                fetch('http://localhost:8080/api/dashboard/month-expenses', bodyData),
-                fetch('http://localhost:8080/api/dashboard/upcoming-reminders', bodyData)
+                fetch('http://localhost:8080/total-farms', bodyData),
+                fetch('http://localhost:8080/total-pigs', bodyData),
+                fetch('http://localhost:8080/month-expenses', bodyData),
+                fetch('http://localhost:8080/upcoming-reminders', bodyData)
             ]);
 
             const farmsData = await farmsRes.json();
@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const userId = localStorage.getItem('userID');
 
          try {
-            const res = await fetch('http://localhost:8080/api/dashboard/chart-data', {
+            const res = await fetch('http://localhost:8080/getChartData', {
                  method: 'POST' ,
                  headers: {'Content-Type': 'application/json'},
                  body: JSON.stringify({userId})
@@ -55,11 +55,13 @@ document.addEventListener('DOMContentLoaded', function() {
          // Map backend data to arrays
             const incomeData = Array(12).fill(0);
             const farmExpenseData = Array(12).fill(0);
+            const feedExpenseData = Array(12).fill(0);
 
             chartData.forEach(d => {
                 const monthIndex = d.month - 1; // month 1 = index 0
                 incomeData[monthIndex] = d.income || 0;
                 farmExpenseData[monthIndex] = d.farm_expenses || 0;
+                feedExpenseData[monthIndex] = d.feed_expenses || 0;
             });
        
 
@@ -81,6 +83,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         data: farmExpenseData,
                         backgroundColor: '#ffd700',
                         hoverBackgroundColor: '#ffe44d',
+                        barPercentage: 0.65,
+                        categoryPercentage: 0.8,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Feed Expenses',
+                        data: feedExpenseData,
+                        backgroundColor: '#8b2436',
+                        hoverBackgroundColor: '#a52c42',
                         barPercentage: 0.65,
                         categoryPercentage: 0.8,
                         borderRadius: 4
@@ -324,6 +335,447 @@ document.addEventListener('DOMContentLoaded', function() {
 
 */ 
 
+// start Notification System
+class NotificationManager {
+    constructor() {
+        this.notifications = this.loadNotifications();
+        this.init();
+    }
+
+    init() {
+        this.setupEventListeners();
+        this.renderNotifications();
+        this.updateBadge();
+    }
+
+    // Sample initial notifications
+    getSampleNotifications() {
+        return [
+            {
+                id: 1,
+                title: "Buy Feed!",
+                message: "Starter feed in Agri Market.",
+                farm: "Farm 2 – Mikel",
+                date: "Sept 25",
+                read: false,
+                type: "feed"
+            },
+            {
+                id: 2,
+                title: "Vaccine Due",
+                message: "Piglets need vaccination for common diseases.",
+                farm: "Farm 1 – Main",
+                date: "Sept 28",
+                read: false,
+                type: "vaccine"
+            },
+            {
+                id: 3,
+                title: "Equipment Maintenance",
+                message: "Watering system needs cleaning and maintenance.",
+                farm: "Farm 2 – Mikel",
+                date: "Oct 2",
+                read: false,
+                type: "maintenance"
+            }
+        ];
+    }
+
+    loadNotifications() {
+        const saved = localStorage.getItem('poinky-notifications');
+        if (saved) {
+            return JSON.parse(saved);
+        } else {
+            const sampleNotifications = this.getSampleNotifications();
+            this.saveNotifications(sampleNotifications);
+            return sampleNotifications;
+        }
+    }
+
+    saveNotifications(notifications) {
+        localStorage.setItem('poinky-notifications', JSON.stringify(notifications));
+    }
+
+    setupEventListeners() {
+        const icon = document.getElementById('notificationIcon');
+        const modal = document.getElementById('notificationModal');
+
+        // Toggle modal on icon click
+        icon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            modal.classList.toggle('show');
+            if (modal.classList.contains('show')) {
+                this.renderNotifications();
+            }
+        });
+
+        // Close when clicking outside modal
+        document.addEventListener('click', (e) => {
+            if (!modal.contains(e.target) && !icon.contains(e.target)) {
+                modal.classList.remove('show');
+            }
+        });
+
+        // Close with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                modal.classList.remove('show');
+            }
+        });
+    }
+
+    renderNotifications() {
+        const container = document.getElementById('notificationList');
+        
+        if (this.notifications.length === 0) {
+            container.innerHTML = `
+                <div class="notification-empty">
+                    <i class="fas fa-bell-slash"></i>
+                    <p>No notifications</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = this.notifications.map(notification => `
+            <div class="notification-item ${notification.read ? 'read' : 'unread'}" 
+                 data-id="${notification.id}"
+                 ondblclick="notificationManager.toggleDelete(${notification.id})">
+                <div class="notification-title">
+                    <span>${notification.title}</span>
+                </div>
+                <div class="notification-message">${notification.message}</div>
+                <div class="notification-details">
+                    <span class="notification-farm">${notification.farm}</span>
+                    <span class="notification-date">${notification.date}</span>
+                </div>
+                <button class="notification-delete" onclick="notificationManager.deleteNotification(${notification.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `).join('');
+
+        // Add click and swipe events
+        this.addNotificationEvents();
+    }
+
+    addNotificationEvents() {
+        const notificationItems = document.querySelectorAll('.notification-item');
+        
+        notificationItems.forEach(item => {
+            const id = parseInt(item.dataset.id);
+            
+            // Single click to mark as read
+            item.addEventListener('click', (e) => {
+                if (!e.target.closest('.notification-delete')) {
+                    this.markAsRead(id);
+                }
+            });
+
+            // Swipe to delete for mobile
+            this.addSwipeEvents(item, id);
+        });
+    }
+
+    addSwipeEvents(item, id) {
+        let startX, currentX, isSwiping = false;
+
+        item.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            currentX = startX;
+            isSwiping = true;
+            item.classList.add('swiping');
+        });
+
+        item.addEventListener('touchmove', (e) => {
+            if (!isSwiping) return;
+            currentX = e.touches[0].clientX;
+            const diff = startX - currentX;
+            
+            if (diff > 0) { // Swiping left
+                item.style.transform = `translateX(-${Math.min(diff, 80)}px)`;
+            }
+        });
+
+        item.addEventListener('touchend', () => {
+            if (!isSwiping) return;
+            isSwiping = false;
+            
+            const diff = startX - currentX;
+            if (diff > 50) { // Swipe threshold
+                item.classList.add('swipe-delete');
+                setTimeout(() => {
+                    this.deleteNotification(id);
+                }, 300);
+            } else {
+                item.style.transform = '';
+            }
+            item.classList.remove('swiping');
+        });
+    }
+
+    markAsRead(id) {
+        const notification = this.notifications.find(n => n.id === id);
+        if (notification && !notification.read) {
+            notification.read = true;
+            this.saveNotifications(this.notifications);
+
+            // Update the element immediately
+            const item = document.querySelector(`.notification-item[data-id="${id}"]`);
+            if (item) {
+                item.classList.remove('unread');
+                item.classList.add('read');
+            }
+
+            this.updateBadge();
+        }
+    }
+
+    toggleDelete(id) {
+        if (window.innerWidth > 768) {
+            const item = document.querySelector(`.notification-item[data-id="${id}"]`);
+            item.classList.toggle('show-delete');
+        }
+    }
+
+    deleteNotification(id) {
+        this.notifications = this.notifications.filter(n => n.id !== id);
+        this.saveNotifications(this.notifications);
+        this.renderNotifications();
+        this.updateBadge();
+        this.updateRemindersCount();
+    }
+
+    updateBadge() {
+        const unreadCount = this.notifications.filter(n => !n.read).length;
+        const badge = document.querySelector('.notificationBadge');
+        if (this.notifications.length === 0) {
+            badge.style.display = 'none';
+        } else {
+            badge.style.display = 'inline-block';
+        }
+    }
+
+    updateRemindersCount() {
+        const remindersCount = document.getElementById('remindersCount');
+        const upcomingReminders = document.getElementById('upcomingReminders');
+        
+        if (remindersCount) {
+            remindersCount.textContent = this.notifications.length;
+        }
+        if (upcomingReminders) {
+            upcomingReminders.textContent = this.notifications.length;
+        }
+    }
+
+    addNotification(title, message, farm, date, type = 'general') {
+        const newNotification = {
+            id: Date.now(),
+            title,
+            message,
+            farm,
+            date,
+            type,
+            read: false
+        };
+        
+        this.notifications.unshift(newNotification);
+        this.saveNotifications(this.notifications);
+        this.renderNotifications();
+        this.updateBadge();
+        this.updateRemindersCount();
+    }//end notif
+    
+}
+
+// Initialize Notification Manager
+document.addEventListener('DOMContentLoaded', () => {
+    window.notificationManager = new NotificationManager();
+});
+
+// Your existing chart code
+
+/*
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // 1. Setup the Chart Context
+    const ctx = document.getElementById('chart').getContext('2d');
+    
+    // 2. Define Data
+    const data = {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        datasets: [
+            {
+                label: 'Income',
+                data: incomeData,
+                backgroundColor: '#5dd05d',
+                hoverBackgroundColor: '#7dde7d',
+                barPercentage: 0.65,
+                categoryPercentage: 0.8,
+                borderRadius: 4
+            },
+            {
+                label: 'Farm Expenses',
+                data: farmExpenseData,
+                backgroundColor: '#ffd700',
+                hoverBackgroundColor: '#ffe44d',
+                barPercentage: 0.65,
+                categoryPercentage: 0.8,
+                borderRadius: 4
+            },
+            {
+                label: 'Feed Expenses',
+                data: feedExpenseData,
+                backgroundColor: '#8b2436',
+                hoverBackgroundColor: '#a52c42',
+                barPercentage: 0.65,
+                categoryPercentage: 0.8,
+                borderRadius: 4
+            }
+        ]
+    };
+
+    // 3. Custom Plugin for Background Area
+    const customChartBackground = {
+        id: 'customChartBackground',
+        beforeDraw: (chart) => {
+            const {ctx, chartArea: {left, top, width, height}} = chart;
+            ctx.save();
+            
+            // Create gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, 'rgba(255, 245, 245, 0.8)');
+            gradient.addColorStop(1, 'rgba(255, 240, 245, 0.4)');
+            
+            // Fill background (Using standard fillRect for maximum compatibility)
+            ctx.fillStyle = gradient;
+            ctx.fillRect(left, top, width, height);
+            
+            // Draw grid lines manually if needed, or let Scales handle it
+            ctx.restore();
+        }
+    };
+
+    // 4. Chart Configuration
+    const config = {
+        type: 'bar',
+        data: data,
+        plugins: [customChartBackground],
+        options: {
+            responsive: true,
+            maintainAspectRatio: false, // Important for fitting container
+            plugins: {
+                legend: { display: false }, // Using custom HTML legend
+                tooltip: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    titleColor: '#333',
+                    bodyColor: '#666',
+                    borderColor: 'rgba(255, 107, 129, 0.3)',
+                    borderWidth: 1,
+                    padding: 12,
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ₱${context.parsed.y.toLocaleString()}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    border: { display: false },
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    ticks: {
+                        color: '#888',
+                        font: { family: 'Poppins' },
+                        callback: (value) => '₱' + value.toLocaleString()
+                    }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        color: '#666',
+                        font: { family: 'Poppins', weight: '500' }
+                    }
+                }
+            },
+            // Click Event for Details Popup
+            onClick: (e, elements) => {
+                if (elements.length > 0) {
+                    const datasetIndex = elements[0].datasetIndex;
+                    const index = elements[0].index;
+                    const label = data.datasets[datasetIndex].label;
+                    const value = data.datasets[datasetIndex].data[index];
+                    const month = data.labels[index];
+                    
+                    showDetailPopup(label, month, value);
+                }
+            },
+            onHover: (event, chartElement) => {
+                event.native.target.style.cursor = chartElement.length ? 'pointer' : 'default';
+            }
+        }
+    };
+
+    // 5. Render Chart
+    new Chart(ctx, config);
+
+    // Helper: Show Popup Details
+    function showDetailPopup(category, month, value) {
+        // Remove existing popup if any
+        const existing = document.getElementById('chart-details-popup');
+        if (existing) existing.remove();
+
+        const popup = document.createElement('div');
+        popup.id = 'chart-details-popup';
+        
+        // Colors map
+        const colors = {
+            'Income': '#5dd05d',
+            'Farm Expenses': '#ffd700',
+            'Feed Expenses': '#8b2436'
+        };
+
+        popup.style.cssText = `
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: white; padding: 25px; border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15); z-index: 2000;
+            border: 2px solid var(--primary-pink, #ff6b81);
+            text-align: center; min-width: 280px; animation: fadeIn 0.3s;
+        `;
+        
+        popup.innerHTML = `
+            <h3 style="color: ${colors[category]}; margin-bottom: 5px;">${category}</h3>
+            <p style="color: #888; margin-bottom: 10px; font-size: 14px;">${month}</p>
+            <p style="font-size: 28px; font-weight: 700; color: #333; margin-bottom: 20px;">
+                ₱${value.toLocaleString()}
+            </p>
+            <button id="closePopup" style="
+                background: #ff6b81; color: white; border: none; 
+                padding: 10px 25px; border-radius: 8px; cursor: pointer; 
+                font-weight: 600; font-family: Poppins;">Close</button>
+        `;
+
+        document.body.appendChild(popup);
+        
+        // Add style for animation
+        const style = document.createElement('style');
+        style.innerHTML = `@keyframes fadeIn { from { opacity: 0; transform: translate(-50%, -45%); } to { opacity: 1; transform: translate(-50%, -50%); } }`;
+        document.head.appendChild(style);
+
+        document.getElementById('closePopup').onclick = () => popup.remove();
+        
+        // Close on background click
+        document.addEventListener('click', function closeFn(e) {
+            if (e.target !== popup && !popup.contains(e.target) && e.target.tagName !== 'CANVAS') {
+                popup.remove();
+                document.removeEventListener('click', closeFn);
+            }
+        }, true);
+    }
+});
+*/
+
 // Add analytics for other expenses breakdown farm expenses: medical, transportation, others
 
 //pie chart
@@ -332,10 +784,11 @@ const ctx = document.getElementById("expensesChart");
 new Chart(ctx, {
     type: "doughnut",
     data: {
-        labels: ["Piglets", "Medicines", "Utilities", "Labor", "Maintenance"],
+        labels: ["Feeds", "Piglets", "Medicines", "Utilities", "Labor", "Maintenance"],
         datasets: [{
-            data: [10000, 1500, 1000, 700, 2000],
+            data: [5000, 10000, 1500, 1000, 700, 2000],
             backgroundColor: [
+                "#7c57ff",   // feeds
                 "#ff8686",   // piglets
                 "#3bc7e6",   // medicines
                 "#ffb64d",   // utilities
@@ -389,6 +842,151 @@ function updateChart(filter) {
     chart.update();
 }
 
+// ProfSet.js — toggles password visibility and swaps eye / eye-slash icons
+// Works with buttons that have class `toggle-password` and `data-target="<input-id>"`
+// Supports FontAwesome <i> icons (toggles fa-eye / fa-eye-slash) and inline SVGs (swaps innerHTML)
+
+document.addEventListener('DOMContentLoaded', () => {
+  const eyeSvg = `\n    <svg class="icon-eye" width="18" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="vertical-align:middle; color:currentColor;">\n      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>\n      <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/>\n    </svg>\n  `;
+
+  const eyeSlashSvg = `\n    <svg class="icon-eye-slash" width="18" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="vertical-align:middle; color:currentColor;">\n      <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a19.6 19.6 0 0 1 4.11-5.08" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>\n      <path d="M1 1l22 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>\n    </svg>\n  `;
+
+  const buttons = document.querySelectorAll('.toggle-password');
+  buttons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const targetId = btn.getAttribute('data-target');
+      if (!targetId) return;
+      const input = document.getElementById(targetId);
+      if (!input) return;
+
+      const isHidden = input.type === 'password';
+      input.type = isHidden ? 'text' : 'password';
+
+      // Swap icon: Handle FontAwesome <i> or inline SVG
+      const faIcon = btn.querySelector('i');
+      if (faIcon) {
+        // Toggle classes for FontAwesome: fa-eye <-> fa-eye-slash
+        if (faIcon.classList.contains('fa-eye')) {
+          faIcon.classList.remove('fa-eye');
+          faIcon.classList.add('fa-eye-slash');
+          // use solid style when slashed (if both styles loaded)
+          faIcon.classList.remove('fa-regular');
+          faIcon.classList.add('fa-solid');
+        } else if (faIcon.classList.contains('fa-eye-slash')) {
+          faIcon.classList.remove('fa-eye-slash');
+          faIcon.classList.add('fa-eye');
+          faIcon.classList.remove('fa-solid');
+          faIcon.classList.add('fa-regular');
+        } else {
+          // If class wasn't present, set according to state
+          if (isHidden) {
+            faIcon.classList.remove('fa-eye-slash');
+            faIcon.classList.add('fa-eye');
+            faIcon.classList.remove('fa-solid');
+            faIcon.classList.add('fa-regular');
+          } else {
+            faIcon.classList.remove('fa-eye');
+            faIcon.classList.add('fa-eye-slash');
+            faIcon.classList.remove('fa-regular');
+            faIcon.classList.add('fa-solid');
+          }
+        }
+        return;
+      }
+
+      // Handle inline SVGs: swap innerHTML of the button between eye and eyeSlash
+      const svg = btn.querySelector('svg');
+      if (svg) {
+        btn.innerHTML = isHidden ? eyeSlashSvg : eyeSvg;
+        // re-append any attributes we need (keep data-target)
+        btn.setAttribute('data-target', targetId);
+      }
+
+    });
+  });
+
+  // ---- Edit Profile button behaviour ----
+  const editBtn = document.getElementById('editProfileBtn');
+  const usernameInput = document.getElementById('usernameInput');
+  const emailInput = document.getElementById('emailInput');
+  if (editBtn && usernameInput && emailInput) {
+    editBtn.dataset.editing = 'false';
+    editBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const editing = editBtn.dataset.editing === 'true';
+      if (!editing) {
+        // Enter edit mode
+        editBtn.dataset.editing = 'true';
+        editBtn.textContent = 'Save';
+        usernameInput.removeAttribute('readonly');
+        emailInput.removeAttribute('readonly');
+        usernameInput.classList.add('editing');
+        emailInput.classList.add('editing');
+        usernameInput.focus();
+      } else {
+        // Save (client-side only)
+        const username = usernameInput.value.trim();
+        const email = emailInput.value.trim();
+        // Basic validation
+        if (!username) {
+          if (window.Swal) Swal.fire('Error', 'Username cannot be empty', 'error');
+          return;
+        }
+        if (!email || !/^[^\@\s]+@[^\@\s]+\.[^\@\s]+$/.test(email)) {
+          if (window.Swal) Swal.fire('Error', 'Please enter a valid email', 'error');
+          return;
+        }
+
+        // Simulate save
+        usernameInput.setAttribute('readonly', '');
+        emailInput.setAttribute('readonly', '');
+        usernameInput.classList.remove('editing');
+        emailInput.classList.remove('editing');
+        editBtn.dataset.editing = 'false';
+        editBtn.textContent = 'Edit';
+        if (window.Swal) Swal.fire({ icon: 'success', title: 'Saved', text: 'Profile info updated', timer: 1400, showConfirmButton: false });
+      }
+    });
+  }
+
+  // ---- Save Password button behaviour ----
+  const savePassBtn = document.getElementById('savePasswordBtn');
+  if (savePassBtn) {
+    savePassBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const oldPassEl = document.getElementById('oldPass');
+      const newPassEl = document.getElementById('newPass');
+      const confirmPassEl = document.getElementById('confirmPass');
+      if (!oldPassEl || !newPassEl || !confirmPassEl) return;
+
+      const oldPass = oldPassEl.value.trim();
+      const newPass = newPassEl.value;
+      const confirmPass = confirmPassEl.value;
+
+      if (!oldPass) {
+        if (window.Swal) Swal.fire('Error', 'Please enter your old password', 'error');
+        return;
+      }
+      if (newPass.length < 6) {
+        if (window.Swal) Swal.fire('Error', 'New password must be at least 6 characters', 'error');
+        return;
+      }
+      if (newPass !== confirmPass) {
+        if (window.Swal) Swal.fire('Error', 'Passwords do not match', 'error');
+        return;
+      }
+
+      // Simulate password change
+      oldPassEl.value = '';
+      newPassEl.value = '';
+      confirmPassEl.value = '';
+      if (window.Swal) Swal.fire({ icon: 'success', title: 'Password updated', timer: 1400, showConfirmButton: false });
+    });
+  }
+
+});
+
 // Profile Modal Setup
 document.addEventListener("DOMContentLoaded", () => {
     const profileBtn = document.getElementById("profileBtn");
@@ -410,4 +1008,40 @@ document.addEventListener("DOMContentLoaded", () => {
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") profileModal.classList.remove("open");
     });
+
+    // Logout modal handling
+    const logoutBtn = document.getElementById('logoutBtn');
+    const logoutModal = document.getElementById('logoutModal');
+    const logoutConfirmBtn = document.getElementById('logoutConfirmBtn');
+    const logoutCancelBtn = document.getElementById('logoutCancelBtn');
+
+    if (logoutBtn && logoutModal) {
+        logoutBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            profileModal.classList.remove('open');
+            logoutModal.classList.add('open');
+            logoutModal.setAttribute('aria-hidden', 'false');
+        });
+
+        if (logoutConfirmBtn) {
+            logoutConfirmBtn.addEventListener('click', () => {
+                window.location.href = 'index.html';
+            });
+        }
+
+        if (logoutCancelBtn) {
+            logoutCancelBtn.addEventListener('click', () => {
+                logoutModal.classList.remove('open');
+                logoutModal.setAttribute('aria-hidden', 'true');
+            });
+        }
+
+        logoutModal.addEventListener('click', (e) => {
+            if (e.target === logoutModal) {
+                logoutModal.classList.remove('open');
+                logoutModal.setAttribute('aria-hidden', 'true');
+            }
+        });
+    }
 });
+
