@@ -5,7 +5,11 @@ import authRoutes from './routes/authRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import pigRoutes from './routes/pigRoutes.js';
 import farmRoutes from './routes/farmRoutes.js';
+import expincRoutes from './routes/expincRoutes.js';
+
+
 import errorHandler from './middleware/errorHandler.js';
+
 
 const app = express();
 
@@ -16,8 +20,9 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/pigs', pigRoutes)
-app.use('/api/farm', farmRoutes)
+app.use('/api/pigs', pigRoutes);
+app.use('/api/farm', farmRoutes);
+app.use('/api/expenses-records', expincRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
