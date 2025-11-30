@@ -76,6 +76,65 @@ let pendingDeleteData            = null;  // stores data for pending deletion co
 const getCurrentFarm = () => farms.find(farm => farm.id === currentFarmId);
 const getFarmById    = (id) => farms.find(farm => farm.id === Number(id));
 
+// -------------------------
+// Persistence helpers
+// -------------------------
+const STORAGE_KEY = 'poinky_farms_v1';
+
+function computeNextIdsFromData() {
+    try {
+        let maxFarm = 0;
+        let maxPig = 0;
+        farms.forEach(f => { if (f && typeof f.id === 'number') maxFarm = Math.max(maxFarm, f.id); if (Array.isArray(f.pigs)) f.pigs.forEach(p => { if (p && typeof p.id === 'number') maxPig = Math.max(maxPig, p.id); }); });
+        nextFarmId = maxFarm + 1 || nextFarmId;
+        nextPigId  = maxPig + 1  || nextPigId;
+    } catch (e) { console.warn('computeNextIdsFromData error', e); }
+}
+
+function saveFarmsToStorage() {
+    try {
+        const payload = { farms, nextFarmId, nextPigId };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    } catch (e) {
+        console.warn('Failed to save farms to localStorage', e);
+    }
+}
+
+function loadFarmsFromStorage() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw);
+        // Support both old format (just array) and new format
+        if (Array.isArray(parsed)) {
+            farms = parsed;
+        } else if (parsed && parsed.farms) {
+            farms = parsed.farms;
+            if (parsed.nextFarmId) nextFarmId = parsed.nextFarmId;
+            if (parsed.nextPigId) nextPigId = parsed.nextPigId;
+        }
+        computeNextIdsFromData();
+        return true;
+    } catch (e) {
+        console.warn('Failed to load farms from localStorage', e);
+        return false;
+    }
+}
+
+// Read File as data URL (base64) helper
+function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+        if (!file) return resolve(null);
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(file);
+    });
+}
+
+// Attempt to initialize from localStorage (if present)
+loadFarmsFromStorage();
+
 function formatStatusText(status) {
     const statusMap = {
         growing:  "Growing",
@@ -356,7 +415,9 @@ window.deleteWeightFromDetails = function (pigId, farmId, data) {
 
     const index = data?.index;
     if (index !== undefined && pig.weightHistory && pig.weightHistory[index]) {
-        pig.weightHistory.splice(index, 1);
+    pig.weightHistory.splice(index, 1);
+    // persist deletion
+    saveFarmsToStorage();
 
         // Refresh pig details
         const pigDetailsFrame = document.getElementById("pigDetailsFrame");
@@ -592,6 +653,7 @@ window.addEventListener("message", (ev) => {
                 }
                 break;
             case "openEditPigDetails":
+            case "openEditPigDetailsFromDetails":
                 if (typeof window.openEditPigDetailsFromDetails === "function") {
                     window.openEditPigDetailsFromDetails(pigId, farmId);
                 }
@@ -927,6 +989,8 @@ document.addEventListener("DOMContentLoaded", function () {
         };
 
         farms.push(newFarm);
+        // persist
+        saveFarmsToStorage();
 
         const newTab = document.createElement("button");
         newTab.className = "tab";
@@ -1015,7 +1079,11 @@ document.addEventListener("DOMContentLoaded", function () {
         };
 
         currentFarm.pigs.push(newPig);
+        // persist new pig
+        saveFarmsToStorage();
         nextPigId++;
+        // persist added pig
+        saveFarmsToStorage();
 
         loadFarmData();
     }
@@ -1096,7 +1164,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // =========================================================================
 
     if (addWeightForm) {
-        addWeightForm.addEventListener("submit", function (e) {
+        addWeightForm.addEventListener("submit", async function (e) {
             e.preventDefault();
 
             clearFormErrors(this);
@@ -1164,10 +1232,20 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             const imgFile = newWeightImgInput?.files?.[0];
+            let imgData = null;
+            if (imgFile) {
+                try {
+                    imgData = await readFileAsDataURL(imgFile);
+                } catch (err) {
+                    console.warn('Failed to read uploaded image as data URL', err);
+                    imgData = null;
+                }
+            }
+
             const newRecord = {
                 date:   dateVal,
                 weight: parseFloat(weightVal),
-                img:    imgFile ? URL.createObjectURL(imgFile) : "Dash Icons/WPig.png"
+                img:    imgData || "Dash Icons/WPig.png"
             };
 
             if (!Array.isArray(pig.weightHistory)) {
@@ -1178,10 +1256,12 @@ document.addEventListener("DOMContentLoaded", function () {
             if (currentEditWeightRecordIndex !== null && pig.weightHistory[currentEditWeightRecordIndex]) {
                 // UPDATE existing record
                 pig.weightHistory[currentEditWeightRecordIndex] = newRecord;
+                saveFarmsToStorage();
                 showAlert("success", "Weight record updated successfully!");
             } else {
                 // ADD new record
                 pig.weightHistory.push(newRecord);
+                saveFarmsToStorage();
                 showAlert("success", "Weight record added successfully!");
             }
 
@@ -1244,7 +1324,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // (Edit weight logic kept optional; safe if edit modal not present)
     if (editWeightForm) {
-        editWeightForm.addEventListener("submit", function (e) {
+        editWeightForm.addEventListener("submit", async function (e) {
             e.preventDefault();
 
             const dateVal   = document.getElementById("editWeightDate")?.value;
@@ -1276,7 +1356,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const imgFile = editWeightImgInput?.files?.[0];
             if (imgFile) {
-                editedRecord.img = URL.createObjectURL(imgFile);
+                try {
+                    const data = await readFileAsDataURL(imgFile);
+                    if (data) editedRecord.img = data;
+                } catch (err) {
+                    console.warn('Failed to read edited image as data URL', err);
+                }
             }
 
             // If editing most recent record, update display weight
@@ -1312,6 +1397,8 @@ document.addEventListener("DOMContentLoaded", function () {
             loadFarmData();
             this.reset();
             currentEditWeightRecordIndex = null;
+            // Persist edits (including any image update)
+            saveFarmsToStorage();
 
             showAlert("success", "Weight record updated successfully!");
         });
@@ -1556,6 +1643,9 @@ document.addEventListener("DOMContentLoaded", function () {
             pig.age     = ageVal;
             pig.date    = dateVal;
             pig.shortId = nameVal.substring(0, 3).toUpperCase();
+
+            // persist the edited pig details
+            saveFarmsToStorage();
 
             if (editPigDetailsModal) editPigDetailsModal.style.display = "none";
 
@@ -3226,6 +3316,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const pigName = farm.pigs[idx].name;
             farm.pigs.splice(idx, 1);
+            // persist deletion
+            saveFarmsToStorage();
 
             if (deletePigConfirmModal) deletePigConfirmModal.style.display = 'none';
             // close pig details
@@ -3293,6 +3385,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 case "weight":
                     if (pig.weightHistory && pig.weightHistory[index]) {
                         pig.weightHistory.splice(index, 1);
+                        // persist deletion
+                        saveFarmsToStorage();
                         deleted = true;
                         typeName = "Weight record";
                     }

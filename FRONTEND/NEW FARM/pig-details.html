@@ -232,13 +232,63 @@ body {
     color: #999;
 }
 
-.pig-thumb {
+    .pig-thumb {
     width: 40px;
     height: 40px;
     object-fit: cover;
     border-radius: 4px;
     border: 1px solid #ddd;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
+
+.pig-thumb:hover { transform: scale(1.06); box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
+
+    /* IMAGE VIEWER */
+    .img-viewer-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.75);
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+
+    .img-viewer-content {
+        position: relative;
+        max-width: 95%;
+        max-height: 95%;
+        padding: 8px;
+    }
+
+    .img-viewer-img {
+        width: 100%;
+        height: auto;
+        max-height: 90vh;
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        background: #fff;
+        display: block;
+    }
+
+    /* Close should sit at the upper-right of the overlay */
+    .img-viewer-close {
+        position: absolute;
+        top: 18px;
+        right: 18px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: none;
+        background: #fff;
+        color: #333;
+        font-size: 20px;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        z-index: 10001;
+    }
 
 /* ACTION BUTTONS */
 .action-btn {
@@ -578,7 +628,7 @@ document.addEventListener("click", () => dropdown.style.display = "none");
                     <tr>
                         <td>${rec.date}</td>
                         <td>${rec.weight} kg</td>
-                        <td><img src="${rec.img || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22%3E%3C/svg%3E'}" class="pig-thumb" onerror="this.style.display='none'"></td>
+                            <td><img src="${rec.img || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22%3E%3C/svg%3E'}" class="pig-thumb" onclick="openImageViewer(this.src)" onerror="this.style.display='none'"></td>
                         <td>
                             <button class="action-btn action-btn-edit" onclick="editWeightRecord(${actualIndex})" title="Edit" aria-label="Edit weight" ${isInactive ? 'disabled' : ''}>
                                 <i class="fas fa-edit" aria-hidden="true"></i>
@@ -714,6 +764,61 @@ function callParentAction(label, fnName, data) {
     );
 }
 </script>
+</script>
 
+<!-- IMAGE VIEWER MODAL -->
+<div id="imgViewerModal" class="img-viewer-modal" aria-hidden="true">
+    
+    <!--   <button id="imgViewerClose" class="img-viewer-close" aria-label="Close image viewer">&times;</button>  -->
+
+    <div class="img-viewer-content" id="imgViewerContent" role="dialog" aria-modal="true">
+        <img id="imgViewerImg" class="img-viewer-img" src="" alt="Image preview">
+    </div>
+</div>
+
+<script>
+// Image viewer helpers
+function openImageViewer(src) {
+    try {
+        if (!src) return;
+        // Avoid opening blank placeholder svgs
+        if (src.startsWith('data:image/svg+xml')) return;
+
+        const modal = document.getElementById('imgViewerModal');
+        const imgEl = document.getElementById('imgViewerImg');
+        if (!modal || !imgEl) return;
+
+        imgEl.src = src;
+        modal.style.display = 'flex';
+        modal.setAttribute('aria-hidden', 'false');
+    } catch (err) { console.warn('openImageViewer error', err); }
+}
+
+function closeImageViewer() {
+    try {
+        const modal = document.getElementById('imgViewerModal');
+        const imgEl = document.getElementById('imgViewerImg');
+        if (!modal) return;
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden', 'true');
+        if (imgEl) imgEl.src = '';
+    } catch (err) { console.warn('closeImageViewer error', err); }
+}
+
+// Close button handler
+document.addEventListener('DOMContentLoaded', function () {
+    const closeBtn = document.getElementById('imgViewerClose');
+    if (closeBtn) closeBtn.addEventListener('click', function (e) { e.stopPropagation(); closeImageViewer(); });
+
+    // Click backdrop to close
+    const modal = document.getElementById('imgViewerModal');
+    if (modal) modal.addEventListener('click', function (e) {
+        if (e.target === modal) closeImageViewer();
+    });
+
+    // Escape to close
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeImageViewer(); });
+});
+</script>
 </body>
 </html>
