@@ -54,7 +54,10 @@
                         <h1>Create Account</h1>
                         <input type="text" placeholder="Name">
                         <input type="email" placeholder="Email">
-                        <input type="password" placeholder="Password">
+                        <div class="password-wrapper">
+                            <input type="password" placeholder="Password" class="password-input">
+                            <i class="fas fa-eye password-toggle"></i>
+                        </div>
                         <button>Sign Up</button>
                         <!-- Mobile toggle text for Sign Up form -->
                         <p class="auth-toggle-text">
@@ -70,14 +73,16 @@
                         </div>
                         <h1>Log In</h1>
                         <input type="email" placeholder="Email" required>
-                        <input type="password" placeholder="Password" required>
+                        <div class="password-wrapper">
+                            <input type="password" placeholder="Password" required class="password-input">
+                            <i class="fas fa-eye password-toggle"></i>
+                        </div>
                         <a href="#">Forget Your Password?</a>
                         <button>Log In</button>
                         <p class="auth-toggle-text">
                             Don't have an account? <a onclick="showSignUp()">Sign Up</a>
                         </p>
                     </form>
-
                 </div>
                 <div class="toggle-container">
                     <div class="toggle">
@@ -218,7 +223,8 @@
     </footer>
 
     <script src="js/script.js"></script>
-    <script>
+
+<script>
 document.addEventListener("DOMContentLoaded", function() {
     const items = document.querySelectorAll(".feature-item");
 
@@ -233,9 +239,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     items.forEach(item => observer.observe(item));
 });
-</script>
 
-<script>
 document.addEventListener("DOMContentLoaded", () => {
     const aboutItems = document.querySelectorAll("#about .about-image, #about .about-text");
 
@@ -250,9 +254,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     aboutItems.forEach(i => observer.observe(i));
 });
-</script>
 
-<script>
 document.addEventListener("DOMContentLoaded", () => {
     const manualItems = document.querySelectorAll(".manual-list li");
     const poinkyItems = document.querySelectorAll(".poinky-list li");
@@ -287,10 +289,20 @@ navLinks.forEach(link => {
     });
 });
 
+// Eye Icon Password toggle functionality
+document.querySelectorAll('.password-toggle').forEach(icon => {
+    icon.addEventListener('click', function() {
+        const passwordInput = this.previousElementSibling;
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+     
+        // Toggle eye icon
+        this.classList.toggle('fa-eye');
+        this.classList.toggle('fa-eye-slash');
+    });
+});
+
 </script>
-
-
-
 
     
 </body>

@@ -362,5 +362,132 @@ if (registerForm) {
     });
 }
 
+// ===============================Error Handling========================
 
+// Form validation functions
+function validateSignUpForm() {
+    const name = document.getElementById('signupName').value.trim();
+    const email = document.getElementById('signupEmail').value.trim();
+    const password = document.getElementById('signupPassword').value.trim();
+    let isValid = true;
 
+    // Clear previous errors
+    clearErrors();
+
+    // Name validation
+    if (name === '') {
+        showError('nameError', 'Name is required');
+        isValid = false;
+    } else if (name.length < 2) {
+        showError('nameError', 'Name must be at least 2 characters');
+        isValid = false;
+    }
+
+    // Email validation
+    if (email === '') {
+        showError('emailError', 'Email is required');
+        isValid = false;
+    } else if (!isValidEmail(email)) {
+        showError('emailError', 'Please enter a valid email address');
+        isValid = false;
+    }
+
+    // Password validation
+    if (password === '') {
+        showError('passwordError', 'Password is required');
+        isValid = false;
+    } else if (password.length < 6) {
+        showError('passwordError', 'Password must be at least 6 characters');
+        isValid = false;
+    }
+
+    if (isValid) {
+        // Form is valid, you can submit it here
+        alert('Sign up successful!');
+        // document.getElementById('signupForm').submit(); // Uncomment to actually submit the form
+    }
+}
+
+function validateSignInForm() {
+    const email = document.getElementById('signinEmail').value.trim();
+    const password = document.getElementById('signinPassword').value.trim();
+    let isValid = true;
+
+    // Clear previous errors
+    clearErrors();
+
+    // Email validation
+    if (email === '') {
+        showError('signinEmailError', 'Email is required');
+        isValid = false;
+    } else if (!isValidEmail(email)) {
+        showError('signinEmailError', 'Please enter a valid email address');
+        isValid = false;
+    }
+
+    // Password validation
+    if (password === '') {
+        showError('signinPasswordError', 'Password is required');
+        isValid = false;
+    }
+
+    if (isValid) {
+        // Form is valid, you can submit it here
+        alert('Login successful!');
+        // document.getElementById('signinForm').submit(); // Uncomment to actually submit the form
+    }
+}
+
+function showError(elementId, message) {
+    const errorElement = document.getElementById(elementId);
+    errorElement.textContent = message;
+    errorElement.style.display = 'block';
+    
+    // Add error class to the input field
+    const inputId = elementId.replace('Error', '');
+    const inputElement = document.getElementById(inputId);
+    if (inputElement) {
+        inputElement.classList.add('error');
+    }
+}
+
+function clearErrors() {
+    const errorElements = document.querySelectorAll('.error-message');
+    errorElements.forEach(element => {
+        element.textContent = '';
+        element.style.display = 'none';
+    });
+    
+    // Remove error classes from all input fields
+    const inputElements = document.querySelectorAll('#signupForm input, #signinForm input');
+    inputElements.forEach(input => {
+        input.classList.remove('error');
+    });
+}
+
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+// Form submission handlers
+document.getElementById('signupForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    validateSignUpForm();
+});
+
+document.getElementById('signinForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    validateSignInForm();
+});
+
+// Real-time validation (optional - clears error when user starts typing)
+document.querySelectorAll('#signupForm input, #signinForm input').forEach(input => {
+    input.addEventListener('input', function() {
+        const errorElement = document.getElementById(this.id + 'Error');
+        if (errorElement) {
+            errorElement.style.display = 'none';
+            this.classList.remove('error');
+        }
+    });
+});
