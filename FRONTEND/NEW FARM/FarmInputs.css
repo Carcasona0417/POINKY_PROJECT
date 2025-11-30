@@ -21,7 +21,7 @@
     background-color: #fff;
     border-radius: 15px;
     padding: 30px;
-    max-width: 450px;
+    max-width: 400px;
     width: 95%;
     max-height: 90vh;
     overflow-y: auto;
@@ -32,7 +32,7 @@
 /* ADD PIG MODAL SPECIFIC SIZE */
 .modal-content.add-pig-modal-content {
     width: 100%;
-    max-width: 450px;
+    max-width: 400px;
     max-height: 91vh;
     overflow-y: auto;
 }
@@ -40,7 +40,7 @@
 /* ADD / EDIT WEIGHT MODALS */
 .modal-content.weight-modal-content {
     width: 100%;
-    max-width: 450px;
+    max-width: 400px;
     max-height: 380px;
     overflow-y: auto;
 }
