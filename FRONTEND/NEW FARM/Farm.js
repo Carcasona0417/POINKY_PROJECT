@@ -2906,7 +2906,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 </div>
 
                 <div class="receipt-totals">
-                    <div class="totals-left">Items: ${pigIds.length}</div>
+                    <div class="totals-left">Pigs: ${pigIds.length}</div>
                     <div class="totals-right">
                         <div class="tot-line"><span>Total Revenue</span><strong>₱${totalRevenue.toFixed(2)}</strong></div>
                         <div class="tot-line"><span>Total Expenses</span><strong>₱${totalExpenses.toFixed(2)}</strong></div>
