@@ -104,8 +104,8 @@
                 <button class="tab-add" type="button"><i class="fa-solid fa-plus"></i></button>
                 <!-- Tab actions dropdown (open on tab double-click) -->
                 <div id="tabActionsDropdown" class="actions-dropdown tab-actions-dropdown" style="display:none; position:absolute;">
-                    <button id="tabRenameBtn">Rename Farm</button>
-                    <button id="tabDeleteBtn" class="delete">Delete Farm</button>
+                    <button id="tabRenameBtn"><i class="fa-solid fa-pen" aria-hidden="true"></i> Rename Farm</button>
+                    <button id="tabDeleteBtn" class="delete"><i class="fa-solid fa-trash" aria-hidden="true"></i> Delete Farm</button>
                 </div>
             </div>
 
@@ -620,9 +620,14 @@
             This is an alert message.
         </p>
 
-        <button id="alertOkBtn" class="alert-ok-btn">
-            OK
-        </button>
+        <div class="alert-buttons-wrapper">
+            <button id="alertOkBtn" class="alert-ok-btn">
+                OK
+            </button>
+            <button id="alertUndoBtn" class="alert-undo-btn" style="display:none;">
+                Undo
+            </button>
+        </div>
     </div>
 </div>
 
@@ -658,9 +663,9 @@
             <input id="confirmDeleteFarmInput" type="text" placeholder="Type Delete to confirm" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
         </div>
 
-        <div class="modal-actions" style="margin-top:16px;">
+            <div class="modal-actions" style="margin-top:16px;">
             <button class="btn-secondary" id="cancelDeleteFarm">Cancel</button>
-            <button class="btn-danger" id="confirmDeleteFarm" disabled>Delete</button>
+            <button class="btn-danger btn-delete-farm" id="confirmDeleteFarm" disabled><i class="fa-solid fa-trash" aria-hidden="true"></i> Delete</button>
         </div>
     </div>
 </div>
@@ -717,7 +722,7 @@
 
         <div class="modal-actions" style="margin-top:16px;">
             <button class="btn-secondary" id="cancelDeletePig">Cancel</button>
-            <button class="btn-danger" id="confirmDeletePig" disabled>Delete</button>
+            <button class="btn-danger btn-delete-pig" id="confirmDeletePig" disabled><i class="fa-solid fa-trash" aria-hidden="true"></i> Delete</button>
         </div>
     </div>
 </div>

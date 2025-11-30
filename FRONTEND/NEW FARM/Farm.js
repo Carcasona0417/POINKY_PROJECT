@@ -102,8 +102,8 @@ window.openAddWeightFromDetails = function (pigId, farmId) {
     // Hide details while editing weight
     if (pigDetailsModal) pigDetailsModal.style.display = "none";
 
-    const today = new Date().toISOString().split("T")[0];
-    if (dateInput)   dateInput.value   = today;
+    // Clear inputs and let user choose any date
+    if (dateInput)   dateInput.value   = "";
     if (weightInput) weightInput.value = "";
     if (newWeightImgInput) newWeightImgInput.value = "";
 
@@ -131,8 +131,8 @@ window.openAddExpenseFromDetails = function (pigId, farmId) {
 
     if (pigDetailsModal) pigDetailsModal.style.display = "none";
 
-    const today = new Date().toISOString().split("T")[0];
-    if (dateInput)      dateInput.value   = today;
+    // Clear inputs and let user choose any date
+    if (dateInput)      dateInput.value   = "";
     if (priceInput)     priceInput.value  = "";
     if (categorySelect) categorySelect.value = "";
 
@@ -154,8 +154,8 @@ window.openAddVaccinationFromDetails = function (pigId, farmId) {
 
     if (pigDetailsModal) pigDetailsModal.style.display = "none";
 
-    const today = new Date().toISOString().split("T")[0];
-    if (dateInput)    dateInput.value    = today;
+    // Clear inputs and let user choose any dates
+    if (dateInput)    dateInput.value    = "";
     if (dueDateInput) dueDateInput.value = "";
     if (typeSelect)   typeSelect.value   = "";
 
@@ -198,6 +198,19 @@ window.openEditPigDetailsFromDetails = function (pigId, farmId) {
     if (shortIdLabel) {
         const fallbackShort = pig.name ? pig.name.substring(0, 3).toUpperCase() : "PIG";
         shortIdLabel.textContent = `Editing: ${pig.id} (${pig.shortId || fallbackShort})`;
+    }
+
+    // Trigger floating label updates for selects that have values
+    [breedInput, genderInput, ageInput].forEach(select => {
+        if (select && select.value) {
+            select.classList.add("has-value");
+        }
+    });
+
+    // Trigger floating label updates for date wrapper
+    if (dateInput && dateInput.value) {
+        const dateWrapper = dateInput.closest(".date-wrapper");
+        if (dateWrapper) dateWrapper.classList.add("has-value");
     }
 
     editModal.style.display = "flex";
@@ -346,6 +359,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const addVaccinationForm = document.getElementById("addVaccinationForm");
     const editPigDetailsForm = document.getElementById("editPigDetailsForm"); // NEW
 
+    // Disable native browser constraint validation — we validate on submit in JS
+    [addPigForm, addWeightForm, editWeightForm, addExpenseForm, addVaccinationForm, editPigDetailsForm].forEach(f => { if (f) f.noValidate = true; });
+
     // Delete pig confirm controls
     const confirmDeletePigBtn = document.getElementById('confirmDeletePig');
     const cancelDeletePigBtn  = document.getElementById('cancelDeletePig');
@@ -386,7 +402,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const alertIcon    = document.getElementById("alertIcon");
     const alertOkBtn   = document.getElementById("alertOkBtn");
 
-    function showAlert(type, message) {
+    function showAlert(type, message, showUndo, undoCallback) {
         if (!alertModal) {
             window.alert(message);
             return;
@@ -416,6 +432,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
         alertIcon.className = "fa-solid " + iconClass;
         alertMessage.textContent = message || "";
+
+        // Handle undo button
+        const undoBtn = document.getElementById("alertUndoBtn");
+        if (undoBtn) {
+            if (showUndo && undoCallback) {
+                undoBtn.style.display = "block";
+                undoBtn.onclick = function () {
+                    undoCallback();
+                    alertModal.style.display = "none";
+                    document.body.style.overflow = "auto";
+                };
+            } else {
+                undoBtn.style.display = "none";
+            }
+        }
 
         alertModal.style.display = "flex";
         document.body.style.overflow = "hidden";
@@ -523,11 +554,11 @@ document.addEventListener("DOMContentLoaded", function () {
         addPigModal.style.display = "flex";
         document.body.style.overflow = "hidden";
 
-        const today        = new Date().toISOString().split("T")[0];
         const pigDateInput = document.getElementById("pigDate");
         const pigNameInput = document.getElementById("pigName");
 
-        if (pigDateInput) pigDateInput.value = today;
+        // Clear inputs - let user choose the date they acquired the pig
+        if (pigDateInput) pigDateInput.value = "";
         if (pigNameInput) pigNameInput.focus();
     }
 
@@ -649,13 +680,53 @@ document.addEventListener("DOMContentLoaded", function () {
         addWeightForm.addEventListener("submit", function (e) {
             e.preventDefault();
 
-            const dateVal   = document.getElementById("newWeightDate")?.value;
-            const weightVal = document.getElementById("newWeightValue")?.value;
+            clearFormErrors(this);
 
-            if (!dateVal || !weightVal) {
-                showAlert("warning", "Please enter a date and weight.");
-                return;
+            const dateInputEl = document.getElementById("newWeightDate");
+            const weightInputEl = document.getElementById("newWeightValue");
+            const dateVal = dateInputEl ? dateInputEl.value : '';
+            const weightVal = weightInputEl ? weightInputEl.value : '';
+
+            let hasError = false;
+
+            // Date validation
+            if (!dateVal) {
+                const wrapper = getWrapperForField(dateInputEl);
+                const err = getOrCreateErrorEl(wrapper) || wrapper && wrapper.querySelector('.date-error');
+                if (err) { err.textContent = 'Please select a date.'; err.style.display = 'block'; }
+                hasError = true;
+            } else {
+                // Allow recent past (weeks/months) but not very old dates, and disallow future dates
+                const picked = new Date(dateVal + 'T00:00:00');
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                if (picked > today) {
+                    const wrapper = getWrapperForField(dateInputEl);
+                    const err = getOrCreateErrorEl(wrapper) || wrapper && wrapper.querySelector('.date-error');
+                    if (err) { err.textContent = 'Date cannot be in the future.'; err.style.display = 'block'; }
+                    hasError = true;
+                } else if (isDateOlderThanMonths(dateVal, 6)) {
+                    const wrapper = getWrapperForField(dateInputEl);
+                    const err = getOrCreateErrorEl(wrapper) || wrapper && wrapper.querySelector('.date-error');
+                    if (err) { err.textContent = 'Date is too old — please choose a date within the last 6 months.'; err.style.display = 'block'; }
+                    hasError = true;
+                }
             }
+
+            // Weight validation
+            if (!weightVal) {
+                const wrapper = getWrapperForField(weightInputEl);
+                const err = getOrCreateErrorEl(wrapper);
+                if (err) { err.textContent = 'Please enter a weight.'; err.style.display = 'block'; }
+                hasError = true;
+            } else if (!isValidWeightValue(weightVal)) {
+                const wrapper = getWrapperForField(weightInputEl);
+                const err = getOrCreateErrorEl(wrapper);
+                if (err) { err.textContent = 'Please enter a believable weight (1–120 kg).'; err.style.display = 'block'; }
+                hasError = true;
+            }
+
+            if (hasError) return;
 
             const farm = currentDetailFarmId
                 ? getFarmById(currentDetailFarmId)
@@ -689,19 +760,33 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (addWeightModal) addWeightModal.style.display = "none";
 
-            // Re-open details modal & refresh iframe
+            // Re-open details modal & refresh iframe with correct pig/farm IDs
             if (pigDetailsModal) pigDetailsModal.style.display = "flex";
-            if (pigDetailsFrame && pigDetailsFrame.src) {
-                pigDetailsFrame.src = pigDetailsFrame.src; // reload
+            if (pigDetailsFrame && currentDetailPigId && currentDetailFarmId) {
+                const refreshUrl = `pig-details.html?id=${encodeURIComponent(currentDetailPigId)}&farm=${encodeURIComponent(currentDetailFarmId)}`;
+                
+                // Set up postMessage to send updated pig data once iframe reloads
+                const onFrameReload = function () {
+                    try {
+                        const updatedPig = window.getPigDataById(currentDetailPigId, currentDetailFarmId);
+                        if (updatedPig && pigDetailsFrame.contentWindow) {
+                            pigDetailsFrame.contentWindow.postMessage({ type: "pigData", pig: updatedPig }, "*");
+                        }
+                    } catch (err) {
+                        console.warn("Failed to postMessage updated pig data:", err);
+                    } finally {
+                        pigDetailsFrame.removeEventListener("load", onFrameReload);
+                    }
+                };
+                
+                pigDetailsFrame.addEventListener("load", onFrameReload);
+                pigDetailsFrame.src = refreshUrl; // reload with correct pig
             }
 
             loadFarmData();
             this.reset();
 
-            const today = new Date().toISOString().split("T")[0];
-            const dateInput = document.getElementById("newWeightDate");
-            if (dateInput) dateInput.value = today;
-
+            // Don't auto-fill date - let user choose when they use the form again
             if (fileNameDisplay) {
                 fileNameDisplay.textContent      = "Upload Image";
                 fileNameDisplay.style.color      = "var(--text-light)";
@@ -715,9 +800,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if (clearWeightFormBtn && addWeightForm) {
         clearWeightFormBtn.addEventListener("click", function () {
             addWeightForm.reset();
-            const today = new Date().toISOString().split("T")[0];
+            // Clear date input completely - let user choose when they want to add a record
             const dateInput = document.getElementById("newWeightDate");
-            if (dateInput) dateInput.value = today;
+            if (dateInput) dateInput.value = "";
 
             if (fileNameDisplay) {
                 fileNameDisplay.textContent      = "Upload Image";
@@ -770,9 +855,28 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             if (editWeightModal) editWeightModal.style.display = "none";
-            if (pigDetailsModal && pigDetailsFrame && pigDetailsFrame.src) {
+            if (pigDetailsModal && pigDetailsFrame && currentDetailPigId && currentDetailFarmId) {
                 pigDetailsModal.style.display = "flex";
-                pigDetailsFrame.src = pigDetailsFrame.src;
+                const refreshUrl = `pig-details.html?id=${encodeURIComponent(currentDetailPigId)}&farm=${encodeURIComponent(currentDetailFarmId)}`;
+                
+                // Set up postMessage to send updated pig data once iframe reloads
+                const onFrameReload = function () {
+                    try {
+                        const updatedPig = window.getPigDataById(currentDetailPigId, currentDetailFarmId);
+                        if (updatedPig && pigDetailsFrame.contentWindow) {
+                            pigDetailsFrame.contentWindow.postMessage({ type: "pigData", pig: updatedPig }, "*");
+                        }
+                    } catch (err) {
+                        console.warn("Failed to postMessage updated pig data:", err);
+                    } finally {
+                        pigDetailsFrame.removeEventListener("load", onFrameReload);
+                    }
+                };
+                
+                pigDetailsFrame.addEventListener("load", onFrameReload);
+                pigDetailsFrame.src = refreshUrl;
+            } else {
+                document.body.style.overflow = "auto";
             }
 
             loadFarmData();
@@ -802,19 +906,105 @@ document.addEventListener("DOMContentLoaded", function () {
         addPigForm.addEventListener("submit", function (e) {
             e.preventDefault();
 
-            const pigData = {
-                name:          document.getElementById("pigName")?.value.trim(),
-                breed:         document.getElementById("pigBreed")?.value,
-                gender:        document.getElementById("pigGender")?.value,
-                age:           document.getElementById("pigAge")?.value,
-                date:          document.getElementById("pigDate")?.value,
-                initialWeight: document.getElementById("pigWeight")?.value
-            };
+            clearFormErrors(this);
 
-            if (Object.values(pigData).some(val => !val && val !== 0)) {
-                showAlert("warning", "Please fill out all pig fields.");
+            const nameEl = document.getElementById("pigName");
+            const breedEl = document.getElementById("pigBreed");
+            const genderEl = document.getElementById("pigGender");
+            const ageEl = document.getElementById("pigAge");
+            const dateEl = document.getElementById("pigDate");
+            const weightEl = document.getElementById("pigWeight");
+
+            const name = nameEl ? nameEl.value.trim() : '';
+            const breed = breedEl ? breedEl.value : '';
+            const gender = genderEl ? genderEl.value : '';
+            const age = ageEl ? ageEl.value : '';
+            const date = dateEl ? dateEl.value : '';
+            const weight = weightEl ? weightEl.value : '';
+
+            let hasError = false;
+
+            if (!name) {
+                const w = getWrapperForField(nameEl);
+                const err = getOrCreateErrorEl(w);
+                if (err) { err.textContent = 'Please enter a name or ID.'; err.style.display = 'block'; }
+                hasError = true;
+            }
+            if (!breed) {
+                const w = getWrapperForField(breedEl);
+                const err = getOrCreateErrorEl(w);
+                if (err) { err.textContent = 'Please select a breed.'; err.style.display = 'block'; }
+                hasError = true;
+            }
+            if (!gender) {
+                const w = getWrapperForField(genderEl);
+                const err = getOrCreateErrorEl(w);
+                if (err) { err.textContent = 'Please select a gender.'; err.style.display = 'block'; }
+                hasError = true;
+            }
+            if (!age) {
+                const w = getWrapperForField(ageEl);
+                const err = getOrCreateErrorEl(w);
+                if (err) { err.textContent = 'Please select an age.'; err.style.display = 'block'; }
+                hasError = true;
+            }
+            if (!date) {
+                const w = getWrapperForField(dateEl);
+                const err = getOrCreateErrorEl(w) || w && w.querySelector('.date-error');
+                if (err) { err.textContent = 'Please select a date acquired.'; err.style.display = 'block'; }
+                hasError = true;
+            } else {
+                const picked = new Date(date + 'T00:00:00');
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                if (picked > today) {
+                    const w = getWrapperForField(dateEl);
+                    const err = getOrCreateErrorEl(w) || w && w.querySelector('.date-error');
+                    if (err) { err.textContent = 'Date acquired cannot be in the future.'; err.style.display = 'block'; }
+                    hasError = true;
+                } else if (isDateTooOld(date)) {
+                    const w = getWrapperForField(dateEl);
+                    const err = getOrCreateErrorEl(w) || w && w.querySelector('.date-error');
+                    if (err) { err.textContent = 'Date acquired is too old — choose within past year.'; err.style.display = 'block'; }
+                    hasError = true;
+                }
+            }
+            if (!weight) {
+                const w = getWrapperForField(weightEl);
+                const err = getOrCreateErrorEl(w);
+                if (err) { err.textContent = 'Please enter an initial weight.'; err.style.display = 'block'; }
+                hasError = true;
+            } else if (!isValidWeightValue(weight)) {
+                const w = getWrapperForField(weightEl);
+                const err = getOrCreateErrorEl(w);
+                if (err) { err.textContent = 'Please enter a believable weight (1–120 kg).'; err.style.display = 'block'; }
+                hasError = true;
+            }
+
+            if (hasError) {
+                // focus the first invalid field for better UX
+                const firstFieldError = this.querySelector('.field-error, .date-error');
+                if (firstFieldError) {
+                    // try to focus associated input/select inside the same wrapper
+                    const wrapper = firstFieldError.closest('.input-wrapper') || firstFieldError.parentElement;
+                    if (wrapper) {
+                        const input = wrapper.querySelector('input, select, textarea');
+                        if (input) {
+                            try { input.focus(); } catch (e) {}
+                        }
+                    }
+                }
                 return;
             }
+
+            const pigData = {
+                name,
+                breed,
+                gender,
+                age,
+                date,
+                initialWeight: weight
+            };
 
             addNewPig(pigData);
             addPigForm.reset();
@@ -827,9 +1017,8 @@ document.addEventListener("DOMContentLoaded", function () {
     if (clearAddPigFormBtn && addPigForm) {
         clearAddPigFormBtn.addEventListener("click", function () {
             addPigForm.reset();
-            const today = new Date().toISOString().split("T")[0];
             const pigDateInput = document.getElementById("pigDate");
-            if (pigDateInput) pigDateInput.value = today;
+            if (pigDateInput) pigDateInput.value = "";
         });
     }
 
@@ -841,14 +1030,79 @@ document.addEventListener("DOMContentLoaded", function () {
         editPigDetailsForm.addEventListener("submit", function (e) {
             e.preventDefault();
 
-            const nameVal   = document.getElementById("editPigName")?.value.trim();
-            const breedVal  = document.getElementById("editPigBreed")?.value;
-            const genderVal = document.getElementById("editPigGender")?.value;
-            const ageVal    = document.getElementById("editPigAge")?.value;
-            const dateVal   = document.getElementById("editPigDate")?.value;
+            clearFormErrors(this);
 
-            if (!nameVal || !breedVal || !genderVal || !ageVal || !dateVal) {
-                showAlert("warning", "Please fill out all pig fields.");
+            const nameEl = document.getElementById("editPigName");
+            const breedEl = document.getElementById("editPigBreed");
+            const genderEl = document.getElementById("editPigGender");
+            const ageEl = document.getElementById("editPigAge");
+            const dateEl = document.getElementById("editPigDate");
+
+            const nameVal   = nameEl ? nameEl.value.trim() : '';
+            const breedVal  = breedEl ? breedEl.value : '';
+            const genderVal = genderEl ? genderEl.value : '';
+            const ageVal    = ageEl ? ageEl.value : '';
+            const dateVal   = dateEl ? dateEl.value : '';
+
+            let hasError = false;
+
+            if (!nameVal) {
+                const w = getWrapperForField(nameEl);
+                const err = getOrCreateErrorEl(w);
+                if (err) { err.textContent = 'Please enter a pig name or ID.'; err.style.display = 'block'; }
+                hasError = true;
+            }
+            if (!breedVal) {
+                const w = getWrapperForField(breedEl);
+                const err = getOrCreateErrorEl(w);
+                if (err) { err.textContent = 'Please select a breed.'; err.style.display = 'block'; }
+                hasError = true;
+            }
+            if (!genderVal) {
+                const w = getWrapperForField(genderEl);
+                const err = getOrCreateErrorEl(w);
+                if (err) { err.textContent = 'Please select a gender.'; err.style.display = 'block'; }
+                hasError = true;
+            }
+            if (!ageVal) {
+                const w = getWrapperForField(ageEl);
+                const err = getOrCreateErrorEl(w);
+                if (err) { err.textContent = 'Please select an age.'; err.style.display = 'block'; }
+                hasError = true;
+            }
+
+            // Date: not future, and not too old (keep previous one-year limit)
+            if (!dateVal) {
+                const w = getWrapperForField(dateEl);
+                const err = getOrCreateErrorEl(w) || w && w.querySelector('.date-error');
+                if (err) { err.textContent = 'Please select a date.'; err.style.display = 'block'; }
+                hasError = true;
+            } else {
+                const picked = new Date(dateVal + 'T00:00:00');
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                if (picked > today) {
+                    const w = getWrapperForField(dateEl);
+                    const err = getOrCreateErrorEl(w) || w && w.querySelector('.date-error');
+                    if (err) { err.textContent = 'Date cannot be in the future.'; err.style.display = 'block'; }
+                    hasError = true;
+                } else if (isDateTooOld(dateVal)) {
+                    const w = getWrapperForField(dateEl);
+                    const err = getOrCreateErrorEl(w) || w && w.querySelector('.date-error');
+                    if (err) { err.textContent = 'Date is too old — please choose a date within the past year.'; err.style.display = 'block'; }
+                    hasError = true;
+                }
+            }
+
+            if (hasError) {
+                const firstFieldError = this.querySelector('.field-error, .date-error');
+                if (firstFieldError) {
+                    const wrapper = firstFieldError.closest('.input-wrapper') || firstFieldError.parentElement;
+                    if (wrapper) {
+                        const input = wrapper.querySelector('input, select, textarea');
+                        if (input) try { input.focus(); } catch(e) {}
+                    }
+                }
                 return;
             }
 
@@ -875,9 +1129,28 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (editPigDetailsModal) editPigDetailsModal.style.display = "none";
 
-            if (pigDetailsModal && pigDetailsFrame && pigDetailsFrame.src) {
+            if (pigDetailsModal && pigDetailsFrame && currentDetailPigId && currentDetailFarmId) {
                 pigDetailsModal.style.display = "flex";
-                pigDetailsFrame.src = pigDetailsFrame.src;
+                const refreshUrl = `pig-details.html?id=${encodeURIComponent(currentDetailPigId)}&farm=${encodeURIComponent(currentDetailFarmId)}`;
+                
+                // Set up postMessage to send updated pig data once iframe reloads
+                const onFrameReload = function () {
+                    try {
+                        const updatedPig = window.getPigDataById(currentDetailPigId, currentDetailFarmId);
+                        if (updatedPig && pigDetailsFrame.contentWindow) {
+                            pigDetailsFrame.contentWindow.postMessage({ type: "pigData", pig: updatedPig }, "*");
+                        }
+                    } catch (err) {
+                        console.warn("Failed to postMessage updated pig data:", err);
+                    } finally {
+                        pigDetailsFrame.removeEventListener("load", onFrameReload);
+                    }
+                };
+
+                pigDetailsFrame.addEventListener("load", onFrameReload);
+                
+                // Reload the iframe with the updated pig data
+                pigDetailsFrame.src = refreshUrl;
             } else {
                 document.body.style.overflow = "auto";
             }
@@ -903,14 +1176,44 @@ document.addEventListener("DOMContentLoaded", function () {
         addExpenseForm.addEventListener("submit", function (e) {
             e.preventDefault();
 
-            const dateVal     = document.getElementById("expenseDate")?.value;
-            const priceVal    = document.getElementById("expensePrice")?.value;
-            const categoryVal = document.getElementById("expenseCategory")?.value;
+            clearFormErrors(this);
 
-            if (!dateVal || !priceVal || !categoryVal) {
-                showAlert("warning", "Please fill out all expense fields.");
-                return;
+            const dateInputEl = document.getElementById("expenseDate");
+            const priceInputEl = document.getElementById("expensePrice");
+            const categoryEl = document.getElementById("expenseCategory");
+
+            const dateVal = dateInputEl ? dateInputEl.value : '';
+            const priceVal = priceInputEl ? priceInputEl.value : '';
+            const categoryVal = categoryEl ? categoryEl.value : '';
+
+            let hasError = false;
+            if (!dateVal) {
+                const wrapper = getWrapperForField(dateInputEl);
+                const err = getOrCreateErrorEl(wrapper) || wrapper && wrapper.querySelector('.date-error');
+                if (err) { err.textContent = 'Please select a date.'; err.style.display = 'block'; }
+                hasError = true;
+            } else if (isDateTooOld(dateVal)) {
+                const wrapper = getWrapperForField(dateInputEl);
+                const err = getOrCreateErrorEl(wrapper) || wrapper && wrapper.querySelector('.date-error');
+                if (err) { err.textContent = 'Date is too old — please choose a date within the past year.'; err.style.display = 'block'; }
+                hasError = true;
             }
+
+            if (!priceVal) {
+                const wrapper = getWrapperForField(priceInputEl);
+                const err = getOrCreateErrorEl(wrapper);
+                if (err) { err.textContent = 'Please enter a price.'; err.style.display = 'block'; }
+                hasError = true;
+            }
+
+            if (!categoryVal) {
+                const wrapper = getWrapperForField(categoryEl);
+                const err = getOrCreateErrorEl(wrapper);
+                if (err) { err.textContent = 'Please select a category.'; err.style.display = 'block'; }
+                hasError = true;
+            }
+
+            if (hasError) return;
 
             const farm = currentDetailFarmId
                 ? getFarmById(currentDetailFarmId)
@@ -939,16 +1242,32 @@ document.addEventListener("DOMContentLoaded", function () {
             if (addExpenseModal) addExpenseModal.style.display = "none";
 
             if (pigDetailsModal) pigDetailsModal.style.display = "flex";
-            if (pigDetailsFrame && pigDetailsFrame.src) {
-                pigDetailsFrame.src = pigDetailsFrame.src;
+            if (pigDetailsFrame && currentDetailPigId && currentDetailFarmId) {
+                const refreshUrl = `pig-details.html?id=${encodeURIComponent(currentDetailPigId)}&farm=${encodeURIComponent(currentDetailFarmId)}`;
+                
+                // Set up postMessage to send updated pig data once iframe reloads
+                const onFrameReload = function () {
+                    try {
+                        const updatedPig = window.getPigDataById(currentDetailPigId, currentDetailFarmId);
+                        if (updatedPig && pigDetailsFrame.contentWindow) {
+                            pigDetailsFrame.contentWindow.postMessage({ type: "pigData", pig: updatedPig }, "*");
+                        }
+                    } catch (err) {
+                        console.warn("Failed to postMessage updated pig data:", err);
+                    } finally {
+                        pigDetailsFrame.removeEventListener("load", onFrameReload);
+                    }
+                };
+                
+                pigDetailsFrame.addEventListener("load", onFrameReload);
+                pigDetailsFrame.src = refreshUrl;
             }
 
             loadFarmData();
             this.reset();
 
-            const today     = new Date().toISOString().split("T")[0];
             const dateInput = document.getElementById("expenseDate");
-            if (dateInput) dateInput.value = today;
+            if (dateInput) dateInput.value = ""; // Clear date - let user choose when they use the form again
 
             showAlert("success", "Expense record added successfully!");
         });
@@ -957,9 +1276,8 @@ document.addEventListener("DOMContentLoaded", function () {
     if (clearExpenseFormBtn && addExpenseForm) {
         clearExpenseFormBtn.addEventListener("click", function () {
             addExpenseForm.reset();
-            const today     = new Date().toISOString().split("T")[0];
             const dateInput = document.getElementById("expenseDate");
-            if (dateInput) dateInput.value = today;
+            if (dateInput) dateInput.value = ""; // Clear date input completely
         });
     }
 
@@ -971,14 +1289,68 @@ document.addEventListener("DOMContentLoaded", function () {
         addVaccinationForm.addEventListener("submit", function (e) {
             e.preventDefault();
 
-            const dateVal    = document.getElementById("vaccDate")?.value;
-            const dueDateVal = document.getElementById("vaccDueDate")?.value;
-            const typeVal    = document.getElementById("vaccType")?.value;
+            clearFormErrors(this);
 
-            if (!dateVal || !dueDateVal || !typeVal) {
-                showAlert("warning", "Please fill out all vaccination fields.");
-                return;
+            const dateEl = document.getElementById("vaccDate");
+            const dueEl  = document.getElementById("vaccDueDate");
+            const typeEl = document.getElementById("vaccType");
+
+            const dateVal = dateEl ? dateEl.value : '';
+            const dueDateVal = dueEl ? dueEl.value : '';
+            const typeVal = typeEl ? typeEl.value : '';
+
+            let hasError = false;
+
+            if (!dateVal) {
+                const w = getWrapperForField(dateEl);
+                const err = getOrCreateErrorEl(w) || w && w.querySelector('.date-error');
+                if (err) { err.textContent = 'Please select a vaccination date.'; err.style.display = 'block'; }
+                hasError = true;
+            } else {
+                // vaccination date: must not be future and should be reasonably recent (<= 6 months)
+                const picked = new Date(dateVal + 'T00:00:00');
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                if (picked > today) {
+                    const w = getWrapperForField(dateEl);
+                    const err = getOrCreateErrorEl(w) || w && w.querySelector('.date-error');
+                    if (err) { err.textContent = 'Vaccination date cannot be in the future.'; err.style.display = 'block'; }
+                    hasError = true;
+                } else if (isDateOlderThanMonths(dateVal, 6)) {
+                    const w = getWrapperForField(dateEl);
+                    const err = getOrCreateErrorEl(w) || w && w.querySelector('.date-error');
+                    if (err) { err.textContent = 'Vaccination date is too old — please choose within the last 6 months.'; err.style.display = 'block'; }
+                    hasError = true;
+                }
             }
+
+            if (!dueDateVal) {
+                const w = getWrapperForField(dueEl);
+                const err = getOrCreateErrorEl(w) || w && w.querySelector('.date-error');
+                if (err) { err.textContent = 'Please select a due date.'; err.style.display = 'block'; }
+                hasError = true;
+            } else {
+                // due date may be in the future, but must not be earlier than vacc date
+                if (dateVal) {
+                    const d1 = new Date(dateVal + 'T00:00:00');
+                    const d2 = new Date(dueDateVal + 'T00:00:00');
+                    if (d2 < d1) {
+                        const w = getWrapperForField(dueEl);
+                        const err = getOrCreateErrorEl(w) || w && w.querySelector('.date-error');
+                        if (err) { err.textContent = 'Due date cannot be earlier than vaccination date.'; err.style.display = 'block'; }
+                        hasError = true;
+                    }
+                }
+            }
+
+            if (!typeVal) {
+                const w = getWrapperForField(typeEl);
+                const err = getOrCreateErrorEl(w);
+                if (err) { err.textContent = 'Please select a vaccination type.'; err.style.display = 'block'; }
+                hasError = true;
+            }
+
+            if (hasError) return;
 
             const farm = currentDetailFarmId
                 ? getFarmById(currentDetailFarmId)
@@ -1008,16 +1380,32 @@ document.addEventListener("DOMContentLoaded", function () {
             if (addVaccinationModal) addVaccinationModal.style.display = "none";
 
             if (pigDetailsModal) pigDetailsModal.style.display = "flex";
-            if (pigDetailsFrame && pigDetailsFrame.src) {
-                pigDetailsFrame.src = pigDetailsFrame.src;
+            if (pigDetailsFrame && currentDetailPigId && currentDetailFarmId) {
+                const refreshUrl = `pig-details.html?id=${encodeURIComponent(currentDetailPigId)}&farm=${encodeURIComponent(currentDetailFarmId)}`;
+                
+                // Set up postMessage to send updated pig data once iframe reloads
+                const onFrameReload = function () {
+                    try {
+                        const updatedPig = window.getPigDataById(currentDetailPigId, currentDetailFarmId);
+                        if (updatedPig && pigDetailsFrame.contentWindow) {
+                            pigDetailsFrame.contentWindow.postMessage({ type: "pigData", pig: updatedPig }, "*");
+                        }
+                    } catch (err) {
+                        console.warn("Failed to postMessage updated pig data:", err);
+                    } finally {
+                        pigDetailsFrame.removeEventListener("load", onFrameReload);
+                    }
+                };
+                
+                pigDetailsFrame.addEventListener("load", onFrameReload);
+                pigDetailsFrame.src = refreshUrl;
             }
 
             loadFarmData();
             this.reset();
 
-            const today    = new Date().toISOString().split("T")[0];
             const vaccDate = document.getElementById("vaccDate");
-            if (vaccDate) vaccDate.value = today;
+            if (vaccDate) vaccDate.value = ""; // Clear date - let user choose when they use the form again
 
             showAlert("success", "Vaccination record added successfully!");
         });
@@ -1026,10 +1414,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if (clearVaccinationFormBtn && addVaccinationForm) {
         clearVaccinationFormBtn.addEventListener("click", function () {
             addVaccinationForm.reset();
-            const today       = new Date().toISOString().split("T")[0];
             const vaccDate    = document.getElementById("vaccDate");
             const vaccDueDate = document.getElementById("vaccDueDate");
-            if (vaccDate)    vaccDate.value    = today;
+            if (vaccDate)    vaccDate.value    = ""; // Clear both dates
             if (vaccDueDate) vaccDueDate.value = "";
         });
     }
@@ -1289,6 +1676,25 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // 2) DATE INPUTS: add .is-focused / .has-value on the wrapper
+    // Helper: open native picker if available, fallback to focus+click
+    function openDatePicker(input) {
+        if (!input) return;
+        try {
+            if (typeof input.showPicker === 'function') {
+                input.showPicker();
+                return;
+            }
+        } catch (e) {
+            // ignore and fallback
+        }
+        try {
+            input.focus();
+            input.click();
+        } catch (e) {
+            // ignore
+        }
+    }
+
     const dateWrappers = document.querySelectorAll(".date-wrapper");
     dateWrappers.forEach(wrapper => {
         const input = wrapper.querySelector("input[type='date']");
@@ -1312,7 +1718,35 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         input.addEventListener("change", update);
+
+        // Inline error element (for submit-time messages)
+        let errorEl = wrapper.querySelector('.date-error');
+        if (!errorEl) {
+            errorEl = document.createElement('div');
+            errorEl.className = 'date-error';
+            errorEl.style.display = 'none';
+            wrapper.appendChild(errorEl);
+        }
+
+        // run initial update state
         update();
+
+        // react to changes: only update visual state; validation occurs on submit
+        input.addEventListener('change', () => {
+            update();
+            // clear any previous inline date error when user changes value
+            if (errorEl) { errorEl.textContent = ''; errorEl.style.display = 'none'; }
+        });
+
+        // Make calendar icon clickable to open date picker (use showPicker when available)
+        const calendarIcon = wrapper.querySelector(".calendar-icon");
+        if (calendarIcon) {
+            calendarIcon.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openDatePicker(input);
+            });
+        }
     });
 
     // 3) WEIGHT / NUMBER INPUTS: highlight unit box on focus
@@ -1329,6 +1763,63 @@ document.addEventListener("DOMContentLoaded", function () {
             wrapper.classList.remove("is-focused");
         });
     });
+
+    // Validation helpers (validate on submit only, show inline span errors)
+    function getWrapperForField(fieldEl) {
+        if (!fieldEl) return null;
+        return fieldEl.closest('.input-wrapper') || fieldEl.parentElement;
+    }
+
+    function getOrCreateErrorEl(wrapper) {
+        if (!wrapper) return null;
+        let el = wrapper.querySelector('.field-error');
+        if (!el) {
+            el = document.createElement('span');
+            el.className = 'field-error';
+            el.style.display = 'none';
+            wrapper.appendChild(el);
+        }
+        return el;
+    }
+
+    function clearFormErrors(form) {
+        if (!form) return;
+        form.querySelectorAll('.field-error').forEach(fe => {
+            fe.textContent = '';
+            fe.style.display = 'none';
+        });
+        // also hide date-error elements inside wrappers
+        form.querySelectorAll('.date-error').forEach(de => { de.textContent = ''; de.style.display = 'none'; });
+    }
+
+    function isDateTooOld(value) {
+        if (!value) return false;
+        const picked = new Date(value + 'T00:00:00');
+        const today = new Date();
+        const oneYearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+        return picked < oneYearAgo;
+    }
+
+    // Check if date is older than given months (e.g., 6 months)
+    function isDateOlderThanMonths(value, months) {
+        if (!value) return false;
+        const picked = new Date(value + 'T00:00:00');
+        const today = new Date();
+        const cutoff = new Date(today);
+        cutoff.setMonth(cutoff.getMonth() - months);
+        // normalize time
+        cutoff.setHours(0,0,0,0);
+        return picked < cutoff;
+    }
+
+    function isValidWeightValue(val) {
+        if (val === null || val === undefined || val === '') return false;
+        const n = parseFloat(val);
+        if (isNaN(n)) return false;
+        if (n < 1) return false; // minimum believable weight is 1 kg
+        if (n > 120) return false; // maximum believable weight is 120 kg
+        return true;
+    }
 
     // =========================================================================
     // 🔄 STATUS MODAL (CHANGE STATUS FLOW)
@@ -1578,11 +2069,306 @@ document.addEventListener("DOMContentLoaded", function () {
                     loadFarmData();
                     showAlert("success", `${pig.name} changed into To Sale.`);
                     break;
+
+                // BULK SOLD: final confirm from receipt
+                case "confirm-sold-batch": {
+                    const priceMap = window._soldPriceMap || {};
+                    const currentFarm = getCurrentFarm();
+                    if (!currentFarm) {
+                        closeStatusModal();
+                        return;
+                    }
+
+                    const checkboxes = Array.from(document.querySelectorAll('.pig-checkbox'));
+                    const selectedIds = checkboxes
+                        .filter(cb => cb.checked && !cb.disabled)
+                        .map(cb => Number(cb.dataset.pigId));
+
+                    let changedCount = 0;
+                    selectedIds.forEach(id => {
+                        const p = currentFarm.pigs.find(pg => pg.id === id);
+                        if (!p) return;
+
+                        const pricePerKg = priceMap[id] || 0;
+                        let currentWeight = 0;
+                        if (p.weightHistory && p.weightHistory.length > 0) {
+                            currentWeight = p.weightHistory[p.weightHistory.length - 1].weight || 0;
+                        }
+                        const total = (currentWeight * pricePerKg).toFixed(2);
+
+                        p.status = "sold";
+                        p.statusHistory = p.statusHistory || [];
+                        p.statusHistory.push({
+                            date: new Date().toISOString().split('T')[0],
+                            status: 'sold',
+                            pricePerKg: pricePerKg || null,
+                            total: total || null,
+                            notes: 'Bulk sold (price set)'
+                        });
+                        changedCount++;
+                    });
+
+                    closeStatusModal();
+                    loadFarmData();
+                    showAlert("success", `${changedCount} pig${changedCount > 1 ? 's' : ''} marked as Sold!`);
+                    break;
+                }
+
+                // BULK DECEASED: final confirm from warning
+                case "confirm-deceased-batch": {
+                    const currentFarm = getCurrentFarm();
+                    if (!currentFarm) {
+                        closeStatusModal();
+                        return;
+                    }
+
+                    const checkboxes = Array.from(document.querySelectorAll('.pig-checkbox'));
+                    const selectedIds = checkboxes
+                        .filter(cb => cb.checked && !cb.disabled)
+                        .map(cb => Number(cb.dataset.pigId));
+
+                    let changedCount = 0;
+                    let pigNames = [];
+                    selectedIds.forEach(id => {
+                        const p = currentFarm.pigs.find(pg => pg.id === id);
+                        if (!p) return;
+
+                        p.status = "deceased";
+                        p.statusHistory = p.statusHistory || [];
+                        p.statusHistory.push({
+                            date: new Date().toISOString().split('T')[0],
+                            status: 'deceased',
+                            notes: 'Marked as deceased'
+                        });
+                        pigNames.push(p.name);
+                        changedCount++;
+                    });
+
+                    closeStatusModal();
+                    loadFarmData();
+
+                    // Show alert with undo option stored in localStorage
+                    const undoData = { pigIds: selectedIds, status: 'growing', timestamp: Date.now() };
+                    window._lastDeceasedUndo = undoData;
+
+                    const pigList = pigNames.join(', ');
+                    showAlert("success", `${pigList} marked as Deceased.`, true, function() {
+                        // Undo callback
+                        if (window._lastDeceasedUndo) {
+                            const farm = getCurrentFarm();
+                            if (farm) {
+                                window._lastDeceasedUndo.pigIds.forEach(id => {
+                                    const p = farm.pigs.find(pg => pg.id === id);
+                                    if (p) {
+                                        p.status = 'growing';
+                                        p.statusHistory = p.statusHistory || [];
+                                        p.statusHistory.push({
+                                            date: new Date().toISOString().split('T')[0],
+                                            status: 'growing',
+                                            notes: 'Undid deceased status'
+                                        });
+                                    }
+                                });
+                                loadFarmData();
+                                showAlert("success", "Undo successful! Pigs restored to Growing status.");
+                            }
+                        }
+                    });
+                    break;
+                }
             }
         });
     }
 
-    // Called when user picks status in dropdown
+    // =========================================================================
+    // 📋 SOLD RECEIPT MODAL (Multiple pigs)
+    // =========================================================================
+    
+    function showSoldReceiptModal(pigIds, farm) {
+        if (!statusModal || !statusModalContent) return;
+
+        let totalRevenue = 0;
+        let totalExpenses = 0;
+        let pigsList = '';
+
+        pigIds.forEach(pigId => {
+            const pig = farm.pigs.find(p => p.id === pigId);
+            if (!pig) return;
+
+            // Get current weight (last weight record)
+            let currentWeight = 0;
+            if (pig.weightHistory && pig.weightHistory.length > 0) {
+                currentWeight = pig.weightHistory[pig.weightHistory.length - 1].weight || 0;
+            }
+
+            // Calculate expenses for this pig
+            let pigExpenses = 0;
+            if (Array.isArray(pig.expenses)) {
+                pigExpenses = pig.expenses.reduce((sum, exp) => sum + (parseFloat(exp.price) || 0), 0);
+            }
+
+            totalExpenses += pigExpenses;
+
+            // For the receipt, we'll ask for price per kg first if not provided
+            // For now, we'll store the pig data and collect price
+            pigsList += `<li data-pig-id="${pig.id}">
+                <strong>${pig.name}</strong> - <span class="pig-weight">${currentWeight} kg</span>
+                <input type="number" class="pig-price-input" data-pig-id="${pig.id}" min="0" step="0.01" placeholder="₱/kg" style="width:100px; padding:5px; margin-left:10px;">
+            </li>`;
+        });
+
+        openStatusModal(`
+            <h3>Sell Multiple Pigs</h3>
+            <p>Enter price per kg for each pig:</p>
+            
+            <ul class="sold-pigs-list" style="list-style:none; padding:0; margin:15px 0;">
+                ${pigsList}
+            </ul>
+            
+            <div class="status-modal-actions">
+                <button class="btn-secondary" data-status-action="cancel">Cancel</button>
+                <button class="btn-primary" data-status-action="proceed-sold-receipt">Proceed</button>
+            </div>
+        `);
+
+        // Override the click handler temporarily for the proceed button
+        const proceedBtn = statusModalContent.querySelector('[data-status-action="proceed-sold-receipt"]');
+        if (proceedBtn) {
+            proceedBtn.onclick = function () {
+                showSoldReceiptSummary(pigIds, farm);
+            };
+        }
+    }
+
+    function showSoldReceiptSummary(pigIds, farm) {
+        if (!statusModal || !statusModalContent) return;
+
+        let totalRevenue = 0;
+        let totalExpenses = 0;
+        let receiptRows = '';
+        const priceMap = {}; // Store price per kg for final confirmation
+
+        // Collect prices and calculate totals
+        pigIds.forEach(pigId => {
+            const pig = farm.pigs.find(p => p.id === pigId);
+            if (!pig) return;
+
+            const priceInput = statusModalContent.querySelector(`input.pig-price-input[data-pig-id="${pigId}"]`);
+            const pricePerKg = priceInput ? parseFloat(priceInput.value) : 0;
+
+            if (isNaN(pricePerKg) || pricePerKg <= 0) {
+                showAlert("error", `Please enter valid price for ${pig.name}.`);
+                return;
+            }
+
+            priceMap[pigId] = pricePerKg;
+
+            // Get current weight
+            let currentWeight = 0;
+            if (pig.weightHistory && pig.weightHistory.length > 0) {
+                currentWeight = pig.weightHistory[pig.weightHistory.length - 1].weight || 0;
+            }
+
+            // Calculate revenue for this pig
+            const pigRevenue = (currentWeight * pricePerKg).toFixed(2);
+            totalRevenue += parseFloat(pigRevenue);
+
+            // Calculate expenses
+            let pigExpenses = 0;
+            if (Array.isArray(pig.expenses)) {
+                pigExpenses = pig.expenses.reduce((sum, exp) => sum + (parseFloat(exp.price) || 0), 0);
+            }
+            totalExpenses += pigExpenses;
+
+            // Add to receipt
+            receiptRows += `<tr>
+                <td>${pig.name}</td>
+                <td>${currentWeight} kg</td>
+                <td>₱${pricePerKg.toFixed(2)}</td>
+                <td>₱${pigRevenue}</td>
+            </tr>`;
+        });
+
+        const totalProfit = (totalRevenue - totalExpenses).toFixed(2);
+
+        openStatusModal(`
+            <h3>Sale Receipt</h3>
+            
+            <div class="receipt-table-wrapper">
+                <table class="receipt-table">
+                    <thead>
+                        <tr>
+                            <th>Pig</th>
+                            <th>Weight</th>
+                            <th>Price/kg</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${receiptRows}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="receipt-summary">
+                <div class="receipt-line">
+                    <span>Total Revenue:</span>
+                    <strong>₱${totalRevenue.toFixed(2)}</strong>
+                </div>
+                <div class="receipt-line">
+                    <span>Total Expenses:</span>
+                    <strong>₱${totalExpenses.toFixed(2)}</strong>
+                </div>
+                <div class="receipt-line profit">
+                    <span>Total Profit:</span>
+                    <strong>₱${totalProfit}</strong>
+                </div>
+            </div>
+
+            <p style="margin-top: 15px; font-size: 14px; color: #666;">
+                <strong>Confirm sale?</strong> This will mark all selected pigs as Sold.
+            </p>
+
+            <div class="status-modal-actions">
+                <button class="btn-secondary" data-status-action="cancel">Cancel</button>
+                <button class="btn-primary" data-status-action="confirm-sold-batch">Confirm Sale</button>
+            </div>
+        `);
+
+        // Store priceMap for the confirm handler
+        window._soldPriceMap = priceMap;
+    }
+
+    // =========================================================================
+    // ☠️ DECEASED WARNING MODAL
+    // =========================================================================
+
+    function showDeceasedWarningModal(pigIds, farm) {
+        if (!statusModal || !statusModalContent) return;
+
+        const pigNames = pigIds
+            .map(id => {
+                const pig = farm.pigs.find(p => p.id === id);
+                return pig ? pig.name : 'Unknown';
+            })
+            .join(', ');
+
+        openStatusModal(`
+            <h3>⚠️ Permanent Action</h3>
+            
+            <div class="warning-box">
+                <p><strong>WARNING:</strong> Marking ${pigIds.length === 1 ? 'this pig' : 'these pigs'} as <strong>Deceased</strong> is a permanent action that <strong>CANNOT be undone</strong>.</p>
+                <p style="margin-top: 10px; font-weight: 600;">Pig${pigIds.length > 1 ? 's' : ''}: <em>${pigNames}</em></p>
+            </div>
+
+            <div class="status-modal-actions">
+                <button class="btn-secondary" data-status-action="cancel">Cancel</button>
+                <button class="btn-danger" data-status-action="confirm-deceased-batch">Yes, Mark as Deceased</button>
+            </div>
+        `);
+    }
+
+    // =========================================================================
     function changeSelectedPigsStatus(newStatus) {
         // Use up-to-date checkbox list (DOM may have changed)
         const checkboxes = Array.from(document.querySelectorAll('.pig-checkbox'));
@@ -1598,12 +2384,6 @@ document.addEventListener("DOMContentLoaded", function () {
         const currentFarm = getCurrentFarm();
         if (!currentFarm) return;
 
-        // Sold requires a per-pig price flow — enforce single-pig update for 'sold'
-        if (newStatus === 'sold' && selectedIds.length > 1) {
-            showAlert("warning", "Please change 'Sold' status one pig at a time (price required).");
-            return;
-        }
-
         // Single pig => use existing canned status flow (gives confirmation prompts / price flow)
         if (selectedIds.length === 1) {
             const pig = currentFarm.pigs.find(p => p.id === selectedIds[0]);
@@ -1615,8 +2395,20 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        // Multiple pigs: allow bulk updates for statuses that don't require extra input
-        const allowedBulk = ['growing', 'tosale', 'deceased'];
+        // Multiple pigs: special handling for 'sold' — show receipt modal
+        if (newStatus === 'sold') {
+            showSoldReceiptModal(selectedIds, currentFarm);
+            return;
+        }
+
+        // Deceased: show warning that it's permanent
+        if (newStatus === 'deceased') {
+            showDeceasedWarningModal(selectedIds, currentFarm);
+            return;
+        }
+
+        // Multiple pigs: allow bulk updates for other statuses
+        const allowedBulk = ['growing', 'tosale'];
         if (!allowedBulk.includes(newStatus)) {
             showAlert("warning", "Cannot bulk-change to the selected status.");
             return;

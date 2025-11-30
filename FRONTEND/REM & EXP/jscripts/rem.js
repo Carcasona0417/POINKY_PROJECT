@@ -72,14 +72,60 @@ document.addEventListener('DOMContentLoaded', function () {
         updateDateWrapperState();
     }
 
-    // Calendar icon opens native picker or focuses input
-    calendarIcon?.addEventListener('click', () => {
-        if (!dateInput) return;
-        if (typeof dateInput.showPicker === 'function') {
-            dateInput.showPicker();
-        } else {
-            dateInput.focus();
+    // Calendar icon opens native picker or focuses input (with validation)
+    function openDatePicker(input) {
+        if (!input) return;
+        try {
+            if (typeof input.showPicker === 'function') {
+                input.showPicker();
+                return;
+            }
+        } catch (e) {}
+        try { input.focus(); input.click(); } catch (e) {}
+    }
+
+    // Inline error element for date validation (too-old dates)
+    let remDateError = null;
+    if (dateWrapper) {
+        remDateError = dateWrapper.querySelector('.date-error');
+        if (!remDateError) {
+            remDateError = document.createElement('div');
+            remDateError.className = 'date-error';
+            remDateError.style.display = 'none';
+            dateWrapper.appendChild(remDateError);
         }
+    }
+
+    function validateRemDate() {
+        if (!dateInput) return;
+        if (!dateInput.value) {
+            dateInput.setCustomValidity('');
+            if (remDateError) remDateError.style.display = 'none';
+            return true;
+        }
+        const picked = new Date(dateInput.value + 'T00:00:00');
+        const today = new Date();
+        const oneYearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+        if (picked < oneYearAgo) {
+            dateInput.setCustomValidity('Date must be within the last year');
+            if (remDateError) {
+                remDateError.textContent = 'Date is too old — please choose a date within the past year.';
+                remDateError.style.display = 'block';
+            }
+            return false;
+        }
+        dateInput.setCustomValidity('');
+        if (remDateError) remDateError.style.display = 'none';
+        return true;
+    }
+
+    calendarIcon?.addEventListener('click', () => {
+        openDatePicker(dateInput);
+    });
+
+    dateInput?.addEventListener('change', () => {
+        // clear previous inline date error when user changes value
+        if (remDateError) { remDateError.textContent = ''; remDateError.style.display = 'none'; }
     });
 
     /* ---------- FLOATING LABEL HELPERS (TEXT, SELECT, TEXTAREA) ---------- */
@@ -187,20 +233,33 @@ document.addEventListener('DOMContentLoaded', function () {
         const pig   = pigSelect ? pigSelect.value : '';
         const notes = notesInput ? notesInput.value.trim() : '';
 
-        // Validation
-        if (!task || !date) {
-            if (window.Swal) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Missing fields',
-                    text: 'Please fill in at least the Task and Date.',
-                    customClass: {
-                        popup: 'swal2-high-zindex'
-                    }
-                });
-            } else {
-                alert('Please fill in at least the Task and Date.');
+        // Clear previous inline task error
+        const taskWrapper = taskInput ? taskInput.closest('.input-wrapper') : null;
+        if (taskWrapper) {
+            const prev = taskWrapper.querySelector('.field-error');
+            if (prev) { prev.textContent = ''; prev.style.display = 'none'; }
+        }
+
+        // Validation: task required
+        if (!task) {
+            if (taskWrapper) {
+                let el = taskWrapper.querySelector('.field-error');
+                if (!el) {
+                    el = document.createElement('span');
+                    el.className = 'field-error';
+                    taskWrapper.appendChild(el);
+                }
+                el.textContent = 'Please enter a task.';
+                el.style.display = 'block';
+                taskInput.focus();
             }
+            return;
+        }
+
+        // Validation: date (use existing validator)
+        const okDate = validateRemDate();
+        if (!okDate) {
+            if (dateInput) dateInput.focus();
             return;
         }
 

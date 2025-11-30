@@ -275,8 +275,34 @@ body {
 .tabs-header {
     display: flex;
     align-items: center;
-    gap: 5px;
-    position: relative; /* so dropdown anchored inside */
+    gap: 8px;
+    position: relative;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-right: 60px; /* Reserve space for sticky add button */
+    scroll-behavior: smooth;
+    /* Scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: #EFA7A7 #F0F0F0;
+}
+
+/* Webkit scrollbar styling (Chrome, Safari, Edge) */
+.tabs-header::-webkit-scrollbar {
+    height: 4px;
+}
+
+.tabs-header::-webkit-scrollbar-track {
+    background: #F0F0F0;
+    border-radius: 10px;
+}
+
+.tabs-header::-webkit-scrollbar-thumb {
+    background: #EFA7A7;
+    border-radius: 10px;
+}
+
+.tabs-header::-webkit-scrollbar-thumb:hover {
+    background: #E59595;
 }
 
 /* Regular farm tab button */
@@ -290,6 +316,8 @@ body {
     cursor: pointer;
     transition: all 0.3s ease;
     font-family: 'Poppins', sans-serif;
+    white-space: nowrap;
+    flex-shrink: 0; /* Prevent tab from shrinking */
 }
 
 /* Active tab (selected farm) */
@@ -303,25 +331,30 @@ body {
     background-color: #E59595;
 }
 
-/* Round button for + Add Farm */
+/* Round button for + Add Farm - sticky positioning */
 .tab-add {
     color: white;
     background-color: #EFA7A7;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-left: 10px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 16px;
     border: none;
-    transition: background-color 0.3s ease;
+    transition: all 0.3s ease;
+    flex-shrink: 0; /* Prevent button from shrinking */
+    position: sticky;
+    right: 8px;
+    box-shadow: 0 2px 8px rgba(240, 128, 128, 0.3);
 }
 
 .tab-add:hover {
     background-color: #E59595;
+    box-shadow: 0 4px 12px rgba(240, 128, 128, 0.5);
+    transform: scale(1.05);
 }
 
 /* =========================================
@@ -973,12 +1006,19 @@ body {
     
     .tabs-header {
         flex-wrap: wrap;
-        gap: 5px;
+        gap: 8px;
+        padding-right: 0; /* Remove sticky spacing on mobile */
+        overflow-x: visible;
     }
     
     .tab {
         padding: 10px 20px;
         font-size: 14px;
+    }
+    
+    .tab-add {
+        position: static; /* No sticky on mobile */
+        margin-top: 5px;
     } 
     
     .table-content-box {
