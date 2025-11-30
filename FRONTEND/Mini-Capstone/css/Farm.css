@@ -733,6 +733,17 @@ body {
     margin-right: 8px;
 }
 
+/* Make clickable variant a fixed 50px wide badge (override min-width) */
+.pig-id-badge.clickable-badge {
+    width: 50px;
+    min-width: 50px;
+    box-sizing: border-box;
+    padding: 6px 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* Faded fullname text under ID */
 .pig-fullname {
     color: var(--text-light);

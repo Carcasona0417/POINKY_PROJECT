@@ -695,6 +695,17 @@ body {
     margin-right: 8px;
 }
 
+/* Make clickable variant a fixed 50px wide badge (override min-width) */
+.pig-id-badge.clickable-badge {
+    width: 120px;
+   
+    box-sizing: border-box;
+    padding: 6px 6px; /* keep small horizontal padding while staying within width */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* Column sizing & alignment to ensure header titles line up with row data */
 .pigs-table thead th { text-align: left; }
 
