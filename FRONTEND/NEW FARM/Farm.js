@@ -1242,10 +1242,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
 
+            // If we're editing an existing record and the user didn't pick a new image,
+            // keep the previous image instead of replacing it with the placeholder.
+            let existingImg = null;
+            if (currentEditWeightRecordIndex !== null && pig.weightHistory && pig.weightHistory[currentEditWeightRecordIndex]) {
+                existingImg = pig.weightHistory[currentEditWeightRecordIndex].img;
+            }
+
             const newRecord = {
                 date:   dateVal,
                 weight: parseFloat(weightVal),
-                img:    imgData || "Dash Icons/WPig.png"
+                img:    imgData || existingImg || "Dash Icons/WPig.png"
             };
 
             if (!Array.isArray(pig.weightHistory)) {
