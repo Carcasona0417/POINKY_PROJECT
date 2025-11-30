@@ -2566,6 +2566,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // =========================================================================
 
     // Farm tabs
+    let lastTabTouch = 0;
     tabs.forEach(tab => {
         tab.addEventListener("click", function () {
             const farmId = parseInt(this.dataset.farm, 10);
@@ -2577,6 +2578,21 @@ document.addEventListener("DOMContentLoaded", function () {
             const farmId = Number(this.dataset.farm);
             showTabActionsDropdown(this, farmId);
             e.stopPropagation();
+        });
+
+        // Touch devices: emulate double-tap to open the dropdown
+        tab.addEventListener('touchend', function (e) {
+            const now = Date.now();
+            // if second tap within 350ms -> treat as double-tap
+            if (now - lastTabTouch <= 350) {
+                const farmId = Number(this.dataset.farm);
+                showTabActionsDropdown(this, farmId);
+                e.stopPropagation();
+                // reset
+                lastTabTouch = 0;
+            } else {
+                lastTabTouch = now;
+            }
         });
     });
 
@@ -2615,20 +2631,98 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function showTabActionsDropdown(tabEl, farmId) {
-        if (!farmTabActionsModal) return;
+        // Show a small inline dropdown anchored to the tab element (not a modal)
+        // Behaviour mirrors the pig-details actions dropdown (Edit / Delete), and
+        // will call the existing rename/delete modal flows when the buttons are clicked.
+
         currentEditFarmId = Number(farmId);
         const farm = getFarmById(farmId);
         if (!farm) return;
 
-        // Update modal title with farm name
-        const farmTabActionsTitle = document.getElementById('farmTabActionsTitle');
-        if (farmTabActionsTitle) {
-            farmTabActionsTitle.textContent = farm.name + ' - Options';
-        }
+        // Remove any existing dropdown first
+        const existing = document.querySelector('.tab-actions-dropdown');
+        if (existing) existing.remove();
 
-        // Show the modal
-        farmTabActionsModal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
+        // Create dropdown element
+        const dd = document.createElement('div');
+        dd.className = 'tab-actions-dropdown';
+        dd.style.position = 'absolute';
+        dd.style.zIndex = 9999;
+        dd.style.background = '#fff';
+        dd.style.border = '1px solid rgba(0,0,0,0.08)';
+        dd.style.borderRadius = '8px';
+        dd.style.padding = '6px 0';
+
+        // Rename button
+        const renameBtn = document.createElement('button');
+        renameBtn.innerHTML = '<i class="fa-solid fa-pen" style="margin-right:8px"></i> Rename Farm';
+        renameBtn.style.background = 'transparent';
+        renameBtn.style.border = 'none';
+        renameBtn.style.width = '100%';
+        renameBtn.style.padding = '8px 12px';
+        renameBtn.style.textAlign = 'left';
+        renameBtn.style.cursor = 'pointer';
+
+        // Delete button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '<i class="fa-solid fa-trash" style="margin-right:8px"></i> Delete Farm';
+        deleteBtn.className = 'delete';
+        deleteBtn.style.background = 'transparent';
+        deleteBtn.style.border = 'none';
+        deleteBtn.style.width = '100%';
+        deleteBtn.style.padding = '8px 12px';
+        deleteBtn.style.textAlign = 'left';
+        deleteBtn.style.cursor = 'pointer';
+
+        dd.appendChild(renameBtn);
+        dd.appendChild(deleteBtn);
+
+        document.body.appendChild(dd);
+
+        // Position dropdown beneath the tab element (centered)
+        const rect = tabEl.getBoundingClientRect();
+        const left = Math.max(8, rect.left + window.scrollX + rect.width / 2 - dd.offsetWidth / 2);
+        const top  = rect.bottom + window.scrollY + 8;
+        dd.style.left = left + 'px';
+        dd.style.top  = top + 'px';
+
+        // Hook up actions
+        renameBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Launch rename flow (modal remains as the actual editing UI)
+            openRenameFarmModalFor(farmId);
+            dd.remove();
+        });
+
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Launch delete confirmation flow
+            openDeleteFarmConfirmFor(farmId);
+            dd.remove();
+        });
+
+        // Clicking anywhere else closes the dropdown
+        const onDocClick = (ev) => {
+            if (!ev.target.closest || !ev.target.closest('.tab-actions-dropdown')) {
+                dd.remove();
+                document.removeEventListener('click', onDocClick);
+                document.removeEventListener('keydown', onEsc);
+            }
+        };
+
+        const onEsc = (ev) => {
+            if (ev.key === 'Escape') {
+                dd.remove();
+                document.removeEventListener('click', onDocClick);
+                document.removeEventListener('keydown', onEsc);
+            }
+        };
+
+        // Use a short timeout so the click that created the dropdown isn't immediately swallowed
+        setTimeout(() => {
+            document.addEventListener('click', onDocClick);
+            document.addEventListener('keydown', onEsc);
+        }, 0);
     }
 
     // ---------------------------

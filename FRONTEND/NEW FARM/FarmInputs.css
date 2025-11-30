@@ -632,10 +632,15 @@ input[type="date"] { -moz-appearance: textfield; }
     padding: 6px 0;
     box-shadow: 0 6px 16px rgba(0,0,0,0.12);
     border-radius: 8px;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    overflow: hidden;
 }
 
 .tab-actions-dropdown button { width: 100%; padding: 10px 14px; border: none; background: white; text-align: left; cursor: pointer; }
 .tab-actions-dropdown button.delete { color: #d32f2f; }
+
+.tab-actions-dropdown button:hover { background: #fff6f7; }
 
 /* Add icons to tab action buttons */
 /* Icons are inserted inline in the HTML to avoid double-icons from CSS pseudo-elements */
