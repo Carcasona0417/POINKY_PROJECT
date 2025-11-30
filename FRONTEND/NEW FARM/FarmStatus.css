@@ -9,7 +9,7 @@
     background: rgba(0, 0, 0, 0.6);
     justify-content: center;
     align-items: center;
-    z-index: 1400;
+    z-index: 1400; 
 }
 
 .status-modal-card {
@@ -204,6 +204,12 @@
 }
 
 /* ======= BUTTONS ======= */
+.modal-actions{
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 18px;
+}
 .status-modal-actions {
     display: flex;
     justify-content: space-between;

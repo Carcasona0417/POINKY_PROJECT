@@ -9,6 +9,13 @@
     background: rgba(0,0,0,0.65);
     z-index: 2000;
 }
+
+.modal-actions{
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 18px;
+}
  
 .modal-content {
     background-color: #fff;
@@ -817,18 +824,19 @@ input[type="date"] { -moz-appearance: textfield; }
 }
 
 .btn-delete-pig:hover, .btn-delete-farm:hover {
-    background: #b71c1c;
+    background: #439A46;
 }
 
 /* Generic danger button (used in confirm dialogs) */
 .btn-danger {
-    background: #d32f2f;
+    background: #4CAF50;
     color: #fff;
     border: none;
     padding: 8px 12px;
     border-radius: 6px;
     cursor: pointer;
     font-weight: 700;
+    width: 250px;
 }
 
 .btn-danger[disabled] { opacity: 0.6; cursor: not-allowed; }
