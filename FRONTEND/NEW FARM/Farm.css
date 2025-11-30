@@ -239,7 +239,7 @@ body {
     height: 70px;
 }
 
-/* Search bar container */
+/* Search bar container (copied from reminders styles) */
 .search-container {
     background: white;
     width: 100%;
@@ -252,7 +252,6 @@ body {
     position: relative;
 }
 
-/* Search input only */
 .search-input {
     border: none;
     outline: none;
@@ -262,7 +261,6 @@ body {
     padding-right: 30px;
 }
 
-/* Search icon inside search box (right side) */
 .search-icon {
     color: var(--text-light);
     position: absolute;

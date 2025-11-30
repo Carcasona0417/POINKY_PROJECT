@@ -67,11 +67,73 @@ let nextPigId                    = 4; // IDs 1..3 used by demo pigs
 let currentDetailPigId           = null;  // pig whose details we’re viewing
 let currentDetailFarmId          = null;  // farm of that pig
 let currentEditWeightRecordIndex = null;
+let currentEditExpenseIndex      = null;
+let currentEditVaccinationIndex  = null;
 let currentEditFarmId            = null;  // used for rename/delete farm UI
+let pendingDeleteData            = null;  // stores data for pending deletion confirmation
 
 // Helpers usable everywhere
 const getCurrentFarm = () => farms.find(farm => farm.id === currentFarmId);
 const getFarmById    = (id) => farms.find(farm => farm.id === Number(id));
+
+// -------------------------
+// Persistence helpers
+// -------------------------
+const STORAGE_KEY = 'poinky_farms_v1';
+
+function computeNextIdsFromData() {
+    try {
+        let maxFarm = 0;
+        let maxPig = 0;
+        farms.forEach(f => { if (f && typeof f.id === 'number') maxFarm = Math.max(maxFarm, f.id); if (Array.isArray(f.pigs)) f.pigs.forEach(p => { if (p && typeof p.id === 'number') maxPig = Math.max(maxPig, p.id); }); });
+        nextFarmId = maxFarm + 1 || nextFarmId;
+        nextPigId  = maxPig + 1  || nextPigId;
+    } catch (e) { console.warn('computeNextIdsFromData error', e); }
+}
+
+function saveFarmsToStorage() {
+    try {
+        const payload = { farms, nextFarmId, nextPigId };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    } catch (e) {
+        console.warn('Failed to save farms to localStorage', e);
+    }
+}
+
+function loadFarmsFromStorage() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw);
+        // Support both old format (just array) and new format
+        if (Array.isArray(parsed)) {
+            farms = parsed;
+        } else if (parsed && parsed.farms) {
+            farms = parsed.farms;
+            if (parsed.nextFarmId) nextFarmId = parsed.nextFarmId;
+            if (parsed.nextPigId) nextPigId = parsed.nextPigId;
+        }
+        computeNextIdsFromData();
+        return true;
+    } catch (e) {
+        console.warn('Failed to load farms from localStorage', e);
+        return false;
+    }
+}
+
+// Read File as data URL (base64) helper
+function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+        if (!file) return resolve(null);
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(file);
+    });
+}
+
+// Attempt to initialize from localStorage (if present)
+loadFarmsFromStorage();
 
 function formatStatusText(status) {
     const statusMap = {
@@ -288,6 +350,279 @@ window.openDeletePigFromDetails = function (pigId, farmId) {
     document.body.style.overflow = 'hidden';
 };
 
+// ======================================================================
+// EDIT/DELETE RECORD FUNCTIONS (called from pig-details.html)
+// ======================================================================
+
+// WEIGHT RECORD EDIT
+window.openEditWeightFromDetails = function (pigId, farmId, data) {
+    const addWeightModal = document.getElementById("addWeightModal");
+    if (!addWeightModal) return;
+
+    currentDetailPigId = Number(pigId);
+    currentDetailFarmId = Number(farmId);
+    currentEditWeightRecordIndex = data?.index;
+
+    const farm = farmId ? getFarmById(farmId) : getCurrentFarm();
+    if (!farm) return;
+
+    const pig = farm.pigs.find(p => p.id === Number(pigId));
+    if (!pig || currentEditWeightRecordIndex === undefined) return;
+
+    const record = pig.weightHistory[currentEditWeightRecordIndex];
+    if (!record) return;
+    console.debug("openEditWeightFromDetails called", { pigId, farmId, index: currentEditWeightRecordIndex, record });
+
+    // Populate form with existing values
+    const dateInput = document.getElementById("newWeightDate");
+    const weightInput = document.getElementById("newWeightValue");
+    const fileNameDisplay = document.getElementById("fileNameDisplay");
+    const weightHint = document.getElementById("weightHint");
+
+    if (dateInput) dateInput.value = record.date;
+    if (weightInput) weightInput.value = record.weight;
+    if (fileNameDisplay) fileNameDisplay.textContent = "Edit Image (optional)";
+
+    // Show last recorded data hint
+    if (weightHint) {
+        if (currentEditWeightRecordIndex > 0) {
+            const lastRecord = pig.weightHistory[currentEditWeightRecordIndex - 1];
+            const weightDiff = (record.weight - lastRecord.weight).toFixed(1);
+            const diffSign = weightDiff >= 0 ? "+" : "";
+            weightHint.innerHTML = `<strong>Last recorded:</strong> ${lastRecord.weight}kg on ${lastRecord.date} (${diffSign}${weightDiff}kg change)`;
+            weightHint.style.display = "block";
+            try { weightHint.dataset.persistent = "true"; } catch(e){}
+            setTimeout(() => { try { if (weightHint && weightHint.dataset.persistent === "true") weightHint.style.display = 'block'; } catch(e){} }, 50);
+        } else {
+            weightHint.style.display = "none";
+        }
+    }
+
+    // Hide details modal
+    const pigDetailsModal = document.getElementById("pigDetailsModal");
+    if (pigDetailsModal) pigDetailsModal.style.display = "none";
+
+    addWeightModal.style.display = "flex";
+};
+
+// WEIGHT RECORD DELETE
+window.deleteWeightFromDetails = function (pigId, farmId, data) {
+    const farm = farmId ? getFarmById(farmId) : getCurrentFarm();
+    if (!farm) return;
+
+    const pig = farm.pigs.find(p => p.id === Number(pigId));
+    if (!pig) return;
+
+    const index = data?.index;
+    if (index !== undefined && pig.weightHistory && pig.weightHistory[index]) {
+    pig.weightHistory.splice(index, 1);
+    // persist deletion
+    saveFarmsToStorage();
+
+        // Refresh pig details
+        const pigDetailsFrame = document.getElementById("pigDetailsFrame");
+        if (pigDetailsFrame && pigDetailsFrame.contentWindow) {
+            const updatedPig = getPigDataById(pigId, farmId);
+            pigDetailsFrame.contentWindow.postMessage({ type: "pigData", pig: updatedPig }, "*");
+        }
+    }
+};
+
+// EXPENSE RECORD EDIT
+window.openEditExpenseFromDetails = function (pigId, farmId, data) {
+    const addExpenseModal = document.getElementById("addExpenseModal");
+    if (!addExpenseModal) return;
+
+    currentDetailPigId = Number(pigId);
+    currentDetailFarmId = Number(farmId);
+    currentEditExpenseIndex = data?.index;
+
+    const farm = farmId ? getFarmById(farmId) : getCurrentFarm();
+    if (!farm) return;
+
+    const pig = farm.pigs.find(p => p.id === Number(pigId));
+    if (!pig || currentEditExpenseIndex === undefined) return;
+
+    const record = pig.expenses[currentEditExpenseIndex];
+    if (!record) return;
+
+    console.debug("openEditExpenseFromDetails called", { pigId, farmId, index: currentEditExpenseIndex, record });
+
+    // Populate form with existing values
+    const dateInput = document.getElementById("expenseDate");
+    const priceInput = document.getElementById("expensePrice");
+    const categorySelect = document.getElementById("expenseCategory");
+    const expenseHint = document.getElementById("expenseHint");
+
+    if (dateInput) dateInput.value = record.date;
+    if (priceInput) priceInput.value = record.price;
+    if (categorySelect) categorySelect.value = record.category || "";
+
+    // Show last recorded data hint
+    if (expenseHint) {
+        if (currentEditExpenseIndex > 0) {
+            const lastRecord = pig.expenses[currentEditExpenseIndex - 1];
+            expenseHint.innerHTML = `<strong>Last recorded:</strong> ₱${lastRecord.price} on ${lastRecord.date} (${lastRecord.category})`;
+            expenseHint.style.display = "block";
+            try { expenseHint.dataset.persistent = "true"; } catch(e){}
+            setTimeout(() => { try { if (expenseHint && expenseHint.dataset.persistent === "true") expenseHint.style.display = 'block'; } catch(e){} }, 50);
+        } else {
+            expenseHint.style.display = "none";
+        }
+    }
+
+    // Hide details modal
+    const pigDetailsModal = document.getElementById("pigDetailsModal");
+    if (pigDetailsModal) pigDetailsModal.style.display = "none";
+
+    addExpenseModal.style.display = "flex";
+};
+
+// EXPENSE RECORD DELETE
+window.deleteExpenseFromDetails = function (pigId, farmId, data) {
+    const farm = farmId ? getFarmById(farmId) : getCurrentFarm();
+    if (!farm) return;
+
+    const pig = farm.pigs.find(p => p.id === Number(pigId));
+    if (!pig) return;
+
+    const index = data?.index;
+    if (index !== undefined && pig.expenses && pig.expenses[index]) {
+        pig.expenses.splice(index, 1);
+
+        // Refresh pig details
+        const pigDetailsFrame = document.getElementById("pigDetailsFrame");
+        if (pigDetailsFrame && pigDetailsFrame.contentWindow) {
+            const updatedPig = getPigDataById(pigId, farmId);
+            pigDetailsFrame.contentWindow.postMessage({ type: "pigData", pig: updatedPig }, "*");
+        }
+    }
+};
+
+// VACCINATION RECORD EDIT
+window.openEditVaccinationFromDetails = function (pigId, farmId, data) {
+    const addVaccinationModal = document.getElementById("addVaccinationModal");
+    if (!addVaccinationModal) return;
+
+    currentDetailPigId = Number(pigId);
+    currentDetailFarmId = Number(farmId);
+    currentEditVaccinationIndex = data?.index;
+
+    const farm = farmId ? getFarmById(farmId) : getCurrentFarm();
+    if (!farm) return;
+
+    const pig = farm.pigs.find(p => p.id === Number(pigId));
+    if (!pig || currentEditVaccinationIndex === undefined) return;
+
+    const record = pig.vaccinations[currentEditVaccinationIndex];
+    if (!record) return;
+
+    console.debug("openEditVaccinationFromDetails called", { pigId, farmId, index: currentEditVaccinationIndex, record });
+
+    // Populate form with existing values
+    const dateInput = document.getElementById("vaccDate");
+    const dueDateInput = document.getElementById("vaccDueDate");
+    const typeSelect = document.getElementById("vaccType");
+
+    if (dateInput) dateInput.value = record.date;
+    if (dueDateInput) dueDateInput.value = record.dueDate;
+    if (typeSelect) typeSelect.value = record.type || "";
+
+    // Hide details modal
+    const pigDetailsModal = document.getElementById("pigDetailsModal");
+    if (pigDetailsModal) pigDetailsModal.style.display = "none";
+
+    addVaccinationModal.style.display = "flex";
+};
+
+// VACCINATION RECORD DELETE
+window.deleteVaccinationFromDetails = function (pigId, farmId, data) {
+    const farm = farmId ? getFarmById(farmId) : getCurrentFarm();
+    if (!farm) return;
+
+    const pig = farm.pigs.find(p => p.id === Number(pigId));
+    if (!pig) return;
+
+    const index = data?.index;
+    if (index !== undefined && pig.vaccinations && pig.vaccinations[index]) {
+        pig.vaccinations.splice(index, 1);
+
+        // Refresh pig details
+        const pigDetailsFrame = document.getElementById("pigDetailsFrame");
+        if (pigDetailsFrame && pigDetailsFrame.contentWindow) {
+            const updatedPig = getPigDataById(pigId, farmId);
+            pigDetailsFrame.contentWindow.postMessage({ type: "pigData", pig: updatedPig }, "*");
+        }
+    }
+};
+
+// ======================================================================
+// DELETE RECORD CONFIRMATION MODALS
+// ======================================================================
+
+// Confirm Weight Delete
+window.confirmDeleteWeight = function (pigId, farmId, data) {
+    const modal = document.getElementById("deleteRecordConfirmModal");
+    const title = document.getElementById("deleteRecordTitle");
+    const text = document.getElementById("deleteRecordConfirmText");
+    
+    if (!modal) return;
+    
+    pendingDeleteData = {
+        type: "weight",
+        pigId: Number(pigId),
+        farmId: Number(farmId),
+        index: data?.index
+    };
+    
+    if (title) title.textContent = "Delete Weight Record";
+    if (text) text.innerHTML = "Are you sure you want to delete this weight record?<br>This action cannot be undone.";
+    
+    modal.style.display = "flex";
+};
+
+// Confirm Expense Delete
+window.confirmDeleteExpense = function (pigId, farmId, data) {
+    const modal = document.getElementById("deleteRecordConfirmModal");
+    const title = document.getElementById("deleteRecordTitle");
+    const text = document.getElementById("deleteRecordConfirmText");
+    
+    if (!modal) return;
+    
+    pendingDeleteData = {
+        type: "expense",
+        pigId: Number(pigId),
+        farmId: Number(farmId),
+        index: data?.index
+    };
+    
+    if (title) title.textContent = "Delete Expense Record";
+    if (text) text.innerHTML = "Are you sure you want to delete this expense record?<br>This action cannot be undone.";
+    
+    modal.style.display = "flex";
+};
+
+// Confirm Vaccination Delete
+window.confirmDeleteVaccination = function (pigId, farmId, data) {
+    const modal = document.getElementById("deleteRecordConfirmModal");
+    const title = document.getElementById("deleteRecordTitle");
+    const text = document.getElementById("deleteRecordConfirmText");
+    
+    if (!modal) return;
+    
+    pendingDeleteData = {
+        type: "vaccination",
+        pigId: Number(pigId),
+        farmId: Number(farmId),
+        index: data?.index
+    };
+    
+    if (title) title.textContent = "Delete Vaccination Record";
+    if (text) text.innerHTML = "Are you sure you want to delete this vaccination record?<br>This action cannot be undone.";
+    
+    modal.style.display = "flex";
+};
+
 // ----------------------------
 // MESSAGE HANDLER (iframe → parent)
 // ----------------------------
@@ -318,6 +653,7 @@ window.addEventListener("message", (ev) => {
                 }
                 break;
             case "openEditPigDetails":
+            case "openEditPigDetailsFromDetails":
                 if (typeof window.openEditPigDetailsFromDetails === "function") {
                     window.openEditPigDetailsFromDetails(pigId, farmId);
                 }
@@ -332,6 +668,80 @@ window.addEventListener("message", (ev) => {
         }
     } catch (e) {
         console.warn("Farm.js message handler error:", e);
+    }
+});
+
+// ----------------------------
+// MESSAGE HANDLER FOR RECORD ACTIONS (edit/delete)
+// ----------------------------
+window.addEventListener("message", (ev) => {
+    try {
+        const data = ev && ev.data;
+        if (!data || data.type !== "recordAction") return;
+
+        const action = data.action;
+        const pigId  = data.pigId;
+        const farmId = data.farmId;
+        const recordData = data.data;
+
+        // Route the action to the appropriate function if available
+        switch (action) {
+            case "openEditWeightFromDetails":
+                if (typeof window.openEditWeightFromDetails === "function") {
+                    window.openEditWeightFromDetails(pigId, farmId, recordData);
+                }
+                break;
+            case "deleteWeightFromDetails":
+                if (typeof window.confirmDeleteWeight === "function") {
+                    window.confirmDeleteWeight(pigId, farmId, recordData);
+                } else if (typeof window.deleteWeightFromDetails === "function") {
+                    window.deleteWeightFromDetails(pigId, farmId, recordData);
+                }
+                break;
+            case "openEditExpenseFromDetails":
+                if (typeof window.openEditExpenseFromDetails === "function") {
+                    window.openEditExpenseFromDetails(pigId, farmId, recordData);
+                }
+                break;
+            case "deleteExpenseFromDetails":
+                if (typeof window.confirmDeleteExpense === "function") {
+                    window.confirmDeleteExpense(pigId, farmId, recordData);
+                } else if (typeof window.deleteExpenseFromDetails === "function") {
+                    window.deleteExpenseFromDetails(pigId, farmId, recordData);
+                }
+                break;
+            case "openEditVaccinationFromDetails":
+                if (typeof window.openEditVaccinationFromDetails === "function") {
+                    window.openEditVaccinationFromDetails(pigId, farmId, recordData);
+                }
+                break;
+            case "confirmDeleteWeight":
+                if (typeof window.confirmDeleteWeight === "function") {
+                    window.confirmDeleteWeight(pigId, farmId, recordData);
+                }
+                break;
+            case "confirmDeleteExpense":
+                if (typeof window.confirmDeleteExpense === "function") {
+                    window.confirmDeleteExpense(pigId, farmId, recordData);
+                }
+                break;
+            case "confirmDeleteVaccination":
+                if (typeof window.confirmDeleteVaccination === "function") {
+                    window.confirmDeleteVaccination(pigId, farmId, recordData);
+                }
+                break;
+            case "deleteVaccinationFromDetails":
+                if (typeof window.confirmDeleteVaccination === "function") {
+                    window.confirmDeleteVaccination(pigId, farmId, recordData);
+                } else if (typeof window.deleteVaccinationFromDetails === "function") {
+                    window.deleteVaccinationFromDetails(pigId, farmId, recordData);
+                }
+                break;
+            default:
+                console.warn("Farm.js received unknown recordAction from iframe:", action);
+        }
+    } catch (e) {
+        console.warn("Farm.js recordAction handler error:", e);
     }
 });
 
@@ -579,6 +989,8 @@ document.addEventListener("DOMContentLoaded", function () {
         };
 
         farms.push(newFarm);
+        // persist
+        saveFarmsToStorage();
 
         const newTab = document.createElement("button");
         newTab.className = "tab";
@@ -667,7 +1079,11 @@ document.addEventListener("DOMContentLoaded", function () {
         };
 
         currentFarm.pigs.push(newPig);
+        // persist new pig
+        saveFarmsToStorage();
         nextPigId++;
+        // persist added pig
+        saveFarmsToStorage();
 
         loadFarmData();
     }
@@ -748,7 +1164,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // =========================================================================
 
     if (addWeightForm) {
-        addWeightForm.addEventListener("submit", function (e) {
+        addWeightForm.addEventListener("submit", async function (e) {
             e.preventDefault();
 
             clearFormErrors(this);
@@ -816,17 +1232,46 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             const imgFile = newWeightImgInput?.files?.[0];
+            let imgData = null;
+            if (imgFile) {
+                try {
+                    imgData = await readFileAsDataURL(imgFile);
+                } catch (err) {
+                    console.warn('Failed to read uploaded image as data URL', err);
+                    imgData = null;
+                }
+            }
+
+            // If we're editing an existing record and the user didn't pick a new image,
+            // keep the previous image instead of replacing it with the placeholder.
+            let existingImg = null;
+            if (currentEditWeightRecordIndex !== null && pig.weightHistory && pig.weightHistory[currentEditWeightRecordIndex]) {
+                existingImg = pig.weightHistory[currentEditWeightRecordIndex].img;
+            }
+
             const newRecord = {
                 date:   dateVal,
                 weight: parseFloat(weightVal),
-                img:    imgFile ? URL.createObjectURL(imgFile) : "Dash Icons/WPig.png"
+                img:    imgData || existingImg || "Dash Icons/WPig.png"
             };
 
             if (!Array.isArray(pig.weightHistory)) {
                 pig.weightHistory = [];
             }
 
-            pig.weightHistory.push(newRecord);
+            // Check if editing or adding
+            if (currentEditWeightRecordIndex !== null && pig.weightHistory[currentEditWeightRecordIndex]) {
+                // UPDATE existing record
+                pig.weightHistory[currentEditWeightRecordIndex] = newRecord;
+                saveFarmsToStorage();
+                showAlert("success", "Weight record updated successfully!");
+            } else {
+                // ADD new record
+                pig.weightHistory.push(newRecord);
+                saveFarmsToStorage();
+                showAlert("success", "Weight record added successfully!");
+            }
+
             pig.weight = `${weightVal}kg`;
 
             if (addWeightModal) addWeightModal.style.display = "none";
@@ -857,14 +1302,15 @@ document.addEventListener("DOMContentLoaded", function () {
             loadFarmData();
             this.reset();
 
+            // Reset edit mode
+            currentEditWeightRecordIndex = null;
+
             // Don't auto-fill date - let user choose when they use the form again
             if (fileNameDisplay) {
                 fileNameDisplay.textContent      = "Upload Image";
                 fileNameDisplay.style.color      = "var(--text-light)";
                 fileNameDisplay.style.fontStyle  = "italic";
             }
-
-            showAlert("success", "Weight record added successfully!");
         });
     }
 
@@ -885,7 +1331,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // (Edit weight logic kept optional; safe if edit modal not present)
     if (editWeightForm) {
-        editWeightForm.addEventListener("submit", function (e) {
+        editWeightForm.addEventListener("submit", async function (e) {
             e.preventDefault();
 
             const dateVal   = document.getElementById("editWeightDate")?.value;
@@ -917,7 +1363,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const imgFile = editWeightImgInput?.files?.[0];
             if (imgFile) {
-                editedRecord.img = URL.createObjectURL(imgFile);
+                try {
+                    const data = await readFileAsDataURL(imgFile);
+                    if (data) editedRecord.img = data;
+                } catch (err) {
+                    console.warn('Failed to read edited image as data URL', err);
+                }
             }
 
             // If editing most recent record, update display weight
@@ -953,6 +1404,8 @@ document.addEventListener("DOMContentLoaded", function () {
             loadFarmData();
             this.reset();
             currentEditWeightRecordIndex = null;
+            // Persist edits (including any image update)
+            saveFarmsToStorage();
 
             showAlert("success", "Weight record updated successfully!");
         });
@@ -1198,6 +1651,9 @@ document.addEventListener("DOMContentLoaded", function () {
             pig.date    = dateVal;
             pig.shortId = nameVal.substring(0, 3).toUpperCase();
 
+            // persist the edited pig details
+            saveFarmsToStorage();
+
             if (editPigDetailsModal) editPigDetailsModal.style.display = "none";
 
             if (pigDetailsModal && pigDetailsFrame && currentDetailPigId && currentDetailFarmId) {
@@ -1304,11 +1760,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (!Array.isArray(pig.expenses)) pig.expenses = [];
 
-            pig.expenses.push({
+            const newExpense = {
                 date:     dateVal,
                 price:    parseFloat(priceVal),
                 category: categoryVal
-            });
+            };
+
+            // Check if editing or adding
+            if (currentEditExpenseIndex !== null && pig.expenses[currentEditExpenseIndex]) {
+                // UPDATE existing record
+                pig.expenses[currentEditExpenseIndex] = newExpense;
+                showAlert("success", "Expense record updated successfully!");
+            } else {
+                // ADD new record
+                pig.expenses.push(newExpense);
+                showAlert("success", "Expense record added successfully!");
+            }
 
             if (addExpenseModal) addExpenseModal.style.display = "none";
 
@@ -1337,10 +1804,11 @@ document.addEventListener("DOMContentLoaded", function () {
             loadFarmData();
             this.reset();
 
+            // Reset edit mode
+            currentEditExpenseIndex = null;
+
             const dateInput = document.getElementById("expenseDate");
             if (dateInput) dateInput.value = ""; // Clear date - let user choose when they use the form again
-
-            showAlert("success", "Expense record added successfully!");
         });
     }
 
@@ -1441,12 +1909,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (!Array.isArray(pig.vaccinations)) pig.vaccinations = [];
 
-            pig.vaccinations.push({
+            const newVaccination = {
                 date:    dateVal,
                 dueDate: dueDateVal,
                 type:    typeVal,
                 status:  "scheduled"
-            });
+            };
+
+            // Check if editing or adding
+            if (currentEditVaccinationIndex !== null && pig.vaccinations[currentEditVaccinationIndex]) {
+                // UPDATE existing record
+                pig.vaccinations[currentEditVaccinationIndex] = newVaccination;
+                showAlert("success", "Vaccination record updated successfully!");
+            } else {
+                // ADD new record
+                pig.vaccinations.push(newVaccination);
+                showAlert("success", "Vaccination record added successfully!");
+            }
 
             if (addVaccinationModal) addVaccinationModal.style.display = "none";
 
@@ -1475,10 +1954,11 @@ document.addEventListener("DOMContentLoaded", function () {
             loadFarmData();
             this.reset();
 
+            // Reset edit mode
+            currentEditVaccinationIndex = null;
+
             const vaccDate = document.getElementById("vaccDate");
             if (vaccDate) vaccDate.value = ""; // Clear date - let user choose when they use the form again
-
-            showAlert("success", "Vaccination record added successfully!");
         });
     }
 
@@ -1503,6 +1983,12 @@ document.addEventListener("DOMContentLoaded", function () {
     if (closeWeightModalBtn) {
         closeWeightModalBtn.addEventListener("click", function () {
             if (addWeightModal) addWeightModal.style.display = "none";
+            const weightHint = document.getElementById("weightHint");
+            if (weightHint) {
+                try { weightHint.dataset.persistent = ""; } catch(e){}
+                weightHint.style.display = "none";
+            }
+            currentEditWeightRecordIndex = null;
             if (pigDetailsModal && pigDetailsFrame && pigDetailsFrame.src) {
                 pigDetailsModal.style.display = "flex";
             } else {
@@ -1514,6 +2000,11 @@ document.addEventListener("DOMContentLoaded", function () {
     if (closeEditWeightBtn) {
         closeEditWeightBtn.addEventListener("click", function () {
             if (editWeightModal) editWeightModal.style.display = "none";
+            const weightHint = document.getElementById("weightHint");
+            if (weightHint) {
+                try { weightHint.dataset.persistent = ""; } catch(e){}
+                weightHint.style.display = "none";
+            }
             if (pigDetailsModal && pigDetailsFrame && pigDetailsFrame.src) {
                 pigDetailsModal.style.display = "flex";
             } else {
@@ -1525,6 +2016,12 @@ document.addEventListener("DOMContentLoaded", function () {
     if (closeExpenseModalBtn) {
         closeExpenseModalBtn.addEventListener("click", function () {
             if (addExpenseModal) addExpenseModal.style.display = "none";
+            const expenseHint = document.getElementById("expenseHint");
+            if (expenseHint) {
+                try { expenseHint.dataset.persistent = ""; } catch(e){}
+                expenseHint.style.display = "none";
+            }
+            currentEditExpenseIndex = null;
             if (pigDetailsModal && pigDetailsFrame && pigDetailsFrame.src) {
                 pigDetailsModal.style.display = "flex";
             } else {
@@ -2409,7 +2906,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 </div>
 
                 <div class="receipt-totals">
-                    <div class="totals-left">Items: ${pigIds.length}</div>
+                    <div class="totals-left">Pigs: ${pigIds.length}</div>
                     <div class="totals-right">
                         <div class="tot-line"><span>Total Revenue</span><strong>₱${totalRevenue.toFixed(2)}</strong></div>
                         <div class="tot-line"><span>Total Expenses</span><strong>₱${totalExpenses.toFixed(2)}</strong></div>
@@ -2826,6 +3323,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const pigName = farm.pigs[idx].name;
             farm.pigs.splice(idx, 1);
+            // persist deletion
+            saveFarmsToStorage();
 
             if (deletePigConfirmModal) deletePigConfirmModal.style.display = 'none';
             // close pig details
@@ -2834,6 +3333,99 @@ document.addEventListener("DOMContentLoaded", function () {
 
             loadFarmData();
             showAlert('success', 'Successfully Deleted Pig');
+        });
+    }
+
+    // Close rename handlers
+    if (cancelRenameFarmBtn) cancelRenameFarmBtn.addEventListener('click', () => {
+        if (renameFarmModal) renameFarmModal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    });
+
+    // ---------------------------
+    // Delete Record confirm handlers (Weight, Expense, Vaccination)
+    // ---------------------------
+    const closeDeleteRecordConfirmModal = document.getElementById("closeDeleteRecordConfirmModal");
+    const cancelDeleteRecordBtn = document.getElementById("cancelDeleteRecord");
+    const confirmDeleteRecordBtn = document.getElementById("confirmDeleteRecord");
+    const deleteRecordConfirmModal = document.getElementById("deleteRecordConfirmModal");
+
+    if (closeDeleteRecordConfirmModal) {
+        closeDeleteRecordConfirmModal.addEventListener("click", () => {
+            if (deleteRecordConfirmModal) deleteRecordConfirmModal.style.display = "none";
+            document.body.style.overflow = "auto";
+            pendingDeleteData = null;
+        });
+    }
+
+    if (cancelDeleteRecordBtn) {
+        cancelDeleteRecordBtn.addEventListener("click", () => {
+            if (deleteRecordConfirmModal) deleteRecordConfirmModal.style.display = "none";
+            document.body.style.overflow = "auto";
+            pendingDeleteData = null;
+        });
+    }
+
+    if (confirmDeleteRecordBtn) {
+        confirmDeleteRecordBtn.addEventListener("click", () => {
+            if (!pendingDeleteData) return;
+
+            const { type, pigId, farmId, index } = pendingDeleteData;
+            const farm = farmId ? getFarmById(farmId) : getCurrentFarm();
+            
+            if (!farm) {
+                showAlert("error", "Farm not found.");
+                return;
+            }
+
+            const pig = farm.pigs.find(p => p.id === pigId);
+            if (!pig) {
+                showAlert("error", "Pig not found.");
+                return;
+            }
+
+            let deleted = false;
+            let typeName = "";
+
+            // Execute the appropriate delete
+            switch (type) {
+                case "weight":
+                    if (pig.weightHistory && pig.weightHistory[index]) {
+                        pig.weightHistory.splice(index, 1);
+                        // persist deletion
+                        saveFarmsToStorage();
+                        deleted = true;
+                        typeName = "Weight record";
+                    }
+                    break;
+                case "expense":
+                    if (pig.expenses && pig.expenses[index]) {
+                        pig.expenses.splice(index, 1);
+                        deleted = true;
+                        typeName = "Expense record";
+                    }
+                    break;
+                case "vaccination":
+                    if (pig.vaccinations && pig.vaccinations[index]) {
+                        pig.vaccinations.splice(index, 1);
+                        deleted = true;
+                        typeName = "Vaccination record";
+                    }
+                    break;
+            }
+
+            if (deleted) {
+                // Refresh pig details iframe
+                const pigDetailsFrame = document.getElementById("pigDetailsFrame");
+                if (pigDetailsFrame && pigDetailsFrame.contentWindow) {
+                    const updatedPig = getPigDataById(pigId, farmId);
+                    pigDetailsFrame.contentWindow.postMessage({ type: "pigData", pig: updatedPig }, "*");
+                }
+            }
+
+            if (deleteRecordConfirmModal) deleteRecordConfirmModal.style.display = "none";
+            document.body.style.overflow = "auto";
+            pendingDeleteData = null;
         });
     }
 
