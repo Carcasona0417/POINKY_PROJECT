@@ -101,7 +101,7 @@ body {
 /* Active menu + hover state */
 .menu-item.active .menu-link,
 .menu-link:hover {
-    background-color: var(--primary-pink);
+    background-color: #F16877;
     color: white;
 }
 
@@ -319,7 +319,7 @@ body {
 /* Regular farm tab button */
 .tab {
     padding: 12px 30px;
-    background-color: #EFA7A7;
+    background-color: #E74A5A;
     color: white;
     font-weight: 600;
     border-radius: 15px 15px 0 0;
@@ -334,20 +334,20 @@ body {
 /* Active tab (selected farm) */
 .tab.active {
     background-color: white;
-    color: var(--primary-pink);
+    color: #D64343;
 }
 
 /* Hover effect for non-active tabs */
 .tab:hover:not(.active) {
-    background-color: #E59595;
+    background-color: #D64343;
 }
 
 /* Round button for + Add Farm - sticky positioning */
 .tab-add {
     color: white;
     background-color: #EFA7A7;
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -363,7 +363,7 @@ body {
 }
 
 .tab-add:hover {
-    background-color: #E59595;
+    background-color: #D64343;
     box-shadow: 0 4px 12px rgba(240, 128, 128, 0.5);
     transform: scale(1.05);
 }
@@ -390,7 +390,7 @@ body {
 /* Title + subtitle text */
 .title-section h2,
 .section-title {
-    color: var(--primary-pink);
+    color: #F16877;
     font-size: 24px;
     margin-bottom: 5px;
 }
@@ -402,12 +402,12 @@ body {
 
 /* "Add Pig" main button */
 .btn-add-pig {
-    background-color: var(--primary-pink);
+    background-color: #E74A5A;
     color: white;
     border: none;
     padding: 12px 25px;
     border-radius: 8px;
-    font-weight: 600;
+    font-weight: 500;
     font-family: 'Poppins', sans-serif;
     cursor: pointer;
     display: flex;
@@ -421,7 +421,7 @@ body {
 }
 
 .btn-add-pig:hover {
-    background-color: var(--primary-pink-dark);
+    background-color: #BE4040;
 }
 
 /* =========================================
@@ -596,21 +596,19 @@ body {
 ========================================= */
 
 .table-container {
-    overflow-x: auto; /* Horizontal scroll if table too wide */
+    overflow-x: auto; 
 }
 
 .pigs-table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    /* Use fixed layout so column widths are honored when set */
-    /* This makes the table respect the widths declared on th/td
-       and prevents long content from changing column sizing. */
     table-layout: fixed;
-    min-width: 480px; /* allow more responsive shrinking on small screens */
+    min-width: 480px; 
+    border: 2px solid #FFB6C1;
+    border-radius: 12px;
 }
 
-/* Table header cells */
 .pigs-table th {
     background-color: #FFB6C1;
     color: var(--text-dark);
@@ -618,14 +616,15 @@ body {
     padding: 12px 10px;
     text-align: left;
     border-bottom: 2px solid #FFB6C1;
-    /* allow header text to wrap on narrow screens */
+
+   
 }
 
-/* Rounded table header corners */
+
 .pigs-table th:first-child { border-top-left-radius: 10px; }
 .pigs-table th:last-child  { border-top-right-radius: 10px; }
 
-/* Table body cells */
+
 .pigs-table td {
     padding: 12px 10px;
     border-bottom: 1px solid #eee;
