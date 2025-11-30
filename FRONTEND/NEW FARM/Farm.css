@@ -603,8 +603,10 @@ body {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    /* Use automatic layout to avoid squashing content; allow cells to wrap when needed */
-    table-layout: auto;
+    /* Use fixed layout so column widths are honored when set */
+    /* This makes the table respect the widths declared on th/td
+       and prevents long content from changing column sizing. */
+    table-layout: fixed;
     min-width: 480px; /* allow more responsive shrinking on small screens */
 }
 
@@ -629,8 +631,11 @@ body {
     border-bottom: 1px solid #eee;
     color: var(--text-dark);
     vertical-align: middle;
-    /* allow table cells to wrap content naturally */
-    white-space: normal;
+    /* With a fixed table layout we usually want to prevent cells from
+       expanding their column. Use ellipsis for overflow so widths stay stable. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Ensure header and body cells share the same box model and vertical alignment */
@@ -695,6 +700,16 @@ body {
 
 /* Checkbox column: fixed small width and centered content */
 .pigs-table th:nth-child(1), .pigs-table td:nth-child(1) { width: 56px; text-align: center; }
+
+/* Explicit widths for other columns so the table matches what you declare */
+.pigs-table th:nth-child(2), .pigs-table td:nth-child(2) { width: 260px; }
+.pigs-table th:nth-child(3), .pigs-table td:nth-child(3) { width: 80px; }
+.pigs-table th:nth-child(4), .pigs-table td:nth-child(4) { width: 90px; }
+.pigs-table th:nth-child(5), .pigs-table td:nth-child(5) { width: 110px; }
+.pigs-table th:nth-child(6), .pigs-table td:nth-child(6) { width: 120px; }
+
+/* Ensure headers also respect overflow/ellipsis */
+.pigs-table thead th { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Pig Name column: left-aligned with matching left padding to align badges */
 .pigs-table th:nth-child(2), .pigs-table td:nth-child(2) { text-align: left; padding-left: 18px; }
