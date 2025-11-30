@@ -30,4 +30,15 @@ export async function addFarm(data) {
     return { result, FarmID };
 }
 
+// GET ALL FARMS FOR A USER
+export async function getUserFarms(userId) {
+    const [rows] = await pool.query(`
+        SELECT FarmID, FarmName 
+        FROM farm 
+        WHERE UserID = ?
+        ORDER BY FarmName ASC
+    `, [userId]);
+    return rows;
+}
+
 // ADD delete and edit

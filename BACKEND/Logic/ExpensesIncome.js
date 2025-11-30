@@ -1,5 +1,22 @@
 import { pool } from "../Database/db.js";
 
+// Generate unique Expense ID
+async function generateExpenseID() {
+    const [rows] = await pool.query(`
+        SELECT ExpID 
+        FROM expenses 
+        ORDER BY ExpID DESC 
+        LIMIT 1
+    `);
+
+    if (rows.length === 0) return "EXP001";
+
+    const lastID = rows[0].ExpID; // e.g. EXP005
+    const number = parseInt(lastID.substring(3)) + 1;
+
+    return "EXP" + number.toString().padStart(3, "0");
+}
+
 // this for barchart
 export async function getUserExpenses(userId){
     const [rows] = await pool.query(`
@@ -28,11 +45,11 @@ export async function getUserExpenses(userId){
 export async function getUserExpensesTable(userId) {
     const [rows] = await pool.query(`
         SELECT
-            DATE_FORMAT(e.Date, '%Y-%m-%d') AS date,
-            f.FarmName AS farm,
-            p.PigName AS pig,
-            e.Category AS category,
-            e.Amount AS price
+            DATE_FORMAT(e.Date, '%Y-%m-%d') AS ExpenseDate,
+            f.FarmName AS FarmName,
+            p.PigName AS PigName,
+            e.Category AS Category,
+            e.Amount AS Amount
         FROM expenses e
         INNER JOIN pig p ON e.PigID = p.PigID
         INNER JOIN farm f ON p.FarmID = f.FarmID
@@ -42,36 +59,261 @@ export async function getUserExpensesTable(userId) {
 
     return rows;
 }
-
+// FOR SOLD TABLES
 export async function getSoldTable(userId) {
     const [rows] = await pool.query(`
         SELECT
-        DATE_FORMAT(e.Date, '%Y-%m-%d') AS dateSold,
-        f.FarmName AS farm,
-        p.PigName AS pig,
-        w.Weight AS weight,
-        e.Category AS category,
-        e.Amount AS pricePerKg,
-        W.Weight * e.Amount AS totalPrice
+        DATE_FORMAT(e.Date, '%Y-%m-%d') AS DateSold,
+        f.FarmName AS FarmName,
+        p.PigName AS PigName,
+        w.Weight AS Weight,
+        e.Category AS Category,
+        e.Amount AS PricePerKg,
+        w.Weight * e.Amount AS TotalPrice
         FROM expenses e
         JOIN pig p ON e.PigID = p.PigID
         JOIN farm f ON p.FarmID = f.FarmID
         JOIN weight_records w ON w.PigID = p.PigID
-        WHERE w.Date = (SELECT MAX(Date) FROM weight_records WHERE PigID = p.PigID)
-        AND e.UserID = ?
+        WHERE e.UserID = ? 
+        AND e.Category = 'Sold'
+        AND w.Date = (SELECT MAX(Date) FROM weight_records WHERE PigID = p.PigID)
+        ORDER BY e.Date DESC
         `, [userId]);
 
         return rows;
 }
 
-// SUMMARY CALCULATION
+/*---------------------
+|SUMMARY CALCULATION |
+-------------------- */
+
+// TOTAL EXPENSES
 export async function getTotalExpenses(userId) {
     const [rows] = await pool.query(`
         SELECT
         SUM (Amount) AS TotalExpense
-        FROM expenses e
+        FROM expenses
         WHERE UserID = ? AND Category != 'Sold'
         `,[userId]);
 
         return rows;
+}
+
+// TOTAL INCOME ESTIMATION - FROM SOLD PIGS
+export async function getEstimatedIncome(userId) {
+    const [rows] = await pool.query(`
+        SELECT
+        SUM (Amount) AS EstimatedIncome
+        FROM expenses        
+        WHERE UserID = ? AND Category = 'Sold'
+        `,[userId]);
+
+        return rows;
+}
+
+// PROJECTED PROFIT - INCOME FROM SOLD PIGS MINUS EXPENSES
+export async function getProjectedProfit(userId) {
+    const [rows] = await pool.query(`
+        SELECT
+        SUM(CASE WHEN Category = 'Sold' THEN Amount ELSE 0 END) -
+        SUM(CASE WHEN Category != 'Sold' THEN Amount ELSE 0 END) AS ProjectedProfit
+        FROM expenses
+        WHERE UserID = ?
+        `,[userId]);
+        return rows;
+    }
+
+/*---------------------
+|  EXPENSE LOGIC     |
+-------------------- */
+
+// FEED EXPENSES - Get total feed expenses for a user
+export async function getFeedExpenses(userId) {
+    const [rows] = await pool.query(`
+        SELECT
+            SUM(Amount) AS TotalFeedExpenses
+        FROM expenses
+        WHERE UserID = ? AND Category = 'Feed'
+    `, [userId]);
+    return rows.length > 0 ? rows : [{ TotalFeedExpenses: null }];
+}
+
+// MEDICINE EXPENSES - Get total medicine expenses for a user
+export async function getMedicineExpenses(userId) {
+    const [rows] = await pool.query(`
+        SELECT
+            SUM(Amount) AS TotalMedicineExpenses
+        FROM expenses
+        WHERE UserID = ? AND Category = 'Medicine'
+    `, [userId]);
+    return rows.length > 0 ? rows : [{ TotalMedicineExpenses: null }];
+}
+
+// TRANSPORTATION EXPENSES - Get total transportation expenses for a user
+export async function getTransportationExpenses(userId) {
+    const [rows] = await pool.query(`
+        SELECT
+            SUM(Amount) AS TotalTransportationExpenses
+        FROM expenses
+        WHERE UserID = ? AND Category = 'Transportation'
+    `, [userId]);
+    return rows.length > 0 ? rows : [{ TotalTransportationExpenses: null }];
+}
+
+// PIGLETS EXPENSES - Get total piglets expenses for a user
+export async function getPigletsExpenses(userId) {
+    const [rows] = await pool.query(`
+        SELECT
+            SUM(Amount) AS TotalPigletsExpenses
+        FROM expenses
+        WHERE UserID = ? AND Category = 'Piglets'
+    `, [userId]);
+    return rows.length > 0 ? rows : [{ TotalPigletsExpenses: null }];
+}
+
+// LABOR EXPENSES - Get total labor expenses for a user
+export async function getLaborExpenses(userId) {
+    const [rows] = await pool.query(`
+        SELECT
+            SUM(Amount) AS TotalLaborExpenses
+        FROM expenses
+        WHERE UserID = ? AND Category = 'Labor'
+    `, [userId]);
+    return rows.length > 0 ? rows : [{ TotalLaborExpenses: null }];
+}
+
+// UTILITIES EXPENSES - Get total utilities expenses for a user
+export async function getUtilitiesExpenses(userId) {
+    const [rows] = await pool.query(`
+        SELECT
+        SUM(Amount) AS TotalUtilitiesExpenses
+        FROM expenses
+        WHERE UserID = ? AND Category = 'Utilities'
+    `, [userId]);
+    return rows.length > 0 ? rows : [{ TotalUtilitiesExpenses: null }];
+}
+
+/*---------------------
+| DROPDOWN FILTERS    |
+-------------------- */
+
+// GET ALL FARMS FOR A USER (for dropdown)
+export async function getFarmsForUser(userId) {
+    const [rows] = await pool.query(`
+        SELECT FarmID, FarmName
+        FROM farm
+        WHERE UserID = ?
+        ORDER BY FarmName ASC
+    `, [userId]);
+    return rows;
+}
+
+// GET ALL PIGS FOR A USER (for dropdown)
+export async function getPigsForUser(userId) {
+    const [rows] = await pool.query(`
+        SELECT DISTINCT p.PigID, p.PigName, f.FarmID, f.FarmName
+        FROM pig p
+        INNER JOIN farm f ON p.FarmID = f.FarmID
+        WHERE f.UserID = ?
+        ORDER BY f.FarmName ASC, p.PigName ASC
+    `, [userId]);
+    return rows;
+}
+
+// GET EXPENSE CATEGORIES (fixed list)
+export function getExpenseCategories() {
+    return [
+        'Feed',
+        'Medicine',
+        'Vaccination',
+        'Labor',
+        'Transportation',
+        'Piglets',
+        'Utilities',
+        'Sold',
+        'Others'
+    ];
+}
+
+/*---------------------
+|  EXPENSE CRUD       |
+-------------------- */
+
+// ADD NEW EXPENSE
+export async function addExpense(data) {
+    const { UserID, PigID, Date, Amount, Category } = data;
+    
+    const ExpID = await generateExpenseID();
+    
+    const [result] = await pool.query(`
+        INSERT INTO expenses (ExpID, UserID, PigID, Date, Amount, Category)
+        VALUES (?, ?, ?, ?, ?, ?)
+    `, [ExpID, UserID, PigID, Date, Amount, Category]);
+    
+    return { ...result, ExpID };
+}
+
+// EDIT EXISTING EXPENSE
+export async function editExpense(expenseId, data) {
+    const { Date, Amount, Category } = data;
+    
+    const [result] = await pool.query(`
+        UPDATE expenses
+        SET Date = ?, Amount = ?, Category = ?
+        WHERE ExpID = ?
+    `, [Date, Amount, Category, expenseId]);
+    
+    return result;
+}
+
+// DELETE EXPENSE
+export async function deleteExpense(expenseId, userId) {
+    // Verify the expense belongs to the user before deleting
+    const [rows] = await pool.query(`
+        SELECT ExpID FROM expenses
+        WHERE ExpID = ? AND UserID = ?
+    `, [expenseId, userId]);
+    
+    if (rows.length === 0) {
+        throw new Error('Expense not found or unauthorized');
+    }
+    
+    const [result] = await pool.query(`
+        DELETE FROM expenses
+        WHERE ExpID = ?
+    `, [expenseId]);
+    
+    return result;
+}
+
+// CANCEL SOLD PIG - Set status back to ToSale
+export async function cancelSoldPig(expenseId, userId) {
+    // Get the expense to find the PigID
+    const [expenseRows] = await pool.query(`
+        SELECT PigID FROM expenses
+        WHERE ExpID = ? AND UserID = ? AND Category = 'Sold'
+    `, [expenseId, userId]);
+    
+    if (expenseRows.length === 0) {
+        throw new Error('Sold record not found or unauthorized');
+    }
+    
+    const pigId = expenseRows[0].PigID;
+    
+    // Delete the sold expense record
+    await pool.query(`
+        DELETE FROM expenses
+        WHERE ExpID = ?
+    `, [expenseId]);
+    
+    // Update pig status from Sold back to ToSale
+    const [updateResult] = await pool.query(`
+        UPDATE pig
+        SET PigStatus = 'ToSale'
+        WHERE PigID = ? AND FarmID IN (
+            SELECT FarmID FROM farm WHERE UserID = ?
+        )
+    `, [pigId, userId]);
+    
+    return updateResult;
 }

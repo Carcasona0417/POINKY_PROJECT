@@ -15,11 +15,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const weightWrapper = addRemModal?.querySelector('.weight-wrapper');
     const priceInput    = weightWrapper ? weightWrapper.querySelector('input[type="number"]') : null;
 
-    // selects inside modal (farm, pig, category)
-    const selectElements = addRemModal ? addRemModal.querySelectorAll('.form-select') : [];
-    const farmSelect     = selectElements[0];
-    const pigSelect      = selectElements[1];
-    const categorySelect = selectElements[2];
+    // selects inside modal (farm, pig, category) - now using IDs
+    const farmSelect     = document.getElementById('farmSelect');
+    const pigSelect      = document.getElementById('pigSelect');
+    const categorySelect = document.getElementById('categorySelect');
 
     // FULL LIST EXPENSES TABLE ELEMENTS
     const expensesTbody         = document.getElementById('expensesTableBody');
@@ -46,30 +45,153 @@ document.addEventListener('DOMContentLoaded', () => {
         (for display only!!)
     ---------------------------------------------------- */
 
-    async function fetchTotalExpenseData() {
+    async function fetchExpensesandReports() {
         const userId = localStorage.getItem('userID');
 
-        const res = await fetch('http://localhost:8080/api/expenses-records/Total-Expenses', {
+        const bodyData = {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({userId})
-        })
+        }
 
-        const result = await res.json();
-  
-        const raw = result?.TotalExpense?.[0].TotalExpense || "0";
-        const num = Number(raw?.toString().trim()) || 0;
+        try {
+            const [
+                TotalExp, EstInc, ProjProf, 
+                FeedExp, MedExp, TransExp, 
+                PigletExp, LaborExp, UtilExp] = await Promise.all([
+                    
+                    // FOR SUMMARY DATA
+                    fetch('http://localhost:8080/api/expenses-records/Total-Expenses', bodyData),
+                    fetch('http://localhost:8080/api/expenses-records/Estimated-Income', bodyData),
+                    fetch('http://localhost:8080/api/expenses-records/Projected-Profit', bodyData),
 
-        document.getElementById('Total_Expenses').textContent = 
-        '₱' + num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    // FOR BREAKDOWN DATA
+                    fetch('http://localhost:8080/api/expenses-records/Feed-Expenses', bodyData),
+                    fetch('http://localhost:8080/api/expenses-records/Medicine-Expenses', bodyData),
+                    fetch('http://localhost:8080/api/expenses-records/Transportation-Expenses', bodyData),
+                    fetch('http://localhost:8080/api/expenses-records/Piglets-Expenses', bodyData),
+                    fetch('http://localhost:8080/api/expenses-records/Labor-Expenses', bodyData),
+                    fetch('http://localhost:8080/api/expenses-records/Utilities-Expenses', bodyData)
+            ]);
+
+            // Parse JSON responses FOR SUMMARY AND BREAKDOWN
+            const totalExpensesData     = await TotalExp.json();
+            const estimatedIncomeData   = await EstInc.json();
+            const projectedProfitData   = await ProjProf.json();
+
+            const feedExpensesData              = await FeedExp.json();
+            const medicineExpensesData          = await MedExp.json();
+            const transportationExpensesData    = await TransExp.json();
+            const pigletsExpensesData           = await PigletExp.json();
+            const laborExpensesData             = await LaborExp.json();
+            const utilitiesExpensesData         = await UtilExp.json();
+
+            // DISPLAYING IT TO THE FRONTEND
+            document.getElementById('totalExpenses').textContent    = '₱' + (totalExpensesData.TotalExpense[0].TotalExpense || 0).toLocaleString('en-PH');
+            document.getElementById('estimatedIncome').textContent  = '₱' + (estimatedIncomeData.EstimatedIncome[0].EstimatedIncome || 0).toLocaleString('en-PH');
+            document.getElementById('projectedProfit').textContent  = '₱' + (projectedProfitData.ProjectedProfit[0].ProjectedProfit || 0).toLocaleString('en-PH');
+
+            console.log('Total Expenses Data:', totalExpensesData);
+            console.log('Estimated Income Data:', estimatedIncomeData);
+            console.log('Projected Profit Data:', projectedProfitData);
+            console.log('Feed Expenses Data:', feedExpensesData);
+            console.log('Medicine Expenses Data:', medicineExpensesData);
+            console.log('Transportation Expenses Data:', transportationExpensesData);
+            console.log('Piglets Expenses Data:', pigletsExpensesData);
+            console.log('Labor Expenses Data:', laborExpensesData);
+            console.log('Utilities Expenses Data:', utilitiesExpensesData);
+
+            document.getElementById('feedExpenses').textContent           = '₱' + (feedExpensesData.FeedExpenses[0]?.TotalFeedExpenses || 0).toLocaleString('en-PH');
+            document.getElementById('medicineExpenses').textContent       = '₱' + (medicineExpensesData.MedicineExpenses[0]?.TotalMedicineExpenses || 0).toLocaleString('en-PH');
+            document.getElementById('transportationExpenses').textContent = '₱' + (transportationExpensesData.TransportationExpenses[0]?.TotalTransportationExpenses || 0).toLocaleString('en-PH');
+            document.getElementById('pigletsExpenses').textContent        = '₱' + (pigletsExpensesData.PigletsExpenses[0]?.TotalPigletsExpenses || 0).toLocaleString('en-PH');
+            document.getElementById('laborExpenses').textContent          = '₱' + (laborExpensesData.LaborExpenses[0]?.TotalLaborExpenses || 0).toLocaleString('en-PH');
+            document.getElementById('utilitiesExpenses').textContent      = '₱' + (utilitiesExpensesData.UtilitiesExpenses[0]?.TotalUtilitiesExpenses || 0).toLocaleString('en-PH');
+            
+
+
+        } catch (error) {
+            console.error('Error fetching summary and breakdown data:', error);
+        }
 
     }
-    fetchTotalExpenseData();
+    fetchExpensesandReports();
 
 
    /* ----------------------------------------------------
        Chart for income and expenses
     ---------------------------------------------------- */
+
+    // LOAD DROPDOWNS FROM API
+    async function loadDropdownsFromAPI() {
+        const userId = localStorage.getItem('userID');
+
+        try {
+            // Fetch farms
+            const farmsRes = await fetch('http://localhost:8080/api/expenses-records/dropdown-farms', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ userId })
+            });
+            const farmsData = await farmsRes.json();
+
+            // Fetch pigs
+            const pigsRes = await fetch('http://localhost:8080/api/expenses-records/dropdown-pigs', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ userId })
+            });
+            const pigsData = await pigsRes.json();
+
+            // Fetch categories
+            const categoriesRes = await fetch('http://localhost:8080/api/expenses-records/dropdown-categories', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({})
+            });
+            const categoriesData = await categoriesRes.json();
+
+            // Populate farm dropdown
+            if (farmSelect && farmsData.farms) {
+                farmSelect.innerHTML = '';
+                farmsData.farms.forEach(farm => {
+                    const option = document.createElement('option');
+                    option.value = farm.FarmID;
+                    option.textContent = farm.FarmName;
+                    farmSelect.appendChild(option);
+                });
+            }
+
+            // Populate pig dropdown
+            if (pigSelect && pigsData.pigs) {
+                pigSelect.innerHTML = '';
+                pigsData.pigs.forEach(pig => {
+                    const option = document.createElement('option');
+                    option.value = pig.PigID;
+                    option.textContent = `${pig.PigName} (${pig.FarmName})`;
+                    pigSelect.appendChild(option);
+                });
+            }
+
+            // Populate category dropdown
+            if (categorySelect && categoriesData.categories) {
+                categoriesData.categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = category;
+                    categorySelect.appendChild(option);
+                });
+            }
+
+            console.log('Dropdowns loaded successfully');
+            console.log('Farms:', farmsData.farms);
+            console.log('Pigs:', pigsData.pigs);
+            console.log('Categories:', categoriesData.categories);
+
+        } catch (error) {
+            console.error('Error loading dropdowns:', error);
+        }
+    }
 
     async function fetchExpenseIncome(){
         const userId = localStorage.getItem('userID');
@@ -172,6 +294,22 @@ document.addEventListener('DOMContentLoaded', () => {
     let expensesData = [];
     let soldData = [];
 
+    // Filter state for expenses
+    let expensesFilterState = {
+        farm: '',
+        pig: '',
+        month: '',
+        year: ''
+    };
+
+    // Filter state for sold data
+    let soldFilterState = {
+        farm: '',
+        pig: '',
+        month: '',
+        year: ''
+    };
+
     //list for all expenses
     async function fetchExpensesTable(){
         
@@ -185,8 +323,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             const result = await res.json();
-            expensesData = result.ExpenseTable || 0;
+            expensesData = result.ExpenseTable || [];
+           
             renderExpensesTable();
+            populateFilterDropdowns();
 
         } catch (error) {
             console.error('Error fetching table data:', error);
@@ -206,8 +346,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             const result = await res.json();
-            soldData = result.SoldTable || 0;
+            soldData = result.SoldTable || [];
             renderSoldTable();
+            populateFilterDropdowns();
 
         } catch (error) {
             console.error('Error fetching table data: ', error)
@@ -215,6 +356,234 @@ document.addEventListener('DOMContentLoaded', () => {
      }
     fetchExpensesTable();
     fetchSoldTable();
+
+    /* ----------------------------------------------------
+       FILTER FUNCTIONS FOR EXPENSES TABLE
+    ---------------------------------------------------- */
+
+    /**
+     * Filter expenses data based on criteria
+     * @param {Array} data - The expenses data to filter
+     * @param {Object} filters - Filter criteria {farm, pig, month, year}
+     * @returns {Array} - Filtered data
+     */
+    function filterExpensesData(data, filters) {
+        return data.filter(item => {
+            // Check farm filter
+            if (filters.farm && item.FarmName !== filters.farm) {
+                return false;
+            }
+
+            // Check pig filter
+            if (filters.pig && item.PigName !== filters.pig) {
+                return false;
+            }
+
+            // Check month and year filters
+            if ((filters.month || filters.year) && item.ExpenseDate) {
+                const date = new Date(item.ExpenseDate);
+                const itemMonth = (date.getMonth() + 1).toString();
+                const itemYear = date.getFullYear().toString();
+
+                if (filters.month && itemMonth !== filters.month) {
+                    return false;
+                }
+
+                if (filters.year && itemYear !== filters.year) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+    }
+
+    /**
+     * Filter sold data based on criteria
+     * @param {Array} data - The sold data to filter
+     * @param {Object} filters - Filter criteria {farm, pig, month, year}
+     * @returns {Array} - Filtered data
+     */
+    function filterSoldData(data, filters) {
+        return data.filter(item => {
+            // Check farm filter
+            if (filters.farm && item.FarmName !== filters.farm) {
+                return false;
+            }
+
+            // Check pig filter
+            if (filters.pig && item.PigName !== filters.pig) {
+                return false;
+            }
+
+            // Check month and year filters
+            if ((filters.month || filters.year) && item.DateSold) {
+                const date = new Date(item.DateSold);
+                const itemMonth = (date.getMonth() + 1).toString();
+                const itemYear = date.getFullYear().toString();
+
+                if (filters.month && itemMonth !== filters.month) {
+                    return false;
+                }
+
+                if (filters.year && itemYear !== filters.year) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+    }
+
+    /**
+     * Get unique values from data for filter dropdowns
+     * @param {Array} data - The data to extract values from
+     * @param {String} fieldName - The field name to extract
+     * @returns {Array} - Unique values sorted
+     */
+    function getUniqueFilterValues(data, fieldName) {
+        const values = [...new Set(data.map(item => item[fieldName]).filter(v => v))];
+        return values.sort();
+    }
+
+    /**
+     * Populate filter dropdowns with data from API
+     */
+    async function populateFilterDropdowns() {
+        const filterDropdown = document.getElementById('filterDropdown');
+        if (!filterDropdown) return;
+
+        const selects = filterDropdown.querySelectorAll('.form-select');
+        if (selects.length < 4) return;
+
+        const [farmSelect, pigSelect, monthSelect, yearSelect] = selects;
+        const userId = localStorage.getItem('userID');
+
+        try {
+            // Fetch farms from API
+            const farmsRes = await fetch('http://localhost:8080/api/expenses-records/dropdown-farms', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({userId})
+            });
+            const farmsData = await farmsRes.json();
+            
+            // Populate farm filter
+            const currentFarmValue = farmSelect.value;
+            farmSelect.innerHTML = '<option value="">Farm</option>';
+            if (farmsData.success && farmsData.farms) {
+                farmsData.farms.forEach(farm => {
+                    const option = document.createElement('option');
+                    option.value = farm.FarmName;
+                    option.textContent = farm.FarmName;
+                    farmSelect.appendChild(option);
+                });
+            }
+            farmSelect.value = currentFarmValue;
+
+            // Fetch pigs from API
+            const pigsRes = await fetch('http://localhost:8080/api/expenses-records/dropdown-pigs', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({userId})
+            });
+            const pigsData = await pigsRes.json();
+
+            // Populate pig filter
+            const currentPigValue = pigSelect.value;
+            pigSelect.innerHTML = '<option value="">Pig Name/ID</option>';
+            if (pigsData.success && pigsData.pigs) {
+                pigsData.pigs.forEach(pig => {
+                    const option = document.createElement('option');
+                    option.value = pig.PigName;
+                    option.textContent = pig.PigName;
+                    pigSelect.appendChild(option);
+                });
+            }
+            pigSelect.value = currentPigValue;
+
+            // Update month select to show month names instead of numbers
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                               'July', 'August', 'September', 'October', 'November', 'December'];
+            monthSelect.innerHTML = '<option value="">Month</option>';
+            monthNames.forEach((month, index) => {
+                const option = document.createElement('option');
+                option.value = (index + 1).toString(); // Keep numeric value for filtering
+                option.textContent = month; // Display full month name
+                monthSelect.appendChild(option);
+            });
+
+        } catch (error) {
+            console.error('Error populating filter dropdowns:', error);
+        }
+    }
+
+    /**
+     * Apply filters and re-render tables
+     */
+    function applyExpensesFilters() {
+        const filterDropdown = document.getElementById('filterDropdown');
+        if (!filterDropdown) return;
+
+        const selects = filterDropdown.querySelectorAll('.form-select');
+        if (selects.length < 4) return;
+
+        const [farmSelect, pigSelect, monthSelect, yearSelect] = selects;
+
+        expensesFilterState = {
+            farm: farmSelect.value,
+            pig: pigSelect.value,
+            month: monthSelect.value,
+            year: yearSelect.value
+        };
+
+        currentExpensesPage = 1; // Reset to first page
+        renderExpensesTable();
+    }
+
+    /**
+     * Apply filters and re-render sold table
+     */
+    function applySoldFilters() {
+        const filterDropdown = document.getElementById('filterDropdown');
+        if (!filterDropdown) return;
+
+        const selects = filterDropdown.querySelectorAll('.form-select');
+        if (selects.length < 4) return;
+
+        const [farmSelect, pigSelect, monthSelect, yearSelect] = selects;
+
+        soldFilterState = {
+            farm: farmSelect.value,
+            pig: pigSelect.value,
+            month: monthSelect.value,
+            year: yearSelect.value
+        };
+
+        currentSoldPage = 1; // Reset to first page
+        renderSoldTable();
+    }
+
+    /**
+     * Clear all filters
+     */
+    function clearAllFilters() {
+        const filterDropdown = document.getElementById('filterDropdown');
+        if (!filterDropdown) return;
+
+        const selects = filterDropdown.querySelectorAll('.form-select');
+        selects.forEach(select => {
+            select.value = '';
+        });
+
+        expensesFilterState = { farm: '', pig: '', month: '', year: '' };
+        soldFilterState = { farm: '', pig: '', month: '', year: '' };
+        currentExpensesPage = 1;
+        currentSoldPage = 1;
+
+        renderExpensesTable();
+        renderSoldTable();
+    }
 
 
     let isEditing = false;
@@ -408,7 +777,9 @@ document.addEventListener('DOMContentLoaded', () => {
     ---------------------------------------------------- */
 
     function renderExpensesTable() {
-        const totalItems = expensesData.length;
+        // Apply filters to get filtered data
+        const filteredData = filterExpensesData(expensesData, expensesFilterState);
+        const totalItems = filteredData.length;
         const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE_EXPENSES));
 
         if (currentExpensesPage > totalPages) currentExpensesPage = totalPages;
@@ -419,23 +790,23 @@ document.addEventListener('DOMContentLoaded', () => {
         expensesTbody.innerHTML = '';
 
         for (let i = startIndex; i < endIndex; i++) {
-            const rowData = expensesData[i];
+            const rowData = filteredData[i];
             const tr = document.createElement('tr');
 
             const dateCell = document.createElement('td');
-            dateCell.textContent = formatDateToLabel(rowData.date);
+            dateCell.textContent = formatDateToLabel(rowData.ExpenseDate);
 
             const farmCell = document.createElement('td');
-            farmCell.textContent = rowData.farm;
+            farmCell.textContent = rowData.FarmName;
 
             const pigCell = document.createElement('td');
-            pigCell.textContent = rowData.pig;
+            pigCell.textContent = rowData.PigName;
 
             const categoryCell = document.createElement('td');
-            categoryCell.textContent = rowData.category;
+            categoryCell.textContent = rowData.Category;
 
             const priceCell = document.createElement('td');
-            priceCell.textContent = formatCurrency(rowData.price);
+            priceCell.textContent = formatCurrency(rowData.Amount);
 
             // --- ACTION BUTTONS TD ---
             const actionCell = document.createElement('td');
@@ -465,9 +836,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderSoldTable() {
-        // Filter out cancelled records
+        // Filter out cancelled records and apply filters
         const activeSoldData = soldData.filter(record => !record.cancelled);
-        const totalItems = activeSoldData.length;
+        const filteredData = filterSoldData(activeSoldData, soldFilterState);
+        const totalItems = filteredData.length;
         const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE_SOLD));
 
         if (currentSoldPage > totalPages) currentSoldPage = totalPages;
@@ -478,26 +850,26 @@ document.addEventListener('DOMContentLoaded', () => {
         soldTbody.innerHTML = '';
 
         for (let i = startIndex; i < endIndex; i++) {
-            const rowData = activeSoldData[i];
+            const rowData = filteredData[i];
             const tr = document.createElement('tr');
 
             const dateCell = document.createElement('td');
-            dateCell.textContent = formatDateToLabel(rowData.dateSold);
+            dateCell.textContent = formatDateToLabel(rowData.DateSold);
 
             const farmCell = document.createElement('td');
-            farmCell.textContent = rowData.farm;
+            farmCell.textContent = rowData.FarmName;
 
             const pigCell = document.createElement('td');
-            pigCell.textContent = rowData.pig;
+            pigCell.textContent = rowData.PigName;
 
             const weightCell = document.createElement('td');
-            weightCell.textContent = rowData.weight;
+            weightCell.textContent = rowData.Weight;
 
             const priceKgCell = document.createElement('td');
-            priceKgCell.textContent = 'P' + (rowData.pricePerKg || 0);
+            priceKgCell.textContent = 'P' + (rowData.PricePerKg || 0);
 
             const priceCell = document.createElement('td');
-            priceCell.textContent = formatCurrency(rowData.totalPrice);
+            priceCell.textContent = formatCurrency(rowData.TotalPrice);
 
             // --- ACTION BUTTONS TD ---
             // Find the actual index in the soldData array
@@ -530,17 +902,17 @@ document.addEventListener('DOMContentLoaded', () => {
         nextSoldBtn.disabled = currentSoldPage === totalPages || totalItems === 0;
     }
 
-    // HANDLE EDIT / DELETE FOR EXPENSES
-document.addEventListener("click", function (e) {
-    if (e.target.closest(".btn-edit")) {
-        const index = e.target.closest(".btn-edit").dataset.index;
-        editExpense(index);
-    }
-    if (e.target.closest(".btn-delete")) {
-        const index = e.target.closest(".btn-delete").dataset.index;
-        deleteExpense(index);
-    }
-});
+            // HANDLE EDIT / DELETE FOR EXPENSES
+        document.addEventListener("click", function (e) {
+            if (e.target.closest(".btn-edit")) {
+                const index = e.target.closest(".btn-edit").dataset.index;
+                editExpense(index);
+            }
+            if (e.target.closest(".btn-delete")) {
+                const index = e.target.closest(".btn-delete").dataset.index;
+                deleteExpense(index);
+            }
+        });
 
 function editExpense(index) {
     const item = expensesData[index];
@@ -584,127 +956,127 @@ function deleteExpense(index) {
 }
 
 
-// SOLD EDIT / DELETE
-function editSold(index) {
-    const item = soldData[index];
-    const editSoldModal = document.getElementById('editSoldModal');
-    
-    if (!editSoldModal) return;
+        // SOLD EDIT / DELETE
+        function editSold(index) {
+            const item = soldData[index];
+            const editSoldModal = document.getElementById('editSoldModal');
+            
+            if (!editSoldModal) return;
 
-    // Store the editing index
-    editSoldModal.dataset.editingIndex = index;
+            // Store the editing index
+            editSoldModal.dataset.editingIndex = index;
 
-    // Populate the modal with current data
-    const editDateSold = document.getElementById('editDateSold');
-    const editFarmName = document.getElementById('editFarmName');
-    const editPigName = document.getElementById('editPigName');
-    const editWeightSold = document.getElementById('editWeightSold');
-    const editPricePerKg = document.getElementById('editPricePerKg');
-    const editTotalPrice = document.getElementById('editTotalPrice');
+            // Populate the modal with current data
+            const editDateSold = document.getElementById('editDateSold');
+            const editFarmName = document.getElementById('editFarmName');
+            const editPigName = document.getElementById('editPigName');
+            const editWeightSold = document.getElementById('editWeightSold');
+            const editPricePerKg = document.getElementById('editPricePerKg');
+            const editTotalPrice = document.getElementById('editTotalPrice');
 
-    if (editDateSold) editDateSold.value = item.dateSold;
-    if (editFarmName) editFarmName.value = item.farm;
-    if (editPigName) editPigName.value = item.pig;
-    if (editWeightSold) editWeightSold.value = item.weight.replace('kg', '').trim();
-    if (editPricePerKg) editPricePerKg.value = item.pricePerKg;
-    if (editTotalPrice) editTotalPrice.value = formatCurrency(item.totalPrice);
+            if (editDateSold) editDateSold.value = item.DateSold;
+            if (editFarmName) editFarmName.value = item.FarmName;
+            if (editPigName) editPigName.value = item.PigName;
+            if (editWeightSold) editWeightSold.value = item.Weight;
+            if (editPricePerKg) editPricePerKg.value = item.PricePerKg;
+            if (editTotalPrice) editTotalPrice.value = formatCurrency(item.TotalPrice);
 
-    // Update floating labels
-    if (editDateSold) toggleHasValue(editDateSold);
-    if (editWeightSold) toggleHasValue(editWeightSold);
-    if (editPricePerKg) toggleHasValue(editPricePerKg);
+            // Update floating labels
+            if (editDateSold) toggleHasValue(editDateSold);
+            if (editWeightSold) toggleHasValue(editWeightSold);
+            if (editPricePerKg) toggleHasValue(editPricePerKg);
 
-    // Show the modal
-    editSoldModal.classList.add('show');
-    document.body.style.overflow = 'hidden';
-}
+            // Show the modal
+            editSoldModal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
 
-function deleteSold(index) {
-    Swal.fire({
-        icon: 'warning',
-        title: 'Cancel this record? This pig will be mark back as To Sale.',
-        showCancelButton: true,
-        confirmButtonText: 'Yes',
-        cancelButtonText: 'No'
-    }).then(res => {
-        if (res.isConfirmed) {
-            soldData[index].cancelled = true;
-            renderSoldTable();
-            // Show success alert with an Undo option
+        function deleteSold(index) {
             Swal.fire({
-                icon: 'success',
-                title: 'Record cancelled',
+                icon: 'warning',
+                title: 'Cancel this record? This pig will be mark back as To Sale.',
                 showCancelButton: true,
-                confirmButtonText: 'Undo',
-                cancelButtonText: 'Close'
-            }).then(choice => {
-                if (choice.isConfirmed) {
-                    // User clicked Undo — restore the sold record
-                    soldData[index].cancelled = false;
+                confirmButtonText: 'Yes',
+                cancelButtonText: 'No'
+            }).then(res => {
+                if (res.isConfirmed) {
+                    soldData[index].cancelled = true;
                     renderSoldTable();
+                    // Show success alert with an Undo option
                     Swal.fire({
                         icon: 'success',
-                        title: 'Record restored',
-                        showConfirmButton: false,
-                        timer: 1200
+                        title: 'Record cancelled',
+                        showCancelButton: true,
+                        confirmButtonText: 'Undo',
+                        cancelButtonText: 'Close'
+                    }).then(choice => {
+                        if (choice.isConfirmed) {
+                            // User clicked Undo — restore the sold record
+                            soldData[index].cancelled = false;
+                            renderSoldTable();
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Record restored',
+                                showConfirmButton: false,
+                                timer: 1200
+                            });
+                        }
                     });
                 }
             });
         }
-    });
-}
 
 
-// HANDLE EDIT / DELETE FOR SOLD DATA
-document.addEventListener("click", function (e) {
-    if (e.target.closest(".btn-edit-sold")) {
-        const index = e.target.closest(".btn-edit-sold").dataset.index;
-        editSold(index);
-    }
-    if (e.target.closest(".btn-cancel-sold")) {
-        const index = e.target.closest(".btn-cancel-sold").dataset.index;
-        cancelSold(index);
-    }
-    if (e.target.closest(".btn-delete-sold")) {
-        const index = e.target.closest(".btn-delete-sold").dataset.index;
-        deleteSold(index);
-    }
-});
+        // HANDLE EDIT / DELETE FOR SOLD DATA
+        document.addEventListener("click", function (e) {
+            if (e.target.closest(".btn-edit-sold")) {
+                const index = e.target.closest(".btn-edit-sold").dataset.index;
+                editSold(index);
+            }
+            if (e.target.closest(".btn-cancel-sold")) {
+                const index = e.target.closest(".btn-cancel-sold").dataset.index;
+                cancelSold(index);
+            }
+            if (e.target.closest(".btn-delete-sold")) {
+                const index = e.target.closest(".btn-delete-sold").dataset.index;
+                deleteSold(index);
+            }
+        });
 
-function cancelSold(index) {
-    Swal.fire({
-        icon: 'warning',
-        title: 'Cancel this record?',
-        showCancelButton: true,
-        confirmButtonText: 'Yes',
-        cancelButtonText: 'No'
-    }).then(res => {
-        if (res.isConfirmed) {
-            soldData[index].cancelled = true;
-            renderSoldTable();
-            // Show success alert with an Undo option
+        function cancelSold(index) {
             Swal.fire({
-                icon: 'success',
-                title: 'Record cancelled',
+                icon: 'warning',
+                title: 'Cancel this record?',
                 showCancelButton: true,
-                confirmButtonText: 'Undo',
-                cancelButtonText: 'Close'
-            }).then(choice => {
-                if (choice.isConfirmed) {
-                    // User clicked Undo — restore the sold record
-                    soldData[index].cancelled = false;
+                confirmButtonText: 'Yes',
+                cancelButtonText: 'No'
+            }).then(res => {
+                if (res.isConfirmed) {
+                    soldData[index].cancelled = true;
                     renderSoldTable();
+                    // Show success alert with an Undo option
                     Swal.fire({
                         icon: 'success',
-                        title: 'Record restored',
-                        showConfirmButton: false,
-                        timer: 1200
+                        title: 'Record cancelled',
+                        showCancelButton: true,
+                        confirmButtonText: 'Undo',
+                        cancelButtonText: 'Close'
+                    }).then(choice => {
+                        if (choice.isConfirmed) {
+                            // User clicked Undo — restore the sold record
+                            soldData[index].cancelled = false;
+                            renderSoldTable();
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Record restored',
+                                showConfirmButton: false,
+                                timer: 1200
+                            });
+                        }
                     });
                 }
             });
         }
-    });
-}
 
     /* ----------------------------------------------------
        EDIT SOLD MODAL - OPEN / CLOSE / SAVE
@@ -859,8 +1231,11 @@ function cancelSold(index) {
        MODAL OPEN / CLOSE
     ---------------------------------------------------- */
 
-function openModal(isNew = true) {
+async function openModal(isNew = true) {
     if (!addRemModal) return;
+
+    // Load dropdown data from API
+    await loadDropdownsFromAPI();
 
     addRemModal.classList.add('show');
     document.body.style.overflow = 'hidden';
@@ -1011,6 +1386,9 @@ if (saveBtn) {
     if (filterToggle && filterDropdown && filterLabel) {
         const filterSelects = filterDropdown.querySelectorAll('.form-select');
 
+        // Populate filter dropdowns with data from tables
+        populateFilterDropdowns();
+
         // toggle dropdown
         filterToggle.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -1024,20 +1402,32 @@ if (saveBtn) {
             }
         });
 
-        // update button label
+        // update button label and apply filters
         filterSelects.forEach(select => {
-            select.addEventListener('change', updateFilterLabel);
+            select.addEventListener('change', () => {
+                updateFilterLabel();
+                applyExpensesFilters();
+                applySoldFilters();
+            });
         });
 
         function updateFilterLabel() {
             let values = [];
             filterSelects.forEach(select => {
                 const val = select.value.trim();
-                if (val !== "") values.push(val);
+                if (val !== "") {
+                    // Get the display text from the selected option
+                    const selectedOption = select.options[select.selectedIndex];
+                    const displayText = selectedOption ? selectedOption.text : val;
+                    values.push(displayText);
+                }
             });
 
             filterLabel.textContent = values.length === 0 ? 'Filter' : values.join(' • ');
         }
+
+        // Add clear filters button if needed (optional)
+        // You can add a reset/clear button in the HTML and wire it here
     }
 
     /* ----------------------------------------------------

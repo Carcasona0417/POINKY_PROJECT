@@ -1,4 +1,4 @@
-import { addFarm } from "../Logic/Add-Farm.js";
+import { addFarm, getUserFarms } from "../Logic/Add-Farm.js";
 
 export async function createFarm(req,res) {
 
@@ -16,5 +16,16 @@ export async function createFarm(req,res) {
         console.error(err);
         res.status(500).json({ success: false, message: "Error adding farm" })
     }
+    
+}
 
+// GET ALL FARMS FOR A USER
+export async function getAllUserFarms(req, res, next) {
+    try {
+        const { userId } = req.body;
+        const farms = await getUserFarms(userId);
+        res.json({ success: true, farms });
+    } catch (err) {
+        next(err);
+    }
 }

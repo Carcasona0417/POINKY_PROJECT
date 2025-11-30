@@ -46,10 +46,33 @@ export const addPig = async (req,res) => {
 export const getAllPigs = async (req, res, next) => {
     try{
         const { farmId } = req.body;
-        const rows = await getPigs(farmId);
+        const rows = await pigService.getPigs(farmId);
         res.json(rows);
 
     }catch(err){
         next(err);
     }
 }
+
+// GET ALL PIGS FOR A USER
+export const getAllUserPigs = async (req, res, next) => {
+    try {
+        const { userId } = req.body;
+        const pigs = await pigService.getUserPigs(userId);
+        res.json({ success: true, pigs });
+    } catch (err) {
+        next(err);
+    }
+}
+
+// GET PIGS BY FARM
+export const getPigsByFarm = async (req, res, next) => {
+    try {
+        const { farmId } = req.body;
+        const pigs = await pigService.getPigsByFarm(farmId);
+        res.json({ success: true, pigs });
+    } catch (err) {
+        next(err);
+    }
+}
+

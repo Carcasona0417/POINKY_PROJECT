@@ -37,13 +37,8 @@
 - username should not store number
 - condition for 8 characters 1 special and 1 uppercase (password)
 
---------SUMMARY FOR EXPENSES-------------------
-- Add Estimated_income logic and integrate to front end
-- Add Project Profit logic and integrate to front end
-- add breakdown logic and integrate it 
-- Add logic for creating expenses
-- add logic for deleting and updating expenses
-- add logic for filtering the tables and chart monthly and yearly
+- Fix problem on why data is not inserted upon adding expense same goes as editing and deleting
+
 
 # WHAT WAS DONE? ( DESCRIPTION )
 - Done With the logic for the login and successful message in the login page
@@ -67,7 +62,8 @@
 - done with the bar chart in expenses in expenses reports
 - done with the PIG sold and Expense table in expense reports
 
- 
+ - done with the expenses an reports display including both tables
+ - added logic CRUD for expenses 
 
 # CHANGES 
 - I change the API instead of /login-register I change it into /login for login and /register for register because it's the url of each pages
