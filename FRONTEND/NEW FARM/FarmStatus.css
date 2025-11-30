@@ -20,6 +20,7 @@
     width: 90%;
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
     font-family: "Poppins", sans-serif;
+    position: relative; /* needed for absolute-positioned totals */
 }
 
 .status-modal-card h3 {
@@ -240,3 +241,129 @@
     margin-top: 10px;
     text-align: right;
 }
+
+/* Receipt table styling inside status modal */
+.status-modal-card table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+}
+
+.status-modal-card table thead th {
+    text-align: left;
+    padding: 10px 12px;
+    background: #fafafa;
+    border-bottom: 1px solid #eee;
+    font-weight: 600;
+    color: #444;
+}
+
+.status-modal-card table tbody td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f5f5f5;
+    color: #333;
+}
+
+.status-modal-card .receipt-summary {
+    display: flex;
+    gap: 16px;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 12px;
+}
+
+/* Make disabled buttons visually distinct in modal too */
+.status-modal-card button:disabled {
+    background: #eee;
+    color: #aaa;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+/* Vertical receipt layout */
+.receipt-vertical {
+    max-width: 720px;
+    font-family: 'Poppins', sans-serif;
+    color: #333;
+}
+
+/* Make receipt area scrollable when content is long and allow horizontal drag */
+.status-modal-card {
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+    overflow: hidden;
+}
+
+.status-modal-card .receipt-vertical {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    max-height: calc(80vh - 140px);
+    padding-right: 6px; /* keep space for sticky totals */
+}
+
+/* Receipt list: allow horizontal scrolling if items extend past width */
+.receipt-list {
+    overflow: auto;
+    cursor: grab; /* indicates draggable area */
+}
+
+.receipt-list:active { cursor: grabbing; }
+
+/* Pin totals to the very bottom of the modal card so they are always visible
+   but don't overlap the scrollable content. We use absolute positioning inside
+   the modal container and reserve bottom padding on the scroll area. */
+.receipt-totals {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #ffffff; /* solid white so it doesn't overlap content visually */
+    border-top: 1px solid #eee;
+    box-shadow: 0 -6px 20px rgba(0,0,0,0.06);
+    padding: 14px 24px;
+    z-index: 30;
+}
+
+/* Make sure the scrollable receipt area leaves room for the absolute totals */
+.status-modal-card .receipt-vertical {
+    padding-bottom: 120px; /* make room for totals (height + margin) */
+}
+
+.receipt-header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:8px;
+}
+.receipt-title { font-size:18px; font-weight:700; color:var(--primary-pink); }
+.receipt-date { font-size:12px; color:#666; }
+.receipt-intro { font-size:13px; color:#555; margin-bottom:10px; }
+
+.receipt-list { display:flex; flex-direction:column; gap:10px; }
+.pig-card {
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    padding:10px;
+    border-radius:8px;
+    background:#fff;
+    border:1px solid #f0f0f0;
+}
+.pig-card-left { max-width:40%; }
+.pig-name { font-weight:700; font-size:15px; color:#222; }
+.pig-meta { font-size:12px; color:#777; margin-top:4px; }
+.pig-card-right { display:flex; flex-direction:column; gap:6px; align-items:flex-end; min-width:180px; }
+.pig-row { display:flex; gap:10px; align-items:center; font-size:13px; }
+.pig-row span { color:#666; }
+.pig-row strong { font-weight:700; }
+.pig-row.profit strong { color:#2e7d32; }
+
+.receipt-totals { display:flex; justify-content:space-between; align-items:center; margin-top:12px; }
+.totals-left { color:#666; }
+.totals-right { text-align:right; }
+.tot-line { font-size:13px; color:#555; }
+.tot-line.net strong { color:#b35f00; font-size:18px; }
+
+.receipt-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }

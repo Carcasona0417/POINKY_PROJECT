@@ -183,6 +183,17 @@ body {
     font-size: 13px;
 }
 
+/* Disabled button appearance */
+.add-btn:disabled,
+#btnEditPig:disabled,
+.actions-dropdown button:disabled {
+    background: #ddd !important;
+    color: #999 !important;
+    cursor: not-allowed !important;
+    opacity: 0.7;
+    pointer-events: none;
+}
+
 /* TABLES */
 .records-table {
     width: 100%;
@@ -485,6 +496,25 @@ document.addEventListener("click", () => dropdown.style.display = "none");
 
         cwEl.textContent = pig.weight ? pig.weight : "-";
         statusEl.textContent = formatStatus(pig.status);
+
+        // Disable add/edit buttons for pigs that are already sold or deceased
+        const isInactive = pig.status === 'sold' || pig.status === 'deceased';
+        if (btnAddWeight) {
+            btnAddWeight.disabled = isInactive;
+            btnAddWeight.title = isInactive ? 'Cannot add weight to sold/deceased pig' : '';
+        }
+        if (btnAddExpense) {
+            btnAddExpense.disabled = isInactive;
+            btnAddExpense.title = isInactive ? 'Cannot add expenses to sold/deceased pig' : '';
+        }
+        if (btnAddVaccine) {
+            btnAddVaccine.disabled = isInactive;
+            btnAddVaccine.title = isInactive ? 'Cannot add vaccination to sold/deceased pig' : '';
+        }
+        if (btnEditPig) {
+            btnEditPig.disabled = isInactive;
+            btnEditPig.title = isInactive ? 'Cannot edit details of sold/deceased pig' : '';
+        }
 
         // WEIGHT TABLE
         weightBody.innerHTML = "";

@@ -72,7 +72,7 @@
                         <span class="notification-badge">1</span>
                     </button>
 
-                    <button class="user-profile-btn">
+                    <button id="profileBtn" class="user-profile-btn" aria-label="User Profile">
                         <i class="fa-solid fa-circle-user user-icon"></i>
                     </button>
                 </div>
@@ -102,11 +102,6 @@
                 <button class="tab" data-farm="2" role="tab" aria-selected="false">Farm 2</button>
                 <button class="tab" data-farm="3" role="tab" aria-selected="false">Farm 3</button>
                 <button class="tab-add" type="button"><i class="fa-solid fa-plus"></i></button>
-                <!-- Tab actions dropdown (open on tab double-click) -->
-                <div id="tabActionsDropdown" class="actions-dropdown tab-actions-dropdown" style="display:none; position:absolute;">
-                    <button id="tabRenameBtn"><i class="fa-solid fa-pen" aria-hidden="true"></i> Rename Farm</button>
-                    <button id="tabDeleteBtn" class="delete"><i class="fa-solid fa-trash" aria-hidden="true"></i> Delete Farm</button>
-                </div>
             </div>
 
             <!-- Table Box -->
@@ -166,7 +161,7 @@
                     <table class="pigs-table">
                         <thead>
                             <tr>
-                                <th><input type="checkbox" id="tableSelectAll"></th>
+                                <th class="select-col">Select</th>
                                 <th>Pig Name / ID</th>
                                 <th>Age</th>
                                 <th>Weight</th>
@@ -604,6 +599,25 @@
 
     <!-- Scripts -->
     <script src="Farm.js"></script>
+    <script>
+        // Fallback/debug: ensure profile button toggles modal
+        (function(){
+            try{
+                const pb = document.getElementById('profileBtn');
+                const pm = document.getElementById('profileModal');
+                // Console info for debugging in browser
+                console.log('ProfileBtn exists:', !!pb, 'ProfileModal exists:', !!pm);
+                if(!pb || !pm) return;
+                // If external script didn't attach listeners, attach a safe fallback
+                const hasListener = pb._hasProfileListener;
+                if(!hasListener){
+                    pb.addEventListener('click', (e)=>{ e.stopPropagation(); pm.classList.toggle('open'); });
+                    document.addEventListener('click', ()=> pm.classList.remove('open'));
+                    pb._hasProfileListener = true;
+                }
+            }catch(err){ console.warn('Profile modal fallback error:', err); }
+        })();
+    </script>
 
 
 
@@ -639,6 +653,31 @@
 <div id="statusModal" class="modal status-modal">
     <div class="status-modal-card" id="statusModalContent">
         <!-- JS inserts dynamic content here -->
+    </div>
+</div>
+
+<!-- ============================
+     FARM TAB ACTIONS MODAL
+=============================== -->
+<div id="farmTabActionsModal" class="modal" style="display:none;">
+    <div class="modal-content small-modal">
+
+        <div class="weight-modal-header">
+            <h3 class="weight-title" id="farmTabActionsTitle">Farm Options</h3>
+            <button id="closeFarmTabActionsModal" class="modal-close-red">&times;</button>
+        </div>
+
+        <div class="modal-body" style="padding: 20px 0;">
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button id="farmTabRenameBtn" class="btn btn-action-modal" style="width: 100%; padding: 12px; text-align: left; border: none; background: #f5f5f5; cursor: pointer; border-radius: 6px; font-size: 14px; transition: all 0.2s ease;">
+                    <i class="fa-solid fa-pen" aria-hidden="true"></i> Rename Farm
+                </button>
+                <button id="farmTabDeleteBtn" class="btn btn-action-modal btn-danger-text" style="width: 100%; padding: 12px; text-align: left; border: none; background: #fff3f3; cursor: pointer; border-radius: 6px; font-size: 14px; color: #dc3545; transition: all 0.2s ease;">
+                    <i class="fa-solid fa-trash" aria-hidden="true"></i> Delete Farm
+                </button>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -726,6 +765,36 @@
         </div>
     </div>
 </div>
+
+<!-- Profile Modal -->
+        <div class="profile-modal" id="profileModal">
+            <div class="profile-modal-content">
+                <div class="profile-header">
+                    <i class="fa-solid fa-circle-user profile-avatar"></i>
+                    <p class="profile-username">Username</p>
+                </div>
+
+                <a href="ProfileSettings.html" class="profile-item profile-settings-link">
+                    <i class="fa-solid fa-gear"></i> Profile Settings
+                </a>
+
+                <div class="profile-item logout" id="logoutBtn">
+                    <i class="fa-solid fa-right-from-bracket"></i> Log Out
+                </div>
+            </div>
+        </div>
+
+        <!-- Logout Modal -->
+        <div class="logout-modal" id="logoutModal" aria-hidden="true">
+            <div class="logout-modal-dialog">
+                <h2>Confirm Logout</h2>
+                <p>Are you sure you want to log out?</p>
+                <div class="logout-modal-buttons">
+                    <button class="logout-cancel-btn" id="logoutCancelBtn">No</button>
+                    <button class="logout-confirm-btn" id="logoutConfirmBtn">Yes</button>
+                </div>
+            </div>
+        </div>
 
 
 </body>

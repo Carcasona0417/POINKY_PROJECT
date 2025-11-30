@@ -124,7 +124,7 @@ body {
     background-image: url('../assets/background-images/BG.png');
     background-size: cover;
     background-position: center;
-    height: 280px;
+    height: 360px;
     padding: 20px 40px;
     color: white;
     display: flex;
@@ -154,18 +154,20 @@ body {
 }
 
 /* Ensure content stays above overlay */
-.top-bar,
-.header-content {
-    position: relative;
-    z-index: 1;
-}
-
-/* Top bar aligned to the right (profile + bell) */
 .top-bar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 250px;
+    height: 60px;
+    background-color: white;
     display: flex;
     justify-content: flex-end;
-    margin-bottom: 30px;
+    align-items: center;
+    padding: 0 25px;
+    z-index: 1000;
 }
+
 
 .user-actions {
     display: flex;
@@ -173,12 +175,10 @@ body {
     gap: 20px;
 }
 
-/* Buttons for notification & profile */
 .notification-btn,
 .user-profile-btn {
     background: none;
     border: none;
-    color: white;
     font-size: 24px;
     cursor: pointer;
     position: relative;
@@ -186,13 +186,24 @@ body {
     transition: transform 0.3s ease;
 }
 
-/* Small scale hover effect */
+.notification-btn .notification-icon,
+.user-profile-btn .user-icon {
+    color: #F16877 !important;
+}
+
+
+.notification-btn:hover .notification-icon,
+.user-profile-btn:hover .user-icon {
+    color: #d95866; /* darker pink on hover */
+}
+
+
+
 .notification-btn:hover,
 .user-profile-btn:hover {
     transform: scale(1.1);
 }
 
-/* Red notification badge count */
 .notification-badge {
     position: absolute;
     top: -5px;
@@ -208,11 +219,11 @@ body {
     text-align: center;
 }
 
-/* Page title + search aligned in center */
 .header-content {
     text-align: center;
     margin-top: auto;
     margin-bottom: 50px;
+    z-index: 1;
 }
 
 .page-title {
@@ -592,7 +603,9 @@ body {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    min-width: 800px; /* Prevent table from being too narrow */
+    /* Use automatic layout to avoid squashing content; allow cells to wrap when needed */
+    table-layout: auto;
+    min-width: 480px; /* allow more responsive shrinking on small screens */
 }
 
 /* Table header cells */
@@ -600,9 +613,10 @@ body {
     background-color: #FFB6C1;
     color: var(--text-dark);
     font-weight: 600;
-    padding: 15px;
+    padding: 12px 10px;
     text-align: left;
     border-bottom: 2px solid #FFB6C1;
+    /* allow header text to wrap on narrow screens */
 }
 
 /* Rounded table header corners */
@@ -611,16 +625,40 @@ body {
 
 /* Table body cells */
 .pigs-table td {
-    padding: 15px;
+    padding: 12px 10px;
     border-bottom: 1px solid #eee;
     color: var(--text-dark);
     vertical-align: middle;
+    /* allow table cells to wrap content naturally */
+    white-space: normal;
+}
+
+/* Ensure header and body cells share the same box model and vertical alignment */
+.pigs-table thead th, .pigs-table tbody td {
+    box-sizing: border-box;
+    vertical-align: middle;
+}
+
+/* Column-specific alignment */
+.pigs-table th:nth-child(1), .pigs-table td:nth-child(1) { text-align: center; }
+.pigs-table th:nth-child(2), .pigs-table td:nth-child(2) { text-align: left; }
+.pigs-table th:nth-child(3), .pigs-table td:nth-child(3) { text-align: center; }
+.pigs-table th:nth-child(4), .pigs-table td:nth-child(4) { text-align: center; }
+.pigs-table th:nth-child(5), .pigs-table td:nth-child(5) { text-align: center; }
+.pigs-table th:nth-child(6), .pigs-table td:nth-child(6) { text-align: center; }
+
+/* Make pig id badge vertically centered within its table cell */
+.pig-id-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
 }
 
 /* Checkbox column */
 .col-checkbox,
 .checkbox-cell {
-    width: 40px;
+    width: 48px;
     text-align: center;
 }
 
@@ -651,6 +689,21 @@ body {
     text-align: center;
     margin-right: 8px;
 }
+
+/* Column sizing & alignment to ensure header titles line up with row data */
+.pigs-table thead th { text-align: left; }
+
+/* Checkbox column: fixed small width and centered content */
+.pigs-table th:nth-child(1), .pigs-table td:nth-child(1) { width: 56px; text-align: center; }
+
+/* Pig Name column: left-aligned with matching left padding to align badges */
+.pigs-table th:nth-child(2), .pigs-table td:nth-child(2) { text-align: left; padding-left: 18px; }
+
+/* Other columns: keep center alignment for compact display */
+.pigs-table th:nth-child(3), .pigs-table td:nth-child(3) { text-align: center; }
+.pigs-table th:nth-child(4), .pigs-table td:nth-child(4) { text-align: center; }
+.pigs-table th:nth-child(5), .pigs-table td:nth-child(5) { text-align: center; }
+.pigs-table th:nth-child(6), .pigs-table td:nth-child(6) { text-align: center; }
 
 /* Clickable pig badge */
 .clickable-badge {
@@ -724,11 +777,26 @@ body {
     border: 1px solid var(--status-deceased);
 }
 
-/* Column widths */
-.col-name  { width: 250px; }
-.col-age   { width: 200px; }
-.col-weight{ width: 200px; }
-.col-gender{ width: 200px; }
+/* Column helper classes: use auto so they don't override responsive column sizing */
+.col-name  { width: auto; }
+.col-age   { width: auto; }
+.col-weight{ width: auto; }
+.col-gender{ width: auto; }
+
+/* Ensure checkboxes in header/body have no extra default margin and are centered */
+.pigs-table thead th input[type="checkbox"],
+.pigs-table tbody td input[type="checkbox"] {
+    margin: 0;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+/* Fix potential left-offset by forcing consistent line-height and padding on header/title cells */
+.pigs-table thead th, .pigs-table tbody td {
+    line-height: 1.2;
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
 
 /* =========================================
    EMPTY STATE (When no pigs yet)
@@ -1028,4 +1096,165 @@ body {
     .pigs-table {
         min-width: 600px;
     }
+}
+
+/* Profile Modal Styles */
+.profile-modal {
+    position: fixed;
+    top: 80px;
+    right: 25px;
+    width: 250px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 18px rgba(0, 0, 0, 0.15);
+    padding: 15px;
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: 0.25s ease;
+    pointer-events: none;
+}
+
+.profile-modal.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.profile-modal-content {
+    position: relative;
+    width: 100%;
+}
+
+.profile-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.profile-avatar {
+    font-size: 36px;
+    color: var(--primary-pink);
+    margin-bottom: 8px;
+}
+
+.profile-username {
+    font-weight: 600;
+    color: var(--text-dark);
+    margin: 0;
+    font-size: 16px;
+}
+
+.profile-item {
+    padding: 12px 15px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+    color: var(--text-dark);
+    user-select: none;
+}
+
+.profile-item:hover {
+    background: rgba(255, 107, 129, 0.08);
+    color: #D64343;
+}
+
+/* Remove underline from profile settings link */
+a.profile-item {
+    text-decoration: none;
+    color: inherit;
+}
+
+.profile-item.logout {
+    color: var(--chart-red);
+    margin-top: 5px;
+    transition: color 0.18s ease;
+}
+
+.profile-item.logout:hover {
+    background: rgba(255, 107, 129, 0.08);
+    color: #D64343;
+}
+
+/* Logout Modal Styles */
+.logout-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+}
+
+.logout-modal.open {
+    display: flex;
+}
+
+.logout-modal-dialog {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+.logout-modal-dialog h2 {
+    color: #F16877;
+    margin-bottom: 12px;
+    font-size: 20px;
+}
+
+.logout-modal-dialog p {
+    color: var(--text-dark);
+    margin-bottom: 24px;
+    font-size: 14px;
+}
+
+.logout-modal-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.logout-confirm-btn,
+.logout-cancel-btn {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Poppins', sans-serif;
+}
+
+.logout-confirm-btn {
+    background-color: #4CAF50;
+    color: white;
+    order: 2;
+}
+
+.logout-confirm-btn:hover {
+    background-color: #439A46;
+}
+
+.logout-cancel-btn {
+    background-color: #D64343;
+    color: white;
+    order: 1;
+}
+
+.logout-cancel-btn:hover {
+    background-color: #BE4040;
 }

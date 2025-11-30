@@ -9,14 +9,61 @@
 // 🧠 GLOBAL STATE (accessible by iframe + main page)
 // =========================================================================
 let farms = [
-    { id: 1, name: "Farm 1", pigs: [] },
+    {
+        id: 1,
+        name: "Farm 1",
+        pigs: [
+            {
+                id: 1,
+                name: "Babe",
+                breed: "Large White",
+                gender: "female",
+                age: "6",
+                date: "2025-01-01",
+                shortId: "BAB",
+                weight: "30kg",
+                status: "growing",
+                weightHistory: [{ date: "2025-01-01", weight: 30 }],
+                expenses: [ { date: "2025-03-01", price: 200 }, { date: "2025-04-15", price: 150 } ],
+                statusHistory: [{ date: "2025-01-01", status: "growing", notes: "Initial" }]
+            },
+            {
+                id: 2,
+                name: "Porky",
+                breed: "Berkshire",
+                gender: "male",
+                age: "8",
+                date: "2024-12-10",
+                shortId: "POR",
+                weight: "45kg",
+                status: "growing",
+                weightHistory: [{ date: "2025-02-15", weight: 45 }],
+                expenses: [ { date: "2025-02-20", price: 300 } ],
+                statusHistory: [{ date: "2024-12-10", status: "growing", notes: "Initial" }]
+            },
+            {
+                id: 3,
+                name: "Snort",
+                breed: "Duroc",
+                gender: "male",
+                age: "5",
+                date: "2025-02-01",
+                shortId: "SNO",
+                weight: "25kg",
+                status: "growing",
+                weightHistory: [{ date: "2025-02-01", weight: 25 }],
+                expenses: [],
+                statusHistory: [{ date: "2025-02-01", status: "growing", notes: "Initial" }]
+            }
+        ]
+    },
     { id: 2, name: "Farm 2", pigs: [] },
     { id: 3, name: "Farm 3", pigs: [] }
 ];
 
 let currentFarmId                = 1;
 let nextFarmId                   = 4;
-let nextPigId                    = 1;
+let nextPigId                    = 4; // IDs 1..3 used by demo pigs
 let currentDetailPigId           = null;  // pig whose details we’re viewing
 let currentDetailFarmId          = null;  // farm of that pig
 let currentEditWeightRecordIndex = null;
@@ -309,9 +356,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const tabsContainer = document.querySelector(".tabs-header");
     const tabs          = document.querySelectorAll(".tab");
     const tabAdd        = document.querySelector(".tab-add");
-    const tabActionsDropdown = document.getElementById('tabActionsDropdown');
-    const tabRenameBtn = document.getElementById('tabRenameBtn');
-    const tabDeleteBtn = document.getElementById('tabDeleteBtn');
 
     // Filters / search / status dropdown
     const filterItems    = document.querySelectorAll(".filter-item");
@@ -394,6 +438,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const confirmDeleteFarmBtn = document.getElementById('confirmDeleteFarm');
     const deleteFarmConfirmText = document.getElementById('deleteFarmConfirmText');
 
+    // Farm tab actions modal
+    const farmTabActionsModal = document.getElementById('farmTabActionsModal');
+    const closeFarmTabActionsModalBtn = document.getElementById('closeFarmTabActionsModal');
+    const farmTabRenameBtn = document.getElementById('farmTabRenameBtn');
+    const farmTabDeleteBtn = document.getElementById('farmTabDeleteBtn');
+
     // =========================================================================
     // 🔔 ALERT MODAL ELEMENTS + HELPER
     // =========================================================================
@@ -435,10 +485,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Handle undo button
         const undoBtn = document.getElementById("alertUndoBtn");
+        let autoCloseTimer = null;
         if (undoBtn) {
             if (showUndo && undoCallback) {
                 undoBtn.style.display = "block";
                 undoBtn.onclick = function () {
+                    // cancel any auto-close
+                    if (autoCloseTimer) clearTimeout(autoCloseTimer);
                     undoCallback();
                     alertModal.style.display = "none";
                     document.body.style.overflow = "auto";
@@ -450,6 +503,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
         alertModal.style.display = "flex";
         document.body.style.overflow = "hidden";
+
+        // Optional auto-close: the function accepts a 5th parameter `autoCloseMs` when called.
+        // If present, auto-close the alert after that many milliseconds (and hide undo).
+        try {
+            const args = Array.from(arguments);
+            const autoCloseMs = args[4];
+            if (autoCloseMs && typeof autoCloseMs === 'number' && autoCloseMs > 0) {
+                autoCloseTimer = setTimeout(() => {
+                    if (alertModal) {
+                        alertModal.style.display = 'none';
+                        document.body.style.overflow = 'auto';
+                    }
+                    if (undoBtn) undoBtn.style.display = 'none';
+                }, autoCloseMs);
+            }
+        } catch (e) {
+            // ignore
+        }
     }
 
     if (alertOkBtn) {
@@ -1936,15 +2007,23 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            const pig = currentFarm.pigs.find(p => p.id === statusFlow.pigId);
-            if (!pig) {
-                closeStatusModal();
-                return;
+            // Determine whether this action needs a single pig (statusFlow.pigId)
+            const actionsNeedingPig = [
+                'confirm-growing','calc-price','back-to-price','show-receipt','confirm-sold','confirm-tosale','confirm-deceased'
+            ];
+
+            let pig = null;
+            if (actionsNeedingPig.includes(action)) {
+                pig = currentFarm.pigs.find(p => p.id === statusFlow.pigId);
+                if (!pig) {
+                    closeStatusModal();
+                    return;
+                }
             }
 
-            // Helper to safely get last weight for To Sale receipt
+            // Helper to safely get last weight for To Sale receipt (only valid when pig exists)
             const getLastWeight = () => {
-                if (!pig.weightHistory || pig.weightHistory.length === 0) return null;
+                if (!pig || !pig.weightHistory || pig.weightHistory.length === 0) return null;
                 return pig.weightHistory[pig.weightHistory.length - 1].weight;
             };
 
@@ -1960,6 +2039,20 @@ document.addEventListener("DOMContentLoaded", function () {
                     loadFarmData();
                     showAlert("success", `${pig.name} changed into Growing.`);
                     break;
+
+                // Proceed from bulk price entry to receipt (single shared price)
+                case "proceed-sold-receipt": {
+                    // retrieve stored bulk context
+                    const bulkIds = window._bulkSellPigIds || [];
+                    const farmId = window._bulkSellFarmId || null;
+                    const farm = farmId ? getFarmById(farmId) : getCurrentFarm();
+                    if (!farm || bulkIds.length === 0) {
+                        closeStatusModal();
+                        return;
+                    }
+                    showSoldReceiptSummary(bulkIds, farm);
+                    break;
+                }
 
                 // (confirm-sold is handled as the final step of the 'sold' price flow)
 
@@ -2072,7 +2165,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 // BULK SOLD: final confirm from receipt
                 case "confirm-sold-batch": {
-                    const priceMap = window._soldPriceMap || {};
+                    const pricePerKg = window._soldPricePerKg || 0;
                     const currentFarm = getCurrentFarm();
                     if (!currentFarm) {
                         closeStatusModal();
@@ -2089,7 +2182,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         const p = currentFarm.pigs.find(pg => pg.id === id);
                         if (!p) return;
 
-                        const pricePerKg = priceMap[id] || 0;
                         let currentWeight = 0;
                         if (p.weightHistory && p.weightHistory.length > 0) {
                             currentWeight = p.weightHistory[p.weightHistory.length - 1].weight || 0;
@@ -2103,10 +2195,13 @@ document.addEventListener("DOMContentLoaded", function () {
                             status: 'sold',
                             pricePerKg: pricePerKg || null,
                             total: total || null,
-                            notes: 'Bulk sold (price set)'
+                            notes: 'Bulk sold (shared price)'
                         });
                         changedCount++;
                     });
+
+                    // clear temporary global
+                    window._soldPricePerKg = null;
 
                     closeStatusModal();
                     loadFarmData();
@@ -2152,6 +2247,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     window._lastDeceasedUndo = undoData;
 
                     const pigList = pigNames.join(', ');
+                    // show success with an undo button and auto-close after 5 seconds
                     showAlert("success", `${pigList} marked as Deceased.`, true, function() {
                         // Undo callback
                         if (window._lastDeceasedUndo) {
@@ -2173,7 +2269,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                 showAlert("success", "Undo successful! Pigs restored to Growing status.");
                             }
                         }
-                    });
+                    }, 5000);
                     break;
                 }
             }
@@ -2184,56 +2280,50 @@ document.addEventListener("DOMContentLoaded", function () {
     // 📋 SOLD RECEIPT MODAL (Multiple pigs)
     // =========================================================================
     
+    // Modified: Use a single price per kg for all selected pigs, then show totals
     function showSoldReceiptModal(pigIds, farm) {
         if (!statusModal || !statusModalContent) return;
 
-        let totalRevenue = 0;
-        let totalExpenses = 0;
-        let pigsList = '';
-
+        // Build simple list with pig names and weights for review
+        let pigsListHtml = '';
         pigIds.forEach(pigId => {
             const pig = farm.pigs.find(p => p.id === pigId);
             if (!pig) return;
-
-            // Get current weight (last weight record)
             let currentWeight = 0;
             if (pig.weightHistory && pig.weightHistory.length > 0) {
                 currentWeight = pig.weightHistory[pig.weightHistory.length - 1].weight || 0;
             }
-
-            // Calculate expenses for this pig
-            let pigExpenses = 0;
-            if (Array.isArray(pig.expenses)) {
-                pigExpenses = pig.expenses.reduce((sum, exp) => sum + (parseFloat(exp.price) || 0), 0);
-            }
-
-            totalExpenses += pigExpenses;
-
-            // For the receipt, we'll ask for price per kg first if not provided
-            // For now, we'll store the pig data and collect price
-            pigsList += `<li data-pig-id="${pig.id}">
-                <strong>${pig.name}</strong> - <span class="pig-weight">${currentWeight} kg</span>
-                <input type="number" class="pig-price-input" data-pig-id="${pig.id}" min="0" step="0.01" placeholder="₱/kg" style="width:100px; padding:5px; margin-left:10px;">
-            </li>`;
+            pigsListHtml += `<li data-pig-id="${pig.id}"><strong>${pig.name}</strong> - ${currentWeight} kg</li>`;
         });
 
         openStatusModal(`
             <h3>Sell Multiple Pigs</h3>
-            <p>Enter price per kg for each pig:</p>
-            
+            <p>Enter a single <strong>price per kg</strong> to apply to all selected pigs:</p>
+
+            <div class="status-input-row">
+                <span class="peso-prefix">₱</span>
+                <input type="number" id="soldPricePerKg" min="0" step="0.01" placeholder="0.00">
+                <span class="per-kg">/kg</span>
+            </div>
+            <small class="status-error" id="soldPriceError" style="display:block; margin-top:6px;"></small>
+
             <ul class="sold-pigs-list" style="list-style:none; padding:0; margin:15px 0;">
-                ${pigsList}
+                ${pigsListHtml}
             </ul>
-            
+
             <div class="status-modal-actions">
                 <button class="btn-secondary" data-status-action="cancel">Cancel</button>
                 <button class="btn-primary" data-status-action="proceed-sold-receipt">Proceed</button>
             </div>
         `);
 
-        // Override the click handler temporarily for the proceed button
+        // store bulk context so the central statusModal click handler can access it
+        window._bulkSellPigIds = pigIds.slice();
+        window._bulkSellFarmId = farm && farm.id ? farm.id : null;
+
         const proceedBtn = statusModalContent.querySelector('[data-status-action="proceed-sold-receipt"]');
         if (proceedBtn) {
+            // keep the local onclick as a fallback
             proceedBtn.onclick = function () {
                 showSoldReceiptSummary(pigIds, farm);
             };
@@ -2243,100 +2333,138 @@ document.addEventListener("DOMContentLoaded", function () {
     function showSoldReceiptSummary(pigIds, farm) {
         if (!statusModal || !statusModalContent) return;
 
+        const priceInput = statusModalContent.querySelector('#soldPricePerKg');
+        const errLabel = statusModalContent.querySelector('#soldPriceError');
+        const pricePerKg = priceInput ? parseFloat(priceInput.value) : NaN;
+
+        if (isNaN(pricePerKg) || pricePerKg <= 0) {
+            if (errLabel) errLabel.textContent = 'Please enter a valid price per kg.';
+            if (priceInput) priceInput.focus();
+            return;
+        }
+
+        // Calculate per-pig totals and grand totals, and render a clearer receipt UI
         let totalRevenue = 0;
         let totalExpenses = 0;
         let receiptRows = '';
-        const priceMap = {}; // Store price per kg for final confirmation
 
-        // Collect prices and calculate totals
         pigIds.forEach(pigId => {
             const pig = farm.pigs.find(p => p.id === pigId);
             if (!pig) return;
 
-            const priceInput = statusModalContent.querySelector(`input.pig-price-input[data-pig-id="${pigId}"]`);
-            const pricePerKg = priceInput ? parseFloat(priceInput.value) : 0;
-
-            if (isNaN(pricePerKg) || pricePerKg <= 0) {
-                showAlert("error", `Please enter valid price for ${pig.name}.`);
-                return;
-            }
-
-            priceMap[pigId] = pricePerKg;
-
-            // Get current weight
             let currentWeight = 0;
             if (pig.weightHistory && pig.weightHistory.length > 0) {
                 currentWeight = pig.weightHistory[pig.weightHistory.length - 1].weight || 0;
             }
 
-            // Calculate revenue for this pig
-            const pigRevenue = (currentWeight * pricePerKg).toFixed(2);
-            totalRevenue += parseFloat(pigRevenue);
+            const pigRevenue = (currentWeight * pricePerKg);
+            totalRevenue += pigRevenue;
 
-            // Calculate expenses
             let pigExpenses = 0;
             if (Array.isArray(pig.expenses)) {
                 pigExpenses = pig.expenses.reduce((sum, exp) => sum + (parseFloat(exp.price) || 0), 0);
             }
             totalExpenses += pigExpenses;
 
-            // Add to receipt
+            const pigProfit = pigRevenue - pigExpenses;
+
             receiptRows += `<tr>
-                <td>${pig.name}</td>
+                <td style="text-align:left; padding-left:10px;">${pig.name}</td>
                 <td>${currentWeight} kg</td>
                 <td>₱${pricePerKg.toFixed(2)}</td>
-                <td>₱${pigRevenue}</td>
+                <td>₱${pigRevenue.toFixed(2)}</td>
+                <td>₱${pigExpenses.toFixed(2)}</td>
+                <td style="font-weight:700;">₱${pigProfit.toFixed(2)}</td>
             </tr>`;
         });
 
-        const totalProfit = (totalRevenue - totalExpenses).toFixed(2);
+        const totalProfit = (totalRevenue - totalExpenses);
 
         openStatusModal(`
-            <h3>Sale Receipt</h3>
-            
-            <div class="receipt-table-wrapper">
-                <table class="receipt-table">
-                    <thead>
-                        <tr>
-                            <th>Pig</th>
-                            <th>Weight</th>
-                            <th>Price/kg</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${receiptRows}
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="receipt-summary">
-                <div class="receipt-line">
-                    <span>Total Revenue:</span>
-                    <strong>₱${totalRevenue.toFixed(2)}</strong>
+            <div class="receipt-vertical">
+                <div class="receipt-header">
+                    <div class="receipt-title">Sale Receipt</div>
+                    <div class="receipt-date">${new Date().toLocaleDateString()}</div>
                 </div>
-                <div class="receipt-line">
-                    <span>Total Expenses:</span>
-                    <strong>₱${totalExpenses.toFixed(2)}</strong>
-                </div>
-                <div class="receipt-line profit">
-                    <span>Total Profit:</span>
-                    <strong>₱${totalProfit}</strong>
-                </div>
-            </div>
 
-            <p style="margin-top: 15px; font-size: 14px; color: #666;">
-                <strong>Confirm sale?</strong> This will mark all selected pigs as Sold.
-            </p>
+                <div class="receipt-intro">Review the breakdown below. Each pig is shown with weight, revenue, expenses and profit.</div>
 
-            <div class="status-modal-actions">
-                <button class="btn-secondary" data-status-action="cancel">Cancel</button>
-                <button class="btn-primary" data-status-action="confirm-sold-batch">Confirm Sale</button>
+                <div class="receipt-list">
+                    ${pigIds.map(pigId => {
+                        const pig = farm.pigs.find(p => p.id === pigId);
+                        if (!pig) return '';
+                        let currentWeight = 0;
+                        if (pig.weightHistory && pig.weightHistory.length > 0) {
+                            currentWeight = pig.weightHistory[pig.weightHistory.length - 1].weight || 0;
+                        }
+                        const pigRevenue = (currentWeight * pricePerKg);
+                        let pigExpenses = 0;
+                        if (Array.isArray(pig.expenses)) {
+                            pigExpenses = pig.expenses.reduce((sum, exp) => sum + (parseFloat(exp.price) || 0), 0);
+                        }
+                        const pigProfit = pigRevenue - pigExpenses;
+
+                        return (`\n                        <div class="pig-card">\n                            <div class="pig-card-left">\n                                <div class="pig-name">${pig.name}</div>\n                                <div class="pig-meta">ID: ${pig.id} • ${currentWeight} kg</div>\n                            </div>\n                            <div class="pig-card-right">\n                                <div class="pig-row"><span>Price/kg</span><strong>₱${pricePerKg.toFixed(2)}</strong></div>\n                                <div class="pig-row"><span>Revenue</span><strong>₱${pigRevenue.toFixed(2)}</strong></div>\n                                <div class="pig-row"><span>Expenses</span><strong>₱${pigExpenses.toFixed(2)}</strong></div>\n                                <div class="pig-row profit"><span>Profit</span><strong>₱${pigProfit.toFixed(2)}</strong></div>\n                            </div>\n                        </div>`);
+                    }).join('')}
+                </div>
+
+                <div class="receipt-totals">
+                    <div class="totals-left">Items: ${pigIds.length}</div>
+                    <div class="totals-right">
+                        <div class="tot-line"><span>Total Revenue</span><strong>₱${totalRevenue.toFixed(2)}</strong></div>
+                        <div class="tot-line"><span>Total Expenses</span><strong>₱${totalExpenses.toFixed(2)}</strong></div>
+                        <div class="tot-line net"><span>Net Profit</span><strong>₱${totalProfit.toFixed(2)}</strong></div>
+                    </div>
+                </div>
+
+                <div class="receipt-actions">
+                    <button class="btn-secondary" data-status-action="cancel">Cancel</button>
+                    <button class="btn-primary" data-status-action="confirm-sold-batch">Confirm Sale</button>
+                </div>
             </div>
         `);
+        // Store shared price for confirm handler
+        window._soldPricePerKg = pricePerKg;
 
-        // Store priceMap for the confirm handler
-        window._soldPriceMap = priceMap;
+        // Attach drag-to-scroll behavior for the receipt list (horizontal drag)
+        // This makes the receipt easier to navigate with mouse/touch when wide.
+        try {
+            const receiptList = statusModalContent.querySelector('.receipt-list');
+            if (receiptList) {
+                let isDown = false;
+                let startX;
+                let scrollLeft;
+
+                receiptList.addEventListener('pointerdown', (e) => {
+                    isDown = true;
+                    receiptList.setPointerCapture(e.pointerId);
+                    startX = e.clientX;
+                    scrollLeft = receiptList.scrollLeft;
+                    receiptList.style.cursor = 'grabbing';
+                });
+
+                receiptList.addEventListener('pointerup', (e) => {
+                    isDown = false;
+                    try { receiptList.releasePointerCapture(e.pointerId); } catch (err) {}
+                    receiptList.style.cursor = 'grab';
+                });
+
+                receiptList.addEventListener('pointercancel', () => {
+                    isDown = false;
+                    receiptList.style.cursor = 'grab';
+                });
+
+                receiptList.addEventListener('pointermove', (e) => {
+                    if (!isDown) return;
+                    const x = e.clientX;
+                    const walk = (startX - x); // scroll-fast
+                    receiptList.scrollLeft = scrollLeft + walk;
+                });
+            }
+        } catch (err) {
+            // non-fatal if pointer events aren't supported
+            console.warn('Receipt drag attach failed', err);
+        }
     }
 
     // =========================================================================
@@ -2487,17 +2615,20 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function showTabActionsDropdown(tabEl, farmId) {
-        if (!tabActionsDropdown || !tabsContainer) return;
+        if (!farmTabActionsModal) return;
         currentEditFarmId = Number(farmId);
+        const farm = getFarmById(farmId);
+        if (!farm) return;
 
-        // compute position relative to tabsContainer
-        const tabRect = tabEl.getBoundingClientRect();
-        const containerRect = tabsContainer.getBoundingClientRect();
+        // Update modal title with farm name
+        const farmTabActionsTitle = document.getElementById('farmTabActionsTitle');
+        if (farmTabActionsTitle) {
+            farmTabActionsTitle.textContent = farm.name + ' - Options';
+        }
 
-        // place dropdown under the tab
-        tabActionsDropdown.style.left = Math.max(0, tabRect.left - containerRect.left) + 'px';
-        tabActionsDropdown.style.top  = (tabRect.bottom - containerRect.top) + 'px';
-        tabActionsDropdown.style.display = 'block';
+        // Show the modal
+        farmTabActionsModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
     }
 
     // ---------------------------
@@ -2647,28 +2778,37 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Tab actions dropdown buttons
-    if (tabRenameBtn) {
-        tabRenameBtn.addEventListener('click', () => {
-            if (tabActionsDropdown) tabActionsDropdown.style.display = 'none';
+    // Farm tab actions modal button listeners
+    if (closeFarmTabActionsModalBtn) {
+        closeFarmTabActionsModalBtn.addEventListener('click', () => {
+            if (farmTabActionsModal) farmTabActionsModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+    }
+
+    if (farmTabRenameBtn) {
+        farmTabRenameBtn.addEventListener('click', () => {
+            if (farmTabActionsModal) farmTabActionsModal.style.display = 'none';
             openRenameFarmModalFor(currentEditFarmId);
         });
     }
 
-    if (tabDeleteBtn) {
-        tabDeleteBtn.addEventListener('click', () => {
-            if (tabActionsDropdown) tabActionsDropdown.style.display = 'none';
+    if (farmTabDeleteBtn) {
+        farmTabDeleteBtn.addEventListener('click', () => {
+            if (farmTabActionsModal) farmTabActionsModal.style.display = 'none';
             openDeleteFarmConfirmFor(currentEditFarmId);
         });
     }
 
-    // hide dropdown when clicking anywhere else
-    document.addEventListener('click', (e) => {
-        if (!tabActionsDropdown) return;
-        if (e.target.closest && e.target.closest('.tab')) return; // click on a tab
-        if (e.target.closest && e.target.closest('.tab-actions-dropdown')) return; // click inside dropdown
-        tabActionsDropdown.style.display = 'none';
-    });
+    // Close farm tab actions modal when clicking outside
+    if (farmTabActionsModal) {
+        farmTabActionsModal.addEventListener('click', (e) => {
+            if (e.target === farmTabActionsModal) {
+                farmTabActionsModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+    }
 
     // Open delete farm confirm from rename modal
     if (btnRenameModalDeleteFarm) {
@@ -2754,3 +2894,61 @@ document.addEventListener("DOMContentLoaded", function () {
 
     init();
 });  // end DOMContentLoaded
+
+// Profile Modal Setup
+document.addEventListener("DOMContentLoaded", () => {
+    const profileBtn = document.getElementById("profileBtn");
+    const profileModal = document.getElementById("profileModal");
+
+    if (!profileBtn || !profileModal) return;
+
+    profileBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        profileModal.classList.toggle("open");
+    });
+
+    profileModal.addEventListener("click", (e) => e.stopPropagation());
+
+    document.addEventListener("click", () => {
+        profileModal.classList.remove("open");
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") profileModal.classList.remove("open");
+    });
+
+    // Logout modal handling
+    const logoutBtn = document.getElementById('logoutBtn');
+    const logoutModal = document.getElementById('logoutModal');
+    const logoutConfirmBtn = document.getElementById('logoutConfirmBtn');
+    const logoutCancelBtn = document.getElementById('logoutCancelBtn');
+
+    if (logoutBtn && logoutModal) {
+        logoutBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            profileModal.classList.remove('open');
+            logoutModal.classList.add('open');
+            logoutModal.setAttribute('aria-hidden', 'false');
+        });
+
+        if (logoutConfirmBtn) {
+            logoutConfirmBtn.addEventListener('click', () => {
+                window.location.href = 'index.html';
+            });
+        }
+
+        if (logoutCancelBtn) {
+            logoutCancelBtn.addEventListener('click', () => {
+                logoutModal.classList.remove('open');
+                logoutModal.setAttribute('aria-hidden', 'true');
+            });
+        }
+
+        logoutModal.addEventListener('click', (e) => {
+            if (e.target === logoutModal) {
+                logoutModal.classList.remove('open');
+                logoutModal.setAttribute('aria-hidden', 'true');
+            }
+        });
+    }
+});
