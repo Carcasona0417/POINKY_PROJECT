@@ -240,6 +240,45 @@ body {
     border: 1px solid #ddd;
 }
 
+/* ACTION BUTTONS */
+.action-btn {
+    padding: 4px 8px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: "Poppins", sans-serif;
+    transition: 0.2s;
+    margin: 0 4px;
+}
+
+.action-btn-edit {
+    color: #2E7D32;
+}
+
+.action-btn-edit:hover {
+    opacity: 0.7;
+    transform: scale(1.1);
+}
+
+.action-btn-delete {
+    color: #C62828;
+}
+
+.action-btn-delete:hover {
+    opacity: 0.7;
+    transform: scale(1.1);
+}
+
+.action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 /* RESPONSIVE */
 @media (max-width: 900px) {
     .pig-details-wrapper {
@@ -308,6 +347,7 @@ body {
                         <th>Date</th>
                         <th>Weight</th>
                         <th>Picture</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="weightBody"></tbody>
@@ -329,6 +369,7 @@ body {
                         <th>Date</th>
                         <th>Expense</th>
                         <th>Category</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="expenseBody"></tbody>
@@ -343,7 +384,6 @@ body {
                     <i class="fa-solid fa-plus"></i> Add Vaccine
                 </button>
             </div>
-
             <table class="records-table">
                 <thead>
                     <tr>
@@ -351,6 +391,7 @@ body {
                         <th>Due Date</th>
                         <th>Vaccine</th>
                         <th>Status</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="healthBody"></tbody>
@@ -466,7 +507,7 @@ document.addEventListener("click", () => dropdown.style.display = "none");
     // ⭐ NEW: EDIT PIG
     btnEditPig.addEventListener("click", () => {
         dropdown.style.display = "none";
-        callParentAction("Edit Pig", "openEditPigDetails");
+        callParentAction("Edit Pig", "openEditPigDetailsFromDetails");
     });
 
     // =======================================================
@@ -529,14 +570,23 @@ document.addEventListener("click", () => dropdown.style.display = "none");
         // WEIGHT TABLE
         weightBody.innerHTML = "";
         if (!pig.weightHistory?.length) {
-            emptyRow(weightBody, 3, "No weight records.");
+            emptyRow(weightBody, 4, "No weight records.");
         } else {
-            [...pig.weightHistory].reverse().forEach(rec => {
+            [...pig.weightHistory].reverse().forEach((rec, idx) => {
+                const actualIndex = pig.weightHistory.length - 1 - idx;
                 weightBody.innerHTML += `
                     <tr>
                         <td>${rec.date}</td>
                         <td>${rec.weight} kg</td>
-                        <td><img src="${rec.img}" class="pig-thumb"></td>
+                        <td><img src="${rec.img || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22%3E%3C/svg%3E'}" class="pig-thumb" onerror="this.style.display='none'"></td>
+                        <td>
+                            <button class="action-btn action-btn-edit" onclick="editWeightRecord(${actualIndex})" title="Edit" aria-label="Edit weight" ${isInactive ? 'disabled' : ''}>
+                                <i class="fas fa-edit" aria-hidden="true"></i>
+                            </button>
+                            <button class="action-btn action-btn-delete" onclick="deleteWeightRecord(${actualIndex})" title="Delete" aria-label="Delete weight">
+                                <i class="fas fa-trash" aria-hidden="true"></i>
+                            </button>
+                        </td>
                     </tr>`;
             });
         }
@@ -544,14 +594,22 @@ document.addEventListener("click", () => dropdown.style.display = "none");
         // EXPENSES TABLE
         expenseBody.innerHTML = "";
         if (!pig.expenses?.length) {
-            emptyRow(expenseBody, 3, "No expenses.");
+            emptyRow(expenseBody, 4, "No expenses.");
         } else {
-            pig.expenses.forEach(exp => {
+            pig.expenses.forEach((exp, idx) => {
                 expenseBody.innerHTML += `
                     <tr>
                         <td>${exp.date}</td>
-                        <td>${exp.price}</td>
-                        <td>${exp.category}</td>
+                        <td>₱${exp.price}</td>
+                        <td>${exp.category || '-'}</td>
+                        <td>
+                            <button class="action-btn action-btn-edit" onclick="editExpenseRecord(${idx})" title="Edit" aria-label="Edit expense" ${isInactive ? 'disabled' : ''}>
+                                <i class="fas fa-edit" aria-hidden="true"></i>
+                            </button>
+                            <button class="action-btn action-btn-delete" onclick="deleteExpenseRecord(${idx})" title="Delete" aria-label="Delete expense">
+                                <i class="fas fa-trash" aria-hidden="true"></i>
+                            </button>
+                        </td>
                     </tr>`;
             });
         }
@@ -559,15 +617,23 @@ document.addEventListener("click", () => dropdown.style.display = "none");
         // VACCINES
         healthBody.innerHTML = "";
         if (!pig.vaccinations?.length) {
-            emptyRow(healthBody, 4, "No vaccination records.");
+            emptyRow(healthBody, 5, "No vaccination records.");
         } else {
-            pig.vaccinations.forEach(v => {
+            pig.vaccinations.forEach((v, idx) => {
                 healthBody.innerHTML += `
                     <tr>
                         <td>${v.date}</td>
                         <td>${v.dueDate}</td>
                         <td>${v.type}</td>
                         <td>${formatStatus(v.status)}</td>
+                        <td>
+                            <button class="action-btn action-btn-edit" onclick="editVaccinationRecord(${idx})" title="Edit" aria-label="Edit vaccination" ${isInactive ? 'disabled' : ''}>
+                                <i class="fas fa-edit" aria-hidden="true"></i>
+                            </button>
+                            <button class="action-btn action-btn-delete" onclick="deleteVaccinationRecord(${idx})" title="Delete" aria-label="Delete vaccination">
+                                <i class="fas fa-trash" aria-hidden="true"></i>
+                            </button>
+                        </td>
                     </tr>`;
             });
         }
@@ -591,6 +657,62 @@ document.addEventListener("click", () => dropdown.style.display = "none");
 
     tryLoad();
 })();
+
+// =======================================
+// EDIT/DELETE HANDLERS (global scope)
+// =======================================
+
+// WEIGHT RECORD HANDLERS
+window.editWeightRecord = function(index) {
+    callParentAction("Edit Weight", "openEditWeightFromDetails", { index });
+};
+
+window.deleteWeightRecord = function(index) {
+    callParentAction("Delete Weight", "confirmDeleteWeight", { index });
+};
+
+// EXPENSE RECORD HANDLERS
+window.editExpenseRecord = function(index) {
+    callParentAction("Edit Expense", "openEditExpenseFromDetails", { index });
+};
+
+window.deleteExpenseRecord = function(index) {
+    callParentAction("Delete Expense", "confirmDeleteExpense", { index });
+};
+
+// VACCINATION RECORD HANDLERS
+window.editVaccinationRecord = function(index) {
+    callParentAction("Edit Vaccination", "openEditVaccinationFromDetails", { index });
+};
+
+window.deleteVaccinationRecord = function(index) {
+    callParentAction("Delete Vaccination", "confirmDeleteVaccination", { index });
+};
+
+// Helper to call parent with optional data
+function callParentAction(label, fnName, data) {
+    const params = new URLSearchParams(window.location.search);
+    const pigId = params.get("id");
+    const farmId = params.get("farm");
+
+    let canDirect = false;
+    try {
+        canDirect = !!(window.parent && typeof window.parent[fnName] === "function");
+    } catch (err) { canDirect = false; }
+
+    if (canDirect) {
+        try {
+            window.parent[fnName](pigId, farmId, data);
+            return;
+        } catch (err) {}
+    }
+
+    // fallback
+    window.parent.postMessage(
+        { type: "recordAction", action: fnName, pigId, farmId, data },
+        "*"
+    );
+}
 </script>
 
 </body>
