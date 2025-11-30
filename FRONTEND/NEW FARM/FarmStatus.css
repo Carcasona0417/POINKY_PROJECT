@@ -355,7 +355,7 @@
 .pig-name { font-weight:700; font-size:15px; color:#222; }
 .pig-meta { font-size:12px; color:#777; margin-top:4px; }
 .pig-card-right { display:flex; flex-direction:column; gap:6px; align-items:flex-end; min-width:180px; }
-.pig-row { display:flex; gap:10px; align-items:center; font-size:13px; }
+.pig-row {  gap:10px; align-items:center; font-size:13px; }
 .pig-row span { color:#666; }
 .pig-row strong { font-weight:700; }
 .pig-row.profit strong { color:#2e7d32; }
