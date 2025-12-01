@@ -1,4 +1,3 @@
-// ======================================================================
 // POINKY FARM.JS
 // - Farms, pigs, list, filters, status, Add Pig
 // - Opens pig-details.html in an iframe modal
@@ -11,54 +10,112 @@
 let farms = [
     {
         id: 1,
-        name: "Farm 1",
+        name: "Sunny Farm",
+        farmId: "F001",
         pigs: [
             {
                 id: 1,
-                name: "Babe",
-                breed: "Large White",
-                gender: "female",
-                age: "6",
-                date: "2025-01-01",
-                shortId: "BAB",
-                weight: "30kg",
+                name: "Bacon",
+                breed: "Yorkshire",
+                gender: "male",
+                age: "12",
+                date: "2024-12-01",
+                shortId: "BAC",
+                weight: "50.50kg",
                 status: "growing",
-                weightHistory: [{ date: "2025-01-01", weight: 30 }],
-                expenses: [ { date: "2025-03-01", price: 200 }, { date: "2025-04-15", price: 150 } ],
-                statusHistory: [{ date: "2025-01-01", status: "growing", notes: "Initial" }]
+                PigID: "P001",
+                weightHistory: [{ date: "2025-01-01", weight: 50.50 }],
+                expenses: [],
+                statusHistory: [{ date: "2024-12-01", status: "growing", notes: "Initial" }]
             },
             {
                 id: 2,
-                name: "Porky",
+                name: "Hamlet",
                 breed: "Berkshire",
                 gender: "male",
-                age: "8",
-                date: "2024-12-10",
-                shortId: "POR",
+                age: "10",
+                date: "2024-11-15",
+                shortId: "HAM",
                 weight: "45kg",
                 status: "growing",
-                weightHistory: [{ date: "2025-02-15", weight: 45 }],
-                expenses: [ { date: "2025-02-20", price: 300 } ],
-                statusHistory: [{ date: "2024-12-10", status: "growing", notes: "Initial" }]
-            },
+                PigID: "P002",
+                weightHistory: [{ date: "2025-01-01", weight: 45 }],
+                expenses: [],
+                statusHistory: [{ date: "2024-11-15", status: "growing", notes: "Initial" }]
+            }
+        ]
+    },
+    {
+        id: 2,
+        name: "Green Pastures",
+        farmId: "F002",
+        pigs: [
             {
                 id: 3,
-                name: "Snort",
+                name: "Piglet",
                 breed: "Duroc",
-                gender: "male",
+                gender: "female",
                 age: "5",
                 date: "2025-02-01",
-                shortId: "SNO",
-                weight: "25kg",
+                shortId: "PIG",
+                weight: "30kg",
                 status: "growing",
-                weightHistory: [{ date: "2025-02-01", weight: 25 }],
+                PigID: "P003",
+                weightHistory: [{ date: "2025-02-01", weight: 30 }],
                 expenses: [],
                 statusHistory: [{ date: "2025-02-01", status: "growing", notes: "Initial" }]
             }
         ]
     },
-    { id: 2, name: "Farm 2", pigs: [] },
-    { id: 3, name: "Farm 3", pigs: [] }
+    {
+        id: 3,
+        name: "Abc",
+        farmId: "F003",
+        pigs: [
+            {
+                id: 4,
+                name: "Snout",
+                breed: "Hampshire",
+                gender: "female",
+                age: "8",
+                date: "2024-10-20",
+                shortId: "SNO",
+                weight: "28kg",
+                status: "growing",
+                PigID: "P004",
+                weightHistory: [{ date: "2025-01-01", weight: 28 }],
+                expenses: [],
+                statusHistory: [{ date: "2024-10-20", status: "growing", notes: "Initial" }]
+            },
+            {
+                id: 5,
+                name: "OJ",
+                breed: "Bokshire",
+                gender: "male",
+                age: "14",
+                date: "2024-09-10",
+                shortId: "OJ",
+                weight: "66kg",
+                status: "growing",
+                PigID: "P034",
+                weightHistory: [{ date: "2025-01-01", weight: 66 }],
+                expenses: [],
+                statusHistory: [{ date: "2024-09-10", status: "growing", notes: "Initial" }]
+            }
+        ]
+    },
+    { 
+        id: 4, 
+        name: "My Test Farm",
+        farmId: "F004",
+        pigs: [] 
+    },
+    { 
+        id: 5, 
+        name: "My Test Farm",
+        farmId: "F005",
+        pigs: [] 
+    }
 ];
 
 let currentFarmId                = 1;
@@ -145,6 +202,241 @@ function readFileAsDataURL(file) {
     });
 }
 
+// API helper to call backend for weight records
+async function callWeightRecordAPI(pigId, weightData, isEdit = false) {
+    try {
+        // Build candidate API bases
+        let candidates = [];
+        try {
+            const origin = window.location.origin;
+            if (origin && origin !== 'null') candidates.push(origin);
+        } catch (e) {}
+        candidates.push('http://localhost:8080');
+        candidates = candidates.filter((v,i,a) => a.indexOf(v) === i);
+        
+        // If on Live Server, prioritize backend fallback
+        const pageOrigin = window.location?.origin;
+        if (pageOrigin && (pageOrigin.includes(':5500') || pageOrigin.includes(':5501'))) {
+            candidates = candidates.filter(c => c !== 'http://localhost:8080');
+            candidates.unshift('http://localhost:8080');
+        }
+
+        const method = isEdit ? 'PUT' : 'POST';
+        const pigIdEncoded = encodeURIComponent(pigId);
+        let lastError = null;
+        let lastResponse = null;
+
+        for (const base of candidates) {
+            try {
+                let url = `${base.replace(/\/$/, '')}/api/pigs/${pigIdEncoded}/weights`;
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(weightData)
+                });
+
+                if (response && response.ok) {
+                    const result = await response.json();
+                    console.log('Weight record API success:', result);
+                    return result;
+                } else if (response) {
+                    // Got a response but it's an error - this means server is reachable
+                    // Don't try other candidates, report the actual error
+                    const errorData = await response.json().catch(() => ({}));
+                    lastResponse = { status: response.status, data: errorData };
+                    console.error(`API call to ${base} returned status ${response.status}:`, errorData);
+                    // Continue to next candidate in case this one failed temporarily
+                } else {
+                    console.debug(`API call to ${base} returned no response`);
+                }
+            } catch (err) {
+                lastError = err;
+                console.debug(`Failed to reach ${base}:`, err.message);
+            }
+        }
+
+        // If we got an error response from a server, throw that with details
+        if (lastResponse) {
+            throw new Error(`Server returned ${lastResponse.status}: ${lastResponse.data?.message || 'Unknown error'}`);
+        }
+
+        throw lastError || new Error('No available API endpoint');
+    } catch (err) {
+        console.warn('callWeightRecordAPI error:', err);
+        throw err;
+    }
+}
+
+// API helper to delete weight record from backend
+async function callWeightDeleteAPI(pigId, weightId) {
+    try {
+        // Build candidate API bases
+        let candidates = [];
+        try {
+            const origin = window.location.origin;
+            if (origin && origin !== 'null') candidates.push(origin);
+        } catch (e) {}
+        candidates.push('http://localhost:8080');
+        candidates = candidates.filter((v,i,a) => a.indexOf(v) === i);
+        
+        // If on Live Server, prioritize backend fallback
+        const pageOrigin = window.location?.origin;
+        if (pageOrigin && (pageOrigin.includes(':5500') || pageOrigin.includes(':5501'))) {
+            candidates = candidates.filter(c => c !== 'http://localhost:8080');
+            candidates.unshift('http://localhost:8080');
+        }
+
+        const pigIdEncoded = encodeURIComponent(pigId);
+        const weightIdEncoded = encodeURIComponent(weightId);
+        let lastError = null;
+
+        for (const base of candidates) {
+            try {
+                const url = `${base.replace(/\/$/, '')}/api/pigs/${pigIdEncoded}/weights/${weightIdEncoded}`;
+                
+                const response = await fetch(url, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (response && response.ok) {
+                    const result = await response.json();
+                    console.log('Weight record delete API success:', result);
+                    return result;
+                } else {
+                    console.debug(`Delete API call to ${base} returned status ${response?.status}`);
+                }
+            } catch (err) {
+                lastError = err;
+                console.debug(`Failed to reach ${base}:`, err.message);
+            }
+        }
+
+        throw lastError || new Error('No available API endpoint');
+    } catch (err) {
+        console.warn('callWeightDeleteAPI error:', err);
+        throw err;
+    }
+}
+
+// API helper to update pig
+async function callUpdatePigAPI(pigId, pigData) {
+    try {
+        let candidates = [];
+        try {
+            const origin = window.location.origin;
+            if (origin && origin !== 'null') candidates.push(origin);
+        } catch (e) {}
+        candidates.push('http://localhost:8080');
+        candidates = candidates.filter((v,i,a) => a.indexOf(v) === i);
+        
+        const pageOrigin = window.location?.origin;
+        if (pageOrigin && (pageOrigin.includes(':5500') || pageOrigin.includes(':5501'))) {
+            candidates = candidates.filter(c => c !== 'http://localhost:8080');
+            candidates.unshift('http://localhost:8080');
+        }
+
+        const pigIdEncoded = encodeURIComponent(pigId);
+        let lastError = null;
+        let lastResponse = null;
+
+        for (const base of candidates) {
+            try {
+                const url = `${base.replace(/\/$/, '')}/api/pigs/${pigIdEncoded}`;
+                
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(pigData)
+                });
+
+                if (response && response.ok) {
+                    const result = await response.json();
+                    console.log('Update pig API success:', result);
+                    return result;
+                } else if (response) {
+                    const errorData = await response.json().catch(() => ({}));
+                    lastResponse = { status: response.status, data: errorData };
+                    console.error(`Update pig API returned ${response.status}:`, errorData);
+                } else {
+                    console.debug(`Update pig API call to ${base} returned no response`);
+                }
+            } catch (err) {
+                lastError = err;
+                console.debug(`Failed to reach ${base}:`, err.message);
+            }
+        }
+
+        if (lastResponse) {
+            throw new Error(`Server returned ${lastResponse.status}: ${lastResponse.data?.message || 'Unknown error'}`);
+        }
+
+        throw lastError || new Error('No available API endpoint');
+    } catch (err) {
+        console.warn('callUpdatePigAPI error:', err);
+        throw err;
+    }
+}
+
+// API helper to delete pig
+async function callDeletePigAPI(pigId) {
+    try {
+        let candidates = [];
+        try {
+            const origin = window.location.origin;
+            if (origin && origin !== 'null') candidates.push(origin);
+        } catch (e) {}
+        candidates.push('http://localhost:8080');
+        candidates = candidates.filter((v,i,a) => a.indexOf(v) === i);
+        
+        const pageOrigin = window.location?.origin;
+        if (pageOrigin && (pageOrigin.includes(':5500') || pageOrigin.includes(':5501'))) {
+            candidates = candidates.filter(c => c !== 'http://localhost:8080');
+            candidates.unshift('http://localhost:8080');
+        }
+
+        const pigIdEncoded = encodeURIComponent(pigId);
+        let lastError = null;
+        let lastResponse = null;
+
+        for (const base of candidates) {
+            try {
+                const url = `${base.replace(/\/$/, '')}/api/pigs/${pigIdEncoded}`;
+                
+                const response = await fetch(url, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (response && response.ok) {
+                    const result = await response.json();
+                    console.log('Delete pig API success:', result);
+                    return result;
+                } else if (response) {
+                    const errorData = await response.json().catch(() => ({}));
+                    lastResponse = { status: response.status, data: errorData };
+                    console.error(`Delete pig API returned ${response.status}:`, errorData);
+                } else {
+                    console.debug(`Delete pig API call to ${base} returned no response`);
+                }
+            } catch (err) {
+                lastError = err;
+                console.debug(`Failed to reach ${base}:`, err.message);
+            }
+        }
+
+        if (lastResponse) {
+            throw new Error(`Server returned ${lastResponse.status}: ${lastResponse.data?.message || 'Unknown error'}`);
+        }
+
+        throw lastError || new Error('No available API endpoint');
+    } catch (err) {
+        console.warn('callDeletePigAPI error:', err);
+        throw err;
+    }
+}
+
 // Attempt to initialize from localStorage (if present)
 loadFarmsFromStorage();
 
@@ -178,7 +470,9 @@ window.openPigDetails = function (pigId, farmId) {
     let canonicalPigId = pigId;
     try {
         const pigObj = window.getPigDataById ? window.getPigDataById(pigId, farmId) : null;
-        if (pigObj && pigObj.PigID) canonicalPigId = pigObj.PigID;
+        if (pigObj && (pigObj.PigID || pigObj.serverId)) {
+            canonicalPigId = pigObj.PigID || pigObj.serverId;
+        }
     } catch (err) { /* ignore */ }
 
     const url = `pig-details.html?id=${encodeURIComponent(canonicalPigId)}&farm=${encodeURIComponent(farmId)}`;
@@ -209,7 +503,14 @@ window.getPigDataById = function (pigId, farmId) {
     const farm = farmId ? getFarmById(farmId) : getCurrentFarm();
     if (!farm) return null;
 
-    const pig = farm.pigs.find(p => p.id === Number(pigId));
+    // Try matching by numeric ID first (demo data)
+    let pig = farm.pigs.find(p => p.id === Number(pigId));
+    
+    // If not found by numeric ID, try matching by PigID (database format like "P001")
+    if (!pig) {
+        pig = farm.pigs.find(p => p.PigID === pigId || p.serverId === pigId);
+    }
+    
     if (!pig) return null;
 
     // deep clone so iframe cannot mutate original
@@ -227,7 +528,8 @@ window.openAddWeightFromDetails = function (pigId, farmId) {
 
     if (!addWeightModal) return;
 
-    currentDetailPigId  = Number(pigId);
+    // Keep original pigId (might be numeric or PigID format like "P001")
+    currentDetailPigId  = pigId;
     currentDetailFarmId = Number(farmId);
 
     // Hide details while editing weight
@@ -348,6 +650,41 @@ window.openEditPigDetailsFromDetails = function (pigId, farmId) {
 };
 
 // Called from pig-details.html when clicking "Delete Pig"
+window.openEditPigFromDetails = function (pigId, farmId) {
+    const editModal = document.getElementById('editPigDetailsModal');
+    if (!editModal) return;
+
+    currentDetailPigId  = pigId;
+    currentDetailFarmId = farmId;
+
+    const farm = farmId ? getFarmById(farmId) : getCurrentFarm();
+    if (!farm) return;
+
+    const numericId = Number(pigId);
+    const pig = farm.pigs.find(p => 
+        p.id === numericId || 
+        p.PigID === pigId || 
+        p.serverId === pigId
+    );
+    if (!pig) return;
+
+    // Populate form with current pig data
+    const editPigNameEl = document.getElementById('editPigName');
+    const editPigBreedEl = document.getElementById('editPigBreed');
+    const editPigGenderEl = document.getElementById('editPigGender');
+    const editPigAgeEl = document.getElementById('editPigAge');
+    const editPigIdDisplay = document.getElementById('editPigShortIdDisplay');
+
+    if (editPigNameEl) editPigNameEl.value = pig.PigName || pig.name || '';
+    if (editPigBreedEl) editPigBreedEl.value = pig.Breed || '';
+    if (editPigGenderEl) editPigGenderEl.value = pig.Gender || '';
+    if (editPigAgeEl) editPigAgeEl.value = pig.Age || '';
+    if (editPigIdDisplay) editPigIdDisplay.textContent = `Editing: ${pig.PigName || pig.name || pigId}`;
+
+    editModal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+};
+
 window.openDeletePigFromDetails = function (pigId, farmId) {
     const delModal = document.getElementById('deletePigConfirmModal');
     if (!delModal) return;
@@ -581,6 +918,36 @@ window.deleteVaccinationFromDetails = function (pigId, farmId, data) {
 // ======================================================================
 // DELETE RECORD CONFIRMATION MODALS
 // ======================================================================
+// DELETE RECORD CONFIRMATION FUNCTIONS
+// ======================================================================
+
+// Generic function to open delete record confirm modal from iframe
+window.openDeleteRecordConfirmModal = function (type, pigId, farmId, index) {
+    const modal = document.getElementById("deleteRecordConfirmModal");
+    const title = document.getElementById("deleteRecordTitle");
+    const text = document.getElementById("deleteRecordConfirmText");
+    
+    if (!modal) return;
+    
+    pendingDeleteData = {
+        type: type,
+        pigId: pigId,
+        farmId: farmId,
+        index: index
+    };
+    
+    const typeNames = {
+        weight: "Weight Record",
+        expense: "Expense Record",
+        vaccination: "Vaccination Record"
+    };
+    
+    if (title) title.textContent = `Delete ${typeNames[type] || 'Record'}`;
+    if (text) text.innerHTML = `Are you sure you want to delete this ${typeNames[type]?.toLowerCase() || 'record'}?<br>This action cannot be undone.`;
+    
+    modal.style.display = "flex";
+    document.body.style.overflow = "hidden";
+};
 
 // Confirm Weight Delete
 window.confirmDeleteWeight = function (pigId, farmId, data) {
@@ -676,8 +1043,8 @@ window.addEventListener("message", (ev) => {
                 break;
             case "openEditPigDetails":
             case "openEditPigDetailsFromDetails":
-                if (typeof window.openEditPigDetailsFromDetails === "function") {
-                    window.openEditPigDetailsFromDetails(pigId, farmId);
+                if (typeof window.openEditPigFromDetails === "function") {
+                    window.openEditPigFromDetails(pigId, farmId);
                 }
                 break;
             case "openDeletePigFromDetails":
@@ -793,6 +1160,17 @@ document.addEventListener("DOMContentLoaded", function () {
     const FARM_API_BASE = 'http://localhost:8080/api/farm';
     const PIG_API_BASE  = 'http://localhost:8080/api/pigs';
 
+    // Simple helper to POST JSON and return parsed JSON (keeps fetch style consistent)
+    async function postJSON(url, obj = {}) {
+        const opts = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(obj)
+        };
+        const res = await fetch(url, opts);
+        return res.json();
+    }
+
     // Rebuild the tab buttons from `farms` array (keeps `tabAdd` present)
     function rebuildFarmTabs() {
         if (!tabsContainer || !tabAdd) return;
@@ -818,15 +1196,10 @@ document.addEventListener("DOMContentLoaded", function () {
         const userID = localStorage.getItem('userID');
         if (!userID) return;
         try {
-            const res = await fetch(`${FARM_API_BASE}/get-user-farms`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: userID })
-            });
-            const data = await res.json();
+            const data = await postJSON(`${FARM_API_BASE}/get-user-farms`, { userId: userID });
             if (data && data.success && Array.isArray(data.farms)) {
-                // Map server farms to local shape; keep server FarmID on `serverId`
-                farms = data.farms.map(f => ({ id: nextFarmId++, name: f.FarmName || f.name || 'Farm', pigs: [], serverId: f.FarmID || f.FarmID }));
+            // Map server farms to local shape; keep server FarmID on `serverId`
+            farms = data.farms.map(f => ({ id: nextFarmId++, name: f.FarmName || f.name || 'Farm', pigs: [], serverId: f.FarmID }));
                 computeNextIdsFromData();
                 saveFarmsToStorage();
                 rebuildFarmTabs();
@@ -842,12 +1215,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!farm) return;
         if (!farm.serverId) return; // nothing to fetch
         try {
-            const res = await fetch(`${PIG_API_BASE}/get-pigs-by-farm`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ farmId: farm.serverId })
-            });
-            const data = await res.json();
+            const data = await postJSON(`${PIG_API_BASE}/get-pigs-by-farm`, { farmId: farm.serverId });
             if (data && data.success && Array.isArray(data.pigs)) {
                 // Map server pigs to local pig objects, preserving any local-only pigs
                 const serverPigs = data.pigs.map(sp => {
@@ -862,9 +1230,10 @@ document.addEventListener("DOMContentLoaded", function () {
                         age: sp.Age || '',
                         date: sp.Date || '',
                         shortId: name.substring(0,3).toUpperCase(),
-                        weight: (sp.Weight !== undefined) ? `${sp.Weight}kg` : '0kg',
+                    weight: sp.weight || `${sp.Weight || 0}kg`,
+                    initialWeight: sp.initialWeight || `${sp.Weight || 0}kg`,
                         status: (sp.PigStatus || 'growing').toLowerCase(),
-                        weightHistory: [],
+                        weightHistory: sp.weightHistory || [],
                         expenses: [],
                         statusHistory: [],
                         serverId: sp.PigID || sp.PigID
@@ -1107,12 +1476,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Attempt to create on backend if user is logged in
         if (userID) {
             try {
-                const res = await fetch(`${FARM_API_BASE}/add-farm`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ FarmName: name, UserID: userID })
-                });
-                const data = await res.json();
+                const data = await postJSON(`${FARM_API_BASE}/add-farm`, { FarmName: name, UserID: userID });
                 if (data && data.success) {
                     const serverId = data.FarmID;
                     const newFarm = { id: nextFarmId, name, pigs: [], serverId };
@@ -1241,21 +1605,16 @@ document.addEventListener("DOMContentLoaded", function () {
         const serverFarmId = currentFarm.serverId;
         if (serverFarmId) {
             try {
-                const res = await fetch(`${PIG_API_BASE}/add-pig`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        PigName: newPig.name,
-                        Breed: newPig.breed,
-                        Gender: newPig.gender,
-                        Date: newPig.date,
-                        Age: newPig.age,
-                        Weight: initialWeight,
-                        FarmID: serverFarmId
-                    })
+                const data = await postJSON(`${PIG_API_BASE}/add-pig`, {
+                    PigName: newPig.name,
+                    Breed: newPig.breed,
+                    Gender: newPig.gender,
+                    Date: newPig.date,
+                    Age: newPig.age,
+                    Weight: initialWeight,
+                    FarmID: serverFarmId
                 });
-                const data = await res.json();
-                if (res.ok && data && data.success && data.PigID) {
+                if (data && data.success && data.PigID) {
                     newPig.serverId = data.PigID;
 
                     // If server returned an inserted weight record, use it to populate UI immediately
@@ -1424,9 +1783,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            const pig = farm.pigs.find(p => p.id === currentDetailPigId);
+            // Handle both numeric IDs and PigID format (e.g., "P001")
+            const numericId = Number(currentDetailPigId);
+            const pig = farm.pigs.find(p => 
+                p.id === numericId || 
+                p.PigID === currentDetailPigId || 
+                p.serverId === currentDetailPigId
+            );
             if (!pig) {
-                showAlert("error", "Error: Pig not found.");
+                showAlert("error", "Error: Pig not found. currentDetailPigId=" + currentDetailPigId);
                 if (addWeightModal) addWeightModal.style.display = "none";
                 document.body.style.overflow = "auto";
                 return;
@@ -1460,8 +1825,51 @@ document.addEventListener("DOMContentLoaded", function () {
                 pig.weightHistory = [];
             }
 
+            // API call to backend
+            const isEdit = currentEditWeightRecordIndex !== null && pig.weightHistory[currentEditWeightRecordIndex];
+            const apiPayload = {
+                weight: parseFloat(weightVal),
+                date: dateVal,
+                photoPath: imgData || (isEdit ? existingImg : null)
+            };
+
+            let apiSuccess = false;
+            let apiError = null;
+            try {
+                // Get the actual database PigID (prefer PigID or serverId over local numeric id)
+                const actualPigId = pig.PigID || pig.serverId || currentDetailPigId;
+                console.log('Attempting API call with pigId:', actualPigId, 'original:', currentDetailPigId);
+                console.log('Payload:', apiPayload);
+                
+                // Try to call backend API
+                const apiResult = await callWeightRecordAPI(actualPigId, apiPayload, isEdit);
+                console.log('API Result:', apiResult);
+                apiSuccess = apiResult && apiResult.success;
+                
+                if (apiSuccess) {
+                    console.log('Weight record successfully sent to backend');
+                    // Store the WeightID from the API response for future updates/deletes
+                    if (apiResult.record && apiResult.record.WeightID) {
+                        newRecord.weightId = apiResult.record.WeightID;
+                    }
+                } else {
+                    console.warn('API returned success=false:', apiResult);
+                    apiError = 'Server returned an error response';
+                }
+            } catch (apiErr) {
+                console.error('Weight record API call failed:', apiErr);
+                apiError = apiErr.message || 'Server connection failed';
+            }
+
+            // If API failed, show error and don't save locally
+            if (!apiSuccess && apiError) {
+                showAlert("error", `Failed to save weight: ${apiError}. Please ensure the server is running and try again.`);
+                return;
+            }
+
+            // Only save locally if API succeeded or was not attempted
             // Check if editing or adding
-            if (currentEditWeightRecordIndex !== null && pig.weightHistory[currentEditWeightRecordIndex]) {
+            if (isEdit) {
                 // UPDATE existing record
                 pig.weightHistory[currentEditWeightRecordIndex] = newRecord;
                 saveFarmsToStorage();
@@ -1479,16 +1887,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Re-open details modal & refresh iframe with correct pig/farm IDs
             if (pigDetailsModal) pigDetailsModal.style.display = "flex";
-                if (pigDetailsFrame && currentDetailPigId && currentDetailFarmId) {
+            if (pigDetailsFrame && currentDetailPigId && currentDetailFarmId) {
                 const urlId = getCanonicalPigId(currentDetailPigId, currentDetailFarmId);
                 const refreshUrl = `pig-details.html?id=${encodeURIComponent(urlId)}&farm=${encodeURIComponent(currentDetailFarmId)}`;
                 
-                // Set up postMessage to send updated pig data once iframe reloads
+                // Set up postMessage to send updated pig data once iframe fully loads
                 const onFrameReload = function () {
                     try {
                         const updatedPig = window.getPigDataById(currentDetailPigId, currentDetailFarmId);
                         if (updatedPig && pigDetailsFrame.contentWindow) {
-                            pigDetailsFrame.contentWindow.postMessage({ type: "pigData", pig: updatedPig }, "*");
+                            // Force a small delay to ensure iframe is ready
+                            setTimeout(() => {
+                                pigDetailsFrame.contentWindow.postMessage({ type: "pigData", pig: updatedPig }, "*");
+                            }, 100);
                         }
                     } catch (err) {
                         console.warn("Failed to postMessage updated pig data:", err);
@@ -2243,6 +2654,98 @@ document.addEventListener("DOMContentLoaded", function () {
                 pigDetailsModal.style.display = "flex";
             } else {
                 document.body.style.overflow = "auto";
+            }
+        });
+    }
+
+    // Handle edit pig details form submission
+    if (editPigDetailsForm) {
+        editPigDetailsForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const pigName = document.getElementById("editPigName")?.value?.trim();
+            const pigBreed = document.getElementById("editPigBreed")?.value?.trim();
+            const pigGender = document.getElementById("editPigGender")?.value?.trim();
+            const pigAge = document.getElementById("editPigAge")?.value;
+
+            if (!pigName || !pigBreed || !pigGender || !pigAge) {
+                showAlert("error", "Please fill in all required fields.");
+                return;
+            }
+
+            if (!currentDetailPigId) {
+                showAlert("error", "Error: Pig ID not found.");
+                return;
+            }
+
+            const farm = currentDetailFarmId
+                ? getFarmById(currentDetailFarmId)
+                : getCurrentFarm();
+            if (!farm) {
+                showAlert("error", "Error: Farm not found.");
+                return;
+            }
+
+            const numericId = Number(currentDetailPigId);
+            const pig = farm.pigs.find(p => 
+                p.id === numericId || 
+                p.PigID === currentDetailPigId || 
+                p.serverId === currentDetailPigId
+            );
+            if (!pig) {
+                showAlert("error", "Error: Pig not found.");
+                return;
+            }
+
+            // Prepare update payload
+            const pigData = {
+                PigName: pigName,
+                Breed: pigBreed,
+                Gender: pigGender,
+                Age: parseInt(pigAge)
+            };
+
+            try {
+                // Get the actual database PigID
+                const actualPigId = pig.PigID || pig.serverId || currentDetailPigId;
+                console.log('Attempting pig update API with pigId:', actualPigId);
+                
+                // Call API to update pig
+                const apiResult = await callUpdatePigAPI(actualPigId, pigData);
+                
+                if (!apiResult.success) {
+                    showAlert("error", "Failed to update pig: " + (apiResult.message || 'Unknown error'));
+                    return;
+                }
+
+                console.log('Pig updated successfully on server');
+                
+                // Update local state
+                pig.PigName = pigName;
+                pig.Breed = pigBreed;
+                pig.Gender = pigGender;
+                pig.Age = parseInt(pigAge);
+                
+                saveFarmsToStorage();
+                showAlert("success", "Pig details updated successfully!");
+
+                // Close modal and refresh
+                if (editPigDetailsModal) editPigDetailsModal.style.display = "none";
+                if (pigDetailsModal) pigDetailsModal.style.display = "flex";
+                
+                // Refresh pig details
+                if (pigDetailsFrame && currentDetailPigId && currentDetailFarmId) {
+                    const urlId = getCanonicalPigId(currentDetailPigId, currentDetailFarmId);
+                    const refreshUrl = `pig-details.html?id=${encodeURIComponent(urlId)}&farm=${encodeURIComponent(currentDetailFarmId)}`;
+                    pigDetailsFrame.src = refreshUrl;
+                }
+                
+                loadFarmData();
+                this.reset();
+                
+            } catch (apiErr) {
+                console.error('Pig update API call failed:', apiErr);
+                showAlert("error", `Failed to update pig: ${apiErr.message || 'Server connection failed'}`);
             }
         });
     }
@@ -3470,12 +3973,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const serverId = farm.serverId;
             if (serverId) {
                 try {
-                    const res = await fetch(`${FARM_API_BASE}/delete-farm`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ FarmID: serverId })
-                    });
-                    const data = await res.json();
+                    const data = await postJSON(`${FARM_API_BASE}/delete-farm`, { FarmID: serverId });
                     if (!data || !data.success) {
                         showAlert('warning', 'Server failed to delete farm; falling back to local delete.');
                     }
@@ -3535,7 +4033,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (confirmDeletePigBtn) {
-        confirmDeletePigBtn.addEventListener('click', () => {
+        confirmDeletePigBtn.addEventListener('click', async () => {
             // delete pig by currentDetailPigId / currentDetailFarmId
             const pid = currentDetailPigId;
             const fid = currentDetailFarmId || currentFarmId;
@@ -3545,15 +4043,34 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            const idx = farm.pigs.findIndex(p => p.id === pid);
+            const numericId = Number(pid);
+            const idx = farm.pigs.findIndex(p => 
+                p.id === numericId || 
+                p.PigID === pid || 
+                p.serverId === pid
+            );
             if (idx === -1) {
                 showAlert('error', 'Pig not found.');
                 return;
             }
 
-            const pigName = farm.pigs[idx].name;
+            const pig = farm.pigs[idx];
+            const pigName = pig.PigName || pig.name;
+            const actualPigId = pig.PigID || pig.serverId || pid;
+
+            // Try to delete from backend first
+            try {
+                console.log('Attempting pig delete API with pigId:', actualPigId);
+                await callDeletePigAPI(actualPigId);
+                console.log('Pig deleted successfully on server');
+            } catch (apiErr) {
+                console.error('Pig delete API call failed:', apiErr);
+                showAlert("error", `Failed to delete pig: ${apiErr.message || 'Server connection failed'}`);
+                return;
+            }
+
+            // If API succeeded, delete locally
             farm.pigs.splice(idx, 1);
-            // persist deletion
             saveFarmsToStorage();
 
             if (deletePigConfirmModal) deletePigConfirmModal.style.display = 'none';
@@ -3597,7 +4114,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (confirmDeleteRecordBtn) {
-        confirmDeleteRecordBtn.addEventListener("click", () => {
+        confirmDeleteRecordBtn.addEventListener("click", async () => {
             if (!pendingDeleteData) return;
 
             const { type, pigId, farmId, index } = pendingDeleteData;
@@ -3621,8 +4138,27 @@ document.addEventListener("DOMContentLoaded", function () {
             switch (type) {
                 case "weight":
                     if (pig.weightHistory && pig.weightHistory[index]) {
+                        const record = pig.weightHistory[index];
+                        
+                        // Try to call API to delete from backend FIRST
+                        try {
+                            const weightId = record.weightId || `W_${record.date}`;
+                            // Get the actual database PigID
+                            const actualPigId = pig.PigID || pig.serverId || pigId;
+                            console.log('Attempting weight delete API with pigId:', actualPigId, 'weightId:', weightId);
+                            await callWeightDeleteAPI(actualPigId, weightId);
+                            console.log('Weight record deleted successfully on server');
+                        } catch (apiErr) {
+                            console.error('Weight record API deletion failed:', apiErr);
+                            showAlert("error", `Failed to delete weight: ${apiErr.message || 'Server connection failed'}`);
+                            pendingDeleteData = null;
+                            if (deleteRecordConfirmModal) deleteRecordConfirmModal.style.display = "none";
+                            document.body.style.overflow = "auto";
+                            return;
+                        }
+                        
+                        // Only delete locally if API succeeded
                         pig.weightHistory.splice(index, 1);
-                        // persist deletion
                         saveFarmsToStorage();
                         deleted = true;
                         typeName = "Weight record";
@@ -3687,12 +4223,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const serverId = farm.serverId;
             if (serverId) {
                 try {
-                    const res = await fetch(`${FARM_API_BASE}/rename-farm`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ FarmID: serverId, FarmName: name })
-                    });
-                    const data = await res.json();
+                    const data = await postJSON(`${FARM_API_BASE}/rename-farm`, { FarmID: serverId, FarmName: name });
                     if (!data || !data.success) {
                         showAlert('warning', 'Server failed to rename farm; name updated locally.');
                     }

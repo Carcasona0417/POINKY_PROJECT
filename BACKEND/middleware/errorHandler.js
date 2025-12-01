@@ -1,5 +1,6 @@
 // Global error handling middleware
 export const errorHandler = (error, req, res, next) => {
+    console.error('ERROR HANDLER TRIGGERED:');
     console.error(error && error.stack ? error.stack : error);
     
     const statusCode = error.statusCode || 500;

@@ -1,4 +1,5 @@
 import { pool } from "../Database/db.js";
+import { addWeightRecord, getWeightHistory, getCurrentWeight, getInitialWeight } from "./Weight-Records.js";
 
 export async function addPig(data) {
 
@@ -40,24 +41,10 @@ export async function addPig(data) {
     let insertedWeightRecord = null;
     try {
         if (Weight !== undefined && Weight !== null && Weight !== '') {
-            // Use the pig's Date (acquired date) as the weight record date if available, otherwise use today's date
             const weightDate = Date ? (new Date(Date)).toISOString().slice(0,10) : (new Date()).toISOString().slice(0,10);
-            const weightId = 'W' + Date.now() + Math.random().toString(36).slice(2,6).toUpperCase();
-            await pool.query(`
-                INSERT INTO weight_records (WeightID, Date, Weight, PigID, PhotoPath)
-                VALUES (?, ?, ?, ?, ?)
-            `, [weightId, weightDate, Weight, finalPigID, null]);
-
-            insertedWeightRecord = {
-                WeightID: weightId,
-                Date: weightDate,
-                Weight: parseFloat(Weight),
-                PigID: finalPigID,
-                PhotoPath: null
-            };
+            insertedWeightRecord = await addWeightRecord(finalPigID, Weight, weightDate);
         }
     } catch (err) {
-        // Log but don't fail pig creation if weight record insert fails
         console.warn('Failed to insert initial weight record for pig', finalPigID, err);
     }
 
@@ -70,45 +57,17 @@ export async function getPigs(farmId){
         SELECT * FROM pig WHERE FarmID = ?
         `, [farmId]);
 
-    // Attach weight records (weightHistory) and current display weight to each pig
+    // Attach initial weight to each pig
+    // Weight in pig table is initial and never changes
     const pigs = [];
     for (const p of rows) {
         const pig = { ...p };
-        try {
-            const [wrows] = await pool.query(`
-                SELECT Date, Weight, PhotoPath
-                FROM weight_records
-                WHERE PigID = ?
-                ORDER BY Date ASC
-            `, [pig.PigID]);
-
-            pig.weightHistory = (wrows || []).map(r => ({
-                date: r.Date instanceof Date ? r.Date.toISOString().slice(0,10) : r.Date,
-                weight: (r.Weight !== null && r.Weight !== undefined) ? parseFloat(r.Weight) : null,
-                img: r.PhotoPath || null
-            }));
-
-            if (pig.weightHistory.length > 0) {
-                const latest = pig.weightHistory[pig.weightHistory.length - 1];
-                pig.weight = latest.weight !== null ? `${latest.weight}kg` : (pig.Weight ? `${pig.Weight}kg` : '0kg');
-            } else {
-                // No weight_records — expose initial pig.Weight as the initial record if present
-                if (pig.Weight !== undefined && pig.Weight !== null && pig.Weight !== '') {
-                    const dateStr = pig.Date instanceof Date ? pig.Date.toISOString().slice(0,10) : pig.Date;
-                    pig.weightHistory = [{ date: dateStr || null, weight: parseFloat(pig.Weight), img: null }];
-                    pig.weight = `${parseFloat(pig.Weight)}kg`;
-                } else {
-                    pig.weightHistory = [];
-                    pig.weight = (pig.Weight !== undefined && pig.Weight !== null) ? `${pig.Weight}kg` : '0kg';
-                }
-            }
-        } catch (err) {
-            pig.weightHistory = pig.weightHistory || [];
-            pig.weight = (pig.Weight !== undefined && pig.Weight !== null) ? `${pig.Weight}kg` : '0kg';
+        // Set initialWeight directly from pig table
+        if (pig.Weight !== undefined && pig.Weight !== null && pig.Weight !== '') {
+            pig.initialWeight = `${parseFloat(pig.Weight)}kg`;
+        } else {
+            pig.initialWeight = '0kg';
         }
-
-        // Expose initialWeight coming from the pig table to make it explicit for front-end
-        pig.initialWeight = (pig.Weight !== undefined && pig.Weight !== null && pig.Weight !== '') ? parseFloat(pig.Weight) : null;
 
         pigs.push(pig);
     }
@@ -139,57 +98,7 @@ export async function getPigsByFarm(farmId) {
     return rows;
 }
 
-// Get weight history for a single pig (returns weight_records and initial pig.Weight)
-export async function getPigWeightHistory(PigID) {
-    // Normalize PigID: accept numeric ids like '5' and map to P-prefixed IDs like 'P005'
-    let queryPigId = PigID;
-    // If pig id is numeric (e.g., '5'), convert to 'P' + zero-padded 3 digits
-    if (/^\d+$/.test(String(PigID))) {
-        const n = String(PigID).padStart(3, '0');
-        queryPigId = 'P' + n;
-    } else if (/^\d+$/.test(String(PigID).replace(/^P/i, ''))) {
-        // If it's like 'P5' or 'p5', normalize to 'P' + zero-padded
-        const digits = String(PigID).replace(/^P/i, '');
-        queryPigId = 'P' + String(digits).padStart(3, '0');
-    }
 
-    // Fetch pig initial weight and date (try normalized id)
-    const [pigRows] = await pool.query(`SELECT PigID, Weight, Date FROM pig WHERE PigID = ?`, [queryPigId]);
-    let pig = pigRows && pigRows.length ? pigRows[0] : null;
-
-    // If not found and original PigID was not the same as queryPigId, try the original as a last resort
-    if (!pig && queryPigId !== PigID) {
-        const [altRows] = await pool.query(`SELECT PigID, Weight, Date FROM pig WHERE PigID = ?`, [PigID]);
-        if (altRows && altRows.length) pig = altRows[0];
-    }
-
-    // Fetch weight records
-    // Fetch weight records for the same normalized id (or original if pig was found by original)
-    const recordsPigId = pig ? pig.PigID : queryPigId;
-    const [wrows] = await pool.query(`
-        SELECT Date, Weight, PhotoPath
-        FROM weight_records
-        WHERE PigID = ?
-        ORDER BY Date ASC
-    `, [recordsPigId]);
-
-    const weightHistory = (wrows || []).map(r => ({
-        date: r.Date instanceof Date ? r.Date.toISOString().slice(0,10) : r.Date,
-        weight: (r.Weight !== null && r.Weight !== undefined) ? parseFloat(r.Weight) : null,
-        img: r.PhotoPath || null
-    }));
-
-    // If no records and pig has a stored Weight, synthesize an initial record
-    if (weightHistory.length === 0 && pig && pig.Weight !== undefined && pig.Weight !== null && pig.Weight !== '') {
-        const dateStr = pig.Date instanceof Date ? pig.Date.toISOString().slice(0,10) : pig.Date;
-        weightHistory.push({ date: dateStr || null, weight: parseFloat(pig.Weight), img: null });
-    }
-
-    return {
-        initialWeight: pig ? (pig.Weight !== undefined && pig.Weight !== null ? parseFloat(pig.Weight) : null) : null,
-        weightHistory
-    };
-}
 
 // ADD delete and edit
 
@@ -201,12 +110,108 @@ export async function renamePig(PigID, PigName) {
     return result;
 }
 
+// Update pig details
+export async function updatePig(PigID, updates) {
+    try {
+        const { PigName, Breed, Gender, Age, Weight, PigType, PigStatus } = updates;
+        
+        // Build dynamic update query based on provided fields
+        const updateFields = [];
+        const updateValues = [];
+
+        if (PigName !== undefined && PigName !== null) {
+            updateFields.push('PigName = ?');
+            updateValues.push(PigName);
+        }
+        if (Breed !== undefined && Breed !== null) {
+            updateFields.push('Breed = ?');
+            updateValues.push(Breed);
+        }
+        if (Gender !== undefined && Gender !== null) {
+            updateFields.push('Gender = ?');
+            updateValues.push(Gender);
+        }
+        if (Age !== undefined && Age !== null) {
+            updateFields.push('Age = ?');
+            updateValues.push(Age);
+        }
+        if (Weight !== undefined && Weight !== null) {
+            updateFields.push('Weight = ?');
+            updateValues.push(Weight);
+        }
+        if (PigType !== undefined && PigType !== null) {
+            updateFields.push('PigType = ?');
+            updateValues.push(PigType);
+        }
+        if (PigStatus !== undefined && PigStatus !== null) {
+            updateFields.push('PigStatus = ?');
+            updateValues.push(PigStatus);
+        }
+
+        if (updateFields.length === 0) {
+            throw new Error('No valid fields to update');
+        }
+
+        updateValues.push(PigID);
+
+        const query = `UPDATE pig SET ${updateFields.join(', ')} WHERE PigID = ?`;
+        const [result] = await pool.query(query, updateValues);
+
+        if (result.affectedRows === 0) {
+            throw new Error('Pig not found');
+        }
+
+        // Return the updated pig
+        const [rows] = await pool.query('SELECT * FROM pig WHERE PigID = ?', [PigID]);
+        if (rows.length === 0) {
+            throw new Error('Pig not found');
+        }
+
+        return rows[0];
+    } catch (err) {
+        throw err;
+    }
+}
+
 export async function deletePig(PigID) {
-    const [result] = await pool.query(
-        `DELETE FROM pig WHERE PigID = ?`,
-        [PigID]
-    );
-    return result;
+    try {
+        // First check if pig exists
+        const [rows] = await pool.query('SELECT * FROM pig WHERE PigID = ?', [PigID]);
+        if (rows.length === 0) {
+            throw new Error('Pig not found');
+        }
+
+        // Delete all weight records first (due to foreign key constraint)
+        await pool.query('DELETE FROM weight_records WHERE PigID = ?', [PigID]);
+
+        // Then delete the pig
+        const [result] = await pool.query('DELETE FROM pig WHERE PigID = ?', [PigID]);
+
+        return { success: true, message: 'Pig and its records deleted successfully' };
+    } catch (err) {
+        throw err;
+    }
+}
+
+// Provide pig weight history + initial weight for controllers
+export async function getPigWeightHistory(pigId) {
+    // weight history from weight_records table (may be empty)
+    const history = await getWeightHistory(pigId);
+
+    // initial weight stored on pig table (may be null)
+    const initial = await getInitialWeight(pigId);
+
+    const initialWeight = (initial !== null && initial !== undefined) ? parseFloat(initial) : null;
+
+    // current weight is the latest record, or fall back to initial weight
+    let currentWeight = null;
+    if (history && history.length > 0) {
+        currentWeight = history[history.length - 1].weight;
+    } else if (initialWeight !== null) {
+        currentWeight = initialWeight;
+    }
+
+    return { initialWeight, currentWeight, weightHistory: history };
 }
 
 

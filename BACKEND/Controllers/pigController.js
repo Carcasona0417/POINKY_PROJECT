@@ -1,4 +1,5 @@
 import * as pigService from "../Logic/Add-Pig.js"
+import * as weightService from "../Logic/Weight-Records.js"
 
 // Condition for AGE depending on months
 function getPigInfoByAge(age) {
@@ -99,10 +100,127 @@ export const getPigWeights = async (req, res, next) => {
         const { pigId } = req.params;
         if (!pigId) return res.status(400).json({ success: false, message: 'pigId is required' });
 
+        console.log('getPigWeights called for pigId:', pigId);
         const data = await pigService.getPigWeightHistory(pigId);
+        console.log('getPigWeights response:', data);
         res.json({ success: true, pigId, ...data });
     } catch (err) {
+        console.error('getPigWeights error:', err);
         next(err);
+    }
+}
+
+// ADD a new weight record
+export const addWeightRecord = async (req, res, next) => {
+    try {
+        const { pigId } = req.params;  // Extract pigId from URL path
+        const { weight, date, photoPath } = req.body;  // Extract weight data from body
+        
+        if (!pigId || !weight || !date) {
+            return res.status(400).json({ success: false, message: 'pigId, weight, and date are required' });
+        }
+
+        console.log('addWeightRecord called with:', { pigId, weight, date });
+        
+        const newRecord = await weightService.addWeightRecord(pigId, weight, date, photoPath || null);
+        res.status(201).json({ success: true, message: 'Weight record added successfully', record: newRecord });
+    } catch (err) {
+        console.error('addWeightRecord error:', err.message || err);
+        if (err.message?.includes('FOREIGN KEY') || err.message?.includes('Pig') || err.code === 'ER_NO_REFERENCED_ROW') {
+            return res.status(404).json({ success: false, message: 'Pig not found in database' });
+        }
+        res.status(500).json({ success: false, message: 'Failed to add weight record', error: err.message });
+    }
+}
+
+// UPDATE a weight record
+export const updateWeightRecord = async (req, res, next) => {
+    try {
+        const { pigId, weightId } = req.params;
+        const { weight, date, photoPath } = req.body;
+        
+        if (!pigId || !weightId || !weight || !date) {
+            return res.status(400).json({ success: false, message: 'pigId, weightId, weight, and date are required' });
+        }
+
+        const updatedRecord = await weightService.updateWeightRecord(pigId, weightId, weight, date, photoPath);
+        res.json({ success: true, message: 'Weight record updated successfully', record: updatedRecord });
+    } catch (err) {
+        console.error('updateWeightRecord error:', err);
+        if (err.message === 'Weight record not found') {
+            return res.status(404).json({ success: false, message: 'Weight record not found' });
+        }
+        next(err);
+    }
+}
+
+// DELETE a weight record
+export const deleteWeightRecord = async (req, res, next) => {
+    try {
+        const { pigId, weightId } = req.params;
+        
+        if (!pigId || !weightId) {
+            return res.status(400).json({ success: false, message: 'pigId and weightId are required' });
+        }
+
+        const result = await weightService.deleteWeightRecord(pigId, weightId);
+        res.json({ success: true, message: 'Weight record deleted successfully', ...result });
+    } catch (err) {
+        console.error('deleteWeightRecord error:', err);
+        if (err.message === 'Weight record not found') {
+            return res.status(404).json({ success: false, message: 'Weight record not found' });
+        }
+        next(err);
+    }
+}
+
+// UPDATE a pig
+export const updatePig = async (req, res, next) => {
+    try {
+        const { pigId } = req.params;
+        const { PigName, Breed, Gender, Age, Weight, PigType, PigStatus } = req.body;
+        
+        if (!pigId) {
+            return res.status(400).json({ success: false, message: 'pigId is required' });
+        }
+
+        const updatedPig = await pigService.updatePig(pigId, {
+            PigName,
+            Breed,
+            Gender,
+            Age,
+            Weight,
+            PigType,
+            PigStatus
+        });
+
+        res.json({ success: true, message: 'Pig updated successfully', pig: updatedPig });
+    } catch (err) {
+        console.error('updatePig error:', err);
+        if (err.message === 'Pig not found') {
+            return res.status(404).json({ success: false, message: 'Pig not found' });
+        }
+        res.status(500).json({ success: false, message: 'Failed to update pig', error: err.message });
+    }
+}
+
+// DELETE a pig
+export const deletePig = async (req, res, next) => {
+    try {
+        const { pigId } = req.params;
+        
+        if (!pigId) {
+            return res.status(400).json({ success: false, message: 'pigId is required' });
+        }
+
+        const result = await pigService.deletePig(pigId);
+        res.json({ success: true, message: 'Pig deleted successfully', ...result });
+    } catch (err) {
+        console.error('deletePig error:', err);
+        if (err.message === 'Pig not found') {
+            return res.status(404).json({ success: false, message: 'Pig not found' });
+        }
+        res.status(500).json({ success: false, message: 'Failed to delete pig', error: err.message });
     }
 }
 

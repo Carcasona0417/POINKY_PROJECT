@@ -514,7 +514,7 @@ document.addEventListener("click", () => dropdown.style.display = "none");
     // =======================================================
     // CALL PARENT ACTION SAFE (TRY DIRECT → FALLBACK POSTMESSAGE)
     // =======================================================
-    function callParentAction(label, fnName) {
+    function callParentAction(label, fnName, data) {
 
         let canDirect = false;
 
@@ -524,14 +524,17 @@ document.addEventListener("click", () => dropdown.style.display = "none");
 
         if (canDirect) {
             try {
-                window.parent[fnName](pigId, farmId);
+                window.parent[fnName](pigId, farmId, data);
                 return;
-            } catch (err) {}
+            } catch (err) { 
+                console.warn('Direct call failed:', err);
+            }
         }
 
         // fallback
+        console.log('Using postMessage for:', fnName);
         window.parent.postMessage(
-            { type: "openAction", action: fnName, pigId, farmId },
+            { type: "openAction", action: fnName, pigId, farmId, data },
             "*"
         );
     }
@@ -554,16 +557,21 @@ document.addEventListener("click", () => dropdown.style.display = "none");
         // DELETE PIG — ask parent to open delete-pig confirmation
         const btnDeletePigEl = document.getElementById('btnDeletePig');
         if (btnDeletePigEl) {
-            btnDeletePigEl.addEventListener('click', () => {
+            btnDeletePigEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.style.display = "none";
                 callParentAction('Delete Pig', 'openDeletePigFromDetails');
             });
         }
 
     // ⭐ NEW: EDIT PIG
-    btnEditPig.addEventListener("click", () => {
-        dropdown.style.display = "none";
-        callParentAction("Edit Pig", "openEditPigDetailsFromDetails");
-    });
+    if (btnEditPig) {
+        btnEditPig.addEventListener("click", (e) => {
+            e.stopPropagation();
+            dropdown.style.display = "none";
+            callParentAction("Edit Pig", "openEditPigDetailsFromDetails");
+        });
+    }
 
     // =======================================================
     // RECEIVE pigData FROM PARENT
@@ -572,6 +580,8 @@ document.addEventListener("click", () => dropdown.style.display = "none");
         const data = ev.data;
         if (!data || data.type !== "pigData") return;
         pigLoadedFromMessage = true;
+        // Reset weightLoaded flag so we fetch fresh data from backend
+        weightLoaded = false;
         renderPig(data.pig);
     });
 
@@ -582,6 +592,20 @@ document.addEventListener("click", () => dropdown.style.display = "none");
             sold: "Sold",
             deceased: "Deceased"
         }[s] || s;
+    }
+
+    function formatDateDisplay(dateStr) {
+        if (!dateStr) return "-";
+        try {
+            const date = new Date(dateStr);
+            return new Intl.DateTimeFormat("en-US", { 
+                year: "numeric", 
+                month: "short", 
+                day: "2-digit" 
+            }).format(date);
+        } catch (e) {
+            return dateStr;
+        }
     }
 
     function emptyRow(body, cols, msg) {
@@ -595,7 +619,7 @@ document.addEventListener("click", () => dropdown.style.display = "none");
         nameEl.textContent   = pig.name;
         breedEl.textContent  = pig.breed;
         genderEl.textContent = pig.gender;
-        dateEl.textContent   = pig.date;
+        dateEl.textContent   = formatDateDisplay(pig.date);
 
         // Initial values (may be updated after fetching server weight history)
         iwEl.textContent = pig.weightHistory?.[0]?.weight
@@ -676,6 +700,7 @@ document.addEventListener("click", () => dropdown.style.display = "none");
     async function fetchWeightHistory() {
         if (weightLoaded) return;
         try {
+            console.log('fetchWeightHistory: starting for pigId:', pigId);
             // Try multiple candidate API bases in order: parent origin, page origin, fallback localhost:8080.
             // This avoids calling a static dev server (e.g. Live Server on :5501) which doesn't expose /api.
             let candidates = [];
@@ -708,10 +733,12 @@ document.addEventListener("click", () => dropdown.style.display = "none");
                 const url = `${base.replace(/\/$/, '')}/api/pigs/${encodeURIComponent(pigId)}/weights`;
                 try {
                     // attempt fetch; if it fails or returns non-ok, try next candidate
+                    console.log('fetchWeightHistory: trying URL:', url);
                     const attempt = await fetch(url, { method: 'GET' });
                     if (attempt && attempt.ok) {
                         res = attempt;
                         usedBase = base;
+                        console.log('fetchWeightHistory: success with', usedBase);
                         break;
                     } else {
                         // log non-ok status and continue
@@ -724,18 +751,27 @@ document.addEventListener("click", () => dropdown.style.display = "none");
             }
             if (!res) throw new Error('Failed to fetch weight history from any API base');
             const data = await res.json();
+            console.log('fetchWeightHistory: got data:', data);
             console.debug('fetchWeightHistory: using API base', usedBase, data && data.success ? 'success' : 'no-data');
             if (data && data.success) {
                 // Normalize: data.weightHistory is expected array
                 const ph = { weightHistory: data.weightHistory || [], weight: null, status: null };
-                // set weight string if available (latest)
+
+                // Prefer authoritative currentWeight returned by the API (latest from weight_records)
+                if (data.currentWeight !== undefined && data.currentWeight !== null) {
+                    ph.weight = `${data.currentWeight} kg`;
+                }
+
+                // If API didn't provide currentWeight, derive it from returned weightHistory
                 if (ph.weightHistory.length > 0) {
                     const latest = ph.weightHistory[ph.weightHistory.length - 1];
-                    ph.weight = latest.weight ? `${latest.weight} kg` : null;
+                    if (ph.weight === null) ph.weight = latest.weight ? `${latest.weight} kg` : null;
                 } else if (data.initialWeight !== null && data.initialWeight !== undefined) {
                     ph.weightHistory = [{ date: null, weight: data.initialWeight, img: null }];
-                    ph.weight = `${data.initialWeight} kg`;
+                    if (ph.weight === null) ph.weight = `${data.initialWeight} kg`;
                 }
+
+                console.log('fetchWeightHistory: about to render with:', ph);
                 renderWeightSection(ph);
                 // mark loaded only after successful render
                 weightLoaded = true;
@@ -815,13 +851,129 @@ document.addEventListener("click", () => dropdown.style.display = "none");
 // EDIT/DELETE HANDLERS (global scope)
 // =======================================
 
-// WEIGHT RECORD HANDLERS
+// Get API base URL helper
+function getApiBase() {
+    let candidates = [];
+    let parentOrigin = null;
+    try {
+        parentOrigin = window.parent && window.parent.location && window.parent.location.origin;
+        if (parentOrigin && parentOrigin !== 'null') candidates.push(parentOrigin);
+    } catch (e) { parentOrigin = null; }
+    let pageOrigin = null;
+    try {
+        pageOrigin = (window.location && window.location.origin && window.location.origin !== 'null') ? window.location.origin : null;
+        if (pageOrigin) candidates.push(pageOrigin);
+    } catch (e) { pageOrigin = null; }
+    const backendFallback = 'http://localhost:8080';
+    candidates.push(backendFallback);
+    candidates = candidates.filter((v,i,a) => a.indexOf(v) === i);
+    const isLiveServer = pageOrigin && (pageOrigin.includes(':5500') || pageOrigin.includes(':5501'));
+    if (isLiveServer) {
+        candidates = candidates.filter(c => c !== backendFallback);
+        candidates.unshift(backendFallback);
+    }
+    return candidates;
+}
+
+// Show notification helper
+function showNotification(type, message) {
+    // Create a simple notification div if one doesn't exist
+    let notif = document.getElementById('weightNotification');
+    if (!notif) {
+        notif = document.createElement('div');
+        notif.id = 'weightNotification';
+        notif.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-family: "Poppins", sans-serif;
+            z-index: 10000;
+            max-width: 300px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        `;
+        document.body.appendChild(notif);
+    }
+    
+    notif.textContent = message;
+    notif.style.background = type === 'success' ? '#4caf50' : type === 'error' ? '#f44336' : '#ff9800';
+    notif.style.color = 'white';
+    notif.style.display = 'block';
+    
+    setTimeout(() => {
+        notif.style.display = 'none';
+    }, 3000);
+}
+
+// WEIGHT RECORD HANDLERS with API integration
 window.editWeightRecord = function(index) {
+    console.log('editWeightRecord called with index:', index);
+    const params = new URLSearchParams(window.location.search);
+    const pigId = params.get("id");
+    const farmId = params.get("farm");
+    
+    console.log('pigId:', pigId, 'farmId:', farmId);
+    
+    // Still call parent for modal UI, but we'll hook into the submit handler
+    console.log('Calling callParentAction for edit weight');
     callParentAction("Edit Weight", "openEditWeightFromDetails", { index });
 };
 
-window.deleteWeightRecord = function(index) {
-    callParentAction("Delete Weight", "confirmDeleteWeight", { index });
+window.deleteWeightRecord = async function(index) {
+    console.log('deleteWeightRecord called with index:', index);
+    const params = new URLSearchParams(window.location.search);
+    const pigId = params.get("id");
+    const farmId = params.get("farm");
+    
+    console.log('pigId:', pigId, 'farmId:', farmId);
+    
+    if (!pigId) {
+        showNotification('error', 'Pig ID not found');
+        return;
+    }
+
+    // Get the weight record details from the current pig data
+    try {
+        // Try to get from parent first
+        let pig = null;
+        try {
+            if (window.parent && typeof window.parent.getPigDataById === 'function') {
+                pig = window.parent.getPigDataById(pigId, farmId);
+                console.log('Got pig from parent:', pig ? 'yes' : 'no');
+            }
+        } catch (e) {
+            console.warn('Error getting pig from parent:', e);
+        }
+
+        if (!pig || !pig.weightHistory || !pig.weightHistory[index]) {
+            showNotification('error', 'Weight record not found');
+            return;
+        }
+
+        const record = pig.weightHistory[index];
+        
+        // Confirm deletion
+        if (!confirm(`Delete weight record from ${record.date}? This action cannot be undone.`)) {
+            return;
+        }
+
+        // Call parent to handle deletion via the delete record modal
+        // This will trigger the pendingDeleteData flow which calls the backend API
+        console.log('Calling parent openDeleteRecordConfirmModal');
+        if (window.parent && typeof window.parent.openDeleteRecordConfirmModal === 'function') {
+            console.log('Calling parent function directly');
+            window.parent.openDeleteRecordConfirmModal("weight", pigId, farmId, index);
+        } else {
+            // Fallback: use postMessage
+            console.log('Using postMessage fallback');
+            callParentAction("Delete Weight", "openDeleteRecordConfirmModal", { type: "weight", index });
+        }
+        
+    } catch (err) {
+        console.warn('deleteWeightRecord error:', err);
+        showNotification('error', 'Failed to delete weight record');
+    }
 };
 
 // EXPENSE RECORD HANDLERS
@@ -843,29 +995,137 @@ window.deleteVaccinationRecord = function(index) {
 };
 
 // Helper to call parent with optional data
-function callParentAction(label, fnName, data) {
-    const params = new URLSearchParams(window.location.search);
-    const pigId = params.get("id");
-    const farmId = params.get("farm");
-
-    let canDirect = false;
+// API helper for weight records - called by parent after form submission
+window.submitWeightRecordToAPI = async function(pigId, farmId, weightData, isEdit = false, recordIndex = null) {
     try {
-        canDirect = !!(window.parent && typeof window.parent[fnName] === "function");
-    } catch (err) { canDirect = false; }
+        const candidates = getApiBase();
+        let response = null;
+        let usedBase = null;
 
-    if (canDirect) {
-        try {
-            window.parent[fnName](pigId, farmId, data);
-            return;
-        } catch (err) {}
+        const pigIdEncoded = encodeURIComponent(pigId);
+        
+        for (const base of candidates) {
+            try {
+                let url, method, body;
+                
+                if (isEdit && recordIndex !== null) {
+                    // Get the weight ID - we need this from the parent's data
+                    const pig = window.parent?.getPigDataById?.(pigId, farmId);
+                    if (!pig?.weightHistory?.[recordIndex]) {
+                        console.warn('Could not find weight record to edit');
+                        continue;
+                    }
+                    
+                    // For now, use date as identifier if WeightID not available
+                    const record = pig.weightHistory[recordIndex];
+                    const weightId = record.weightId || `W_${record.date}`;
+                    
+                    url = `${base.replace(/\/$/, '')}/api/pigs/${pigIdEncoded}/weights/${encodeURIComponent(weightId)}`;
+                    method = 'PUT';
+                } else {
+                    url = `${base.replace(/\/$/, '')}/api/pigs/${pigIdEncoded}/weights`;
+                    method = 'POST';
+                }
+
+                body = {
+                    weight: parseFloat(weightData.weight),
+                    date: weightData.date,
+                    photoPath: weightData.photoPath || null
+                };
+
+                const attempt = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                if (attempt && attempt.ok) {
+                    response = attempt;
+                    usedBase = base;
+                    break;
+                } else {
+                    console.debug('API attempt failed:', attempt.status);
+                }
+            } catch (err) {
+                console.debug('API call error:', err.message);
+            }
+        }
+
+        if (!response) {
+            showNotification('error', 'Failed to connect to server');
+            return false;
+        }
+
+        const result = await response.json();
+        if (result.success) {
+            showNotification('success', isEdit ? 'Weight record updated successfully!' : 'Weight record added successfully!');
+            return true;
+        } else {
+            showNotification('error', result.message || 'Operation failed');
+            return false;
+        }
+    } catch (err) {
+        console.error('submitWeightRecordToAPI error:', err);
+        showNotification('error', 'An error occurred');
+        return false;
     }
+};
 
-    // fallback
-    window.parent.postMessage(
-        { type: "recordAction", action: fnName, pigId, farmId, data },
-        "*"
-    );
-}
+// API helper for deleting weight records
+window.deleteWeightRecordAPI = async function(pigId, farmId, recordIndex) {
+    try {
+        const candidates = getApiBase();
+        let response = null;
+
+        const pig = window.parent?.getPigDataById?.(pigId, farmId);
+        if (!pig?.weightHistory?.[recordIndex]) {
+            showNotification('error', 'Weight record not found');
+            return false;
+        }
+
+        const record = pig.weightHistory[recordIndex];
+        const weightId = record.weightId || `W_${record.date}`;
+        const pigIdEncoded = encodeURIComponent(pigId);
+
+        for (const base of candidates) {
+            try {
+                const url = `${base.replace(/\/$/, '')}/api/pigs/${pigIdEncoded}/weights/${encodeURIComponent(weightId)}`;
+                
+                const attempt = await fetch(url, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (attempt && attempt.ok) {
+                    response = attempt;
+                    break;
+                } else {
+                    console.debug('Delete API attempt failed:', attempt.status);
+                }
+            } catch (err) {
+                console.debug('Delete API call error:', err.message);
+            }
+        }
+
+        if (!response) {
+            showNotification('error', 'Failed to connect to server');
+            return false;
+        }
+
+        const result = await response.json();
+        if (result.success) {
+            showNotification('success', 'Weight record deleted successfully!');
+            return true;
+        } else {
+            showNotification('error', result.message || 'Deletion failed');
+            return false;
+        }
+    } catch (err) {
+        console.error('deleteWeightRecordAPI error:', err);
+        showNotification('error', 'An error occurred');
+        return false;
+    }
+};
 </script>
 </script>
 

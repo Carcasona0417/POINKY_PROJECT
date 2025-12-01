@@ -14,3 +14,10 @@ CREATE TABLE Weight_Records (
 
     UNIQUE KEY unique_pig_weight_date (PigID, Date)
 );
+
+-- Auto-increment counter table for WeightID generation
+CREATE TABLE IF NOT EXISTS weight_id_counter (
+    counter_id INT PRIMARY KEY DEFAULT 1,
+    next_id INT DEFAULT 1,
+    CONSTRAINT pk_counter CHECK (counter_id = 1)
+);
