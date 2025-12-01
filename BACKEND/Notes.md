@@ -37,9 +37,6 @@
 - username should not store number
 - condition for 8 characters 1 special and 1 uppercase (password)
 
-- Fix problem on why data is not inserted upon adding expense same goes as editing and deleting
-
-
 # WHAT WAS DONE? ( DESCRIPTION )
 - Done With the logic for the login and successful message in the login page
 - Done With the logic for the Sign up and successful message in the register page, also it will redirect to    login page
@@ -64,6 +61,8 @@
 
  - done with the expenses an reports display including both tables
  - added logic CRUD for expenses 
+ - Fixed the filter and the edit,add,delete, and cancel has been connected to the database
+ 
 
 # CHANGES 
 - I change the API instead of /login-register I change it into /login for login and /register for register because it's the url of each pages
@@ -74,6 +73,7 @@
 # WHAT IS NEED TO BE CHANGE
 - Change the alert into a modern success message
 - Breakdown the farm expenses
+
 
 # SECURITY CHECK (To be done by another programmer)
 -

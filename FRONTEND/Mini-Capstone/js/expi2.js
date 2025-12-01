@@ -117,6 +117,74 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     fetchExpensesandReports();
 
+    // FETCH FILTERED SUMMARY, BREAKDOWN, AND CHART DATA
+    async function fetchFilteredData(filters) {
+        const userId = localStorage.getItem('userID');
+
+        const bodyData = {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ userId, filters })
+        }
+
+        try {
+            const [
+                TotalExp, EstInc, ProjProf, 
+                FeedExp, MedExp, TransExp, 
+                PigletExp, LaborExp, UtilExp,
+                ChartData] = await Promise.all([
+                    
+                    // FOR SUMMARY DATA
+                    fetch('http://localhost:8080/api/expenses-records/Total-Expenses-Filtered', bodyData),
+                    fetch('http://localhost:8080/api/expenses-records/Estimated-Income-Filtered', bodyData),
+                    fetch('http://localhost:8080/api/expenses-records/Projected-Profit-Filtered', bodyData),
+
+                    // FOR BREAKDOWN DATA
+                    fetch('http://localhost:8080/api/expenses-records/Feed-Expenses-Filtered', bodyData),
+                    fetch('http://localhost:8080/api/expenses-records/Medicine-Expenses-Filtered', bodyData),
+                    fetch('http://localhost:8080/api/expenses-records/Transportation-Expenses-Filtered', bodyData),
+                    fetch('http://localhost:8080/api/expenses-records/Piglets-Expenses-Filtered', bodyData),
+                    fetch('http://localhost:8080/api/expenses-records/Labor-Expenses-Filtered', bodyData),
+                    fetch('http://localhost:8080/api/expenses-records/Utilities-Expenses-Filtered', bodyData),
+                    
+                    // FOR CHART DATA
+                    fetch('http://localhost:8080/api/expenses-records/Expenses-Income-Filtered', bodyData)
+            ]);
+
+            // Parse JSON responses
+            const totalExpensesData     = await TotalExp.json();
+            const estimatedIncomeData   = await EstInc.json();
+            const projectedProfitData   = await ProjProf.json();
+
+            const feedExpensesData              = await FeedExp.json();
+            const medicineExpensesData          = await MedExp.json();
+            const transportationExpensesData    = await TransExp.json();
+            const pigletsExpensesData           = await PigletExp.json();
+            const laborExpensesData             = await LaborExp.json();
+            const utilitiesExpensesData         = await UtilExp.json();
+            
+            const chartDataResult = await ChartData.json();
+
+            // UPDATE SUMMARY SECTION
+            document.getElementById('totalExpenses').textContent    = '₱' + (totalExpensesData.TotalExpense[0].TotalExpense || 0).toLocaleString('en-PH');
+            document.getElementById('estimatedIncome').textContent  = '₱' + (estimatedIncomeData.EstimatedIncome[0].EstimatedIncome || 0).toLocaleString('en-PH');
+            document.getElementById('projectedProfit').textContent  = '₱' + (projectedProfitData.ProjectedProfit[0].ProjectedProfit || 0).toLocaleString('en-PH');
+
+            // UPDATE BREAKDOWN SECTION
+            document.getElementById('feedExpenses').textContent           = '₱' + (feedExpensesData.FeedExpenses[0]?.TotalFeedExpenses || 0).toLocaleString('en-PH');
+            document.getElementById('medicineExpenses').textContent       = '₱' + (medicineExpensesData.MedicineExpenses[0]?.TotalMedicineExpenses || 0).toLocaleString('en-PH');
+            document.getElementById('transportationExpenses').textContent = '₱' + (transportationExpensesData.TransportationExpenses[0]?.TotalTransportationExpenses || 0).toLocaleString('en-PH');
+            document.getElementById('pigletsExpenses').textContent        = '₱' + (pigletsExpensesData.PigletsExpenses[0]?.TotalPigletsExpenses || 0).toLocaleString('en-PH');
+            document.getElementById('laborExpenses').textContent          = '₱' + (laborExpensesData.LaborExpenses[0]?.TotalLaborExpenses || 0).toLocaleString('en-PH');
+            document.getElementById('utilitiesExpenses').textContent      = '₱' + (utilitiesExpensesData.UtilitiesExpenses[0]?.TotalUtilitiesExpenses || 0).toLocaleString('en-PH');
+
+            // UPDATE CHART
+            updateExpenseChart(chartDataResult.EIData);
+
+        } catch (error) {
+            console.error('Error fetching filtered data:', error);
+        }
+    }
 
    /* ----------------------------------------------------
        Chart for income and expenses
@@ -205,16 +273,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const result = await res.json();
             const EIData = result.EIData; // EI means Expenses and Incomes
+            updateExpenseChart(EIData);
 
-            const incomeData = Array(12).fill(0);
-            const expenseData = Array(12).fill(0);
-
-            EIData.forEach(d => {
-                const monthIndex = d.month - 1;
-                incomeData[monthIndex] = d.income || 0;
-                expenseData[monthIndex] = d.expenses || 0;
-            })
+        } catch (error) {
+            console.error('Error fetching chart data:', error);
+        }
         
+    } 
+    
+    // GLOBAL CHART INSTANCE
+    let incomeExpensesChart = null;
+
+    // UPDATE EXPENSE CHART FUNCTION
+    function updateExpenseChart(EIData) {
+        const incomeData = Array(12).fill(0);
+        const expenseData = Array(12).fill(0);
+
+        EIData.forEach(d => {
+            const monthIndex = d.month - 1;
+            incomeData[monthIndex] = d.income || 0;
+            expenseData[monthIndex] = d.expenses || 0;
+        })
+    
         const data ={
             labels: [
                 'Jan','Feb','Mar','Apr',
@@ -242,47 +322,50 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             ]
         };
+        
+        // Destroy existing chart if it exists
+        if (incomeExpensesChart) {
+            incomeExpensesChart.destroy();
+        }
+        
         // Create the Income & Expenses Bar Chart
-            const incomeExpensesChart = new Chart(ctx, {
-                type: 'bar',
-                data: data,
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            callbacks: {
-                                label: function(context) {
-                                    const value = context.raw || 0;
-                                    return context.dataset.label + ': ₱' + value.toLocaleString('en-PH');
-                                }
+        incomeExpensesChart = new Chart(ctx, {
+            type: 'bar',
+            data: data,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw || 0;
+                                return context.dataset.label + ': ₱' + value.toLocaleString('en-PH');
                             }
                         }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: false,
                     },
-                    scales: {
-                        x: {
-                            stacked: false,
-                        },
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return '₱' + value.toLocaleString('en-PH');
-                                }
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₱' + value.toLocaleString('en-PH');
                             }
                         }
                     }
                 }
-            });
-        } catch (error) {
-            console.error('Error fetching chart data:', error);
-        }
-        
-    } 
+            }
+        });
+    }
+    
     fetchExpenseIncome();
 
         // END OF THE BARCHART
@@ -539,6 +622,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         currentExpensesPage = 1; // Reset to first page
         renderExpensesTable();
+        
+        // Fetch and update filtered data for chart and summary
+        fetchFilteredData(expensesFilterState);
     }
 
     /**
@@ -918,11 +1004,17 @@ function editExpense(index) {
     const item = expensesData[index];
 
     // Fill modal
-    dateInput.value = item.date;
-    farmSelect.value = item.farm;
-    pigSelect.value  = item.pig;
-    categorySelect.value = item.category;
-    priceInput.value = item.price;
+    dateInput.value = item.ExpenseDate;
+    
+    // Display farm and pig names but disable selection (read-only)
+    farmSelect.innerHTML = `<option selected>${item.FarmName}</option>`;
+    farmSelect.disabled = true;
+    
+    pigSelect.innerHTML = `<option selected>${item.PigName}</option>`;
+    pigSelect.disabled = true;
+    
+    categorySelect.value = item.Category;
+    priceInput.value = item.Amount;
 
     // Trigger floating labels
     dateWrapper.classList.add('has-value');
@@ -947,10 +1039,45 @@ function deleteExpense(index) {
         title: 'Delete this expense?',
         showCancelButton: true,
         confirmButtonText: 'Delete'
-    }).then(res => {
+    }).then(async (res) => {
         if (res.isConfirmed) {
-            expensesData.splice(index, 1);
-            renderExpensesTable();
+            try {
+                const userId = localStorage.getItem('userID');
+                const expenseItem = expensesData[index];
+                const expId = expenseItem.ExpID;
+
+                const response = await fetch('http://localhost:8080/api/expenses-records/delete-expense', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        ExpID: expId,
+                        UserID: userId
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to delete expense');
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Expense deleted',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+
+                // Refresh tables
+                fetchExpensesTable();
+                fetchExpensesandReports();
+
+            } catch (error) {
+                console.error('Error deleting expense:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to delete expense. Please try again.'
+                });
+            }
         }
     });
 }
@@ -998,30 +1125,63 @@ function deleteExpense(index) {
                 showCancelButton: true,
                 confirmButtonText: 'Yes',
                 cancelButtonText: 'No'
-            }).then(res => {
+            }).then(async (res) => {
                 if (res.isConfirmed) {
-                    soldData[index].cancelled = true;
-                    renderSoldTable();
-                    // Show success alert with an Undo option
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Record cancelled',
-                        showCancelButton: true,
-                        confirmButtonText: 'Undo',
-                        cancelButtonText: 'Close'
-                    }).then(choice => {
-                        if (choice.isConfirmed) {
-                            // User clicked Undo — restore the sold record
-                            soldData[index].cancelled = false;
-                            renderSoldTable();
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Record restored',
-                                showConfirmButton: false,
-                                timer: 1200
-                            });
+                    try {
+                        const userId = localStorage.getItem('userID');
+                        const soldItem = soldData[index];
+                        const expId = soldItem.ExpID;
+
+                        const response = await fetch('http://localhost:8080/api/expenses-records/cancel-sold-pig', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                ExpID: expId,
+                                UserID: userId
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Failed to cancel sold record');
                         }
-                    });
+
+                        // Show success alert with an Undo option
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Record cancelled',
+                            showCancelButton: true,
+                            confirmButtonText: 'Undo',
+                            cancelButtonText: 'Close'
+                        }).then(async (choice) => {
+                            if (choice.isConfirmed) {
+                                // User clicked Undo — need to re-create the sold record
+                                try {
+                                    // For now, just refresh the tables
+                                    fetchSoldTable();
+                                    fetchExpensesandReports();
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Record restored',
+                                        showConfirmButton: false,
+                                        timer: 1200
+                                    });
+                                } catch (undoError) {
+                                    console.error('Error restoring record:', undoError);
+                                }
+                            } else {
+                                // User closed or chose not to undo - refresh tables
+                                fetchSoldTable();
+                                fetchExpensesandReports();
+                            }
+                        });
+                    } catch (error) {
+                        console.error('Error cancelling sold record:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to cancel sold record. Please try again.'
+                        });
+                    }
                 }
             });
         }
@@ -1050,30 +1210,63 @@ function deleteExpense(index) {
                 showCancelButton: true,
                 confirmButtonText: 'Yes',
                 cancelButtonText: 'No'
-            }).then(res => {
+            }).then(async (res) => {
                 if (res.isConfirmed) {
-                    soldData[index].cancelled = true;
-                    renderSoldTable();
-                    // Show success alert with an Undo option
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Record cancelled',
-                        showCancelButton: true,
-                        confirmButtonText: 'Undo',
-                        cancelButtonText: 'Close'
-                    }).then(choice => {
-                        if (choice.isConfirmed) {
-                            // User clicked Undo — restore the sold record
-                            soldData[index].cancelled = false;
-                            renderSoldTable();
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Record restored',
-                                showConfirmButton: false,
-                                timer: 1200
-                            });
+                    try {
+                        const userId = localStorage.getItem('userID');
+                        const soldItem = soldData[index];
+                        const expId = soldItem.ExpID;
+
+                        const response = await fetch('http://localhost:8080/api/expenses-records/cancel-sold-pig', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                ExpID: expId,
+                                UserID: userId
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Failed to cancel sold record');
                         }
-                    });
+
+                        // Show success alert with an Undo option
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Record cancelled',
+                            showCancelButton: true,
+                            confirmButtonText: 'Undo',
+                            cancelButtonText: 'Close'
+                        }).then(async (choice) => {
+                            if (choice.isConfirmed) {
+                                // User clicked Undo — need to re-create the sold record
+                                try {
+                                    // For now, just refresh the tables since we need to implement add-sold logic
+                                    fetchSoldTable();
+                                    fetchExpensesandReports();
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Record restored',
+                                        showConfirmButton: false,
+                                        timer: 1200
+                                    });
+                                } catch (undoError) {
+                                    console.error('Error restoring record:', undoError);
+                                }
+                            } else {
+                                // User closed or chose not to undo - refresh tables
+                                fetchSoldTable();
+                                fetchExpensesandReports();
+                            }
+                        });
+                    } catch (error) {
+                        console.error('Error cancelling sold record:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to cancel sold record. Please try again.'
+                        });
+                    }
                 }
             });
         }
@@ -1132,7 +1325,7 @@ function deleteExpense(index) {
 
     // Save changes button
     if (saveEditSoldBtn) {
-        saveEditSoldBtn.addEventListener('click', () => {
+        saveEditSoldBtn.addEventListener('click', async () => {
             const editingIndex = editSoldModal.dataset.editingIndex;
             
             if (editingIndex === undefined) return;
@@ -1169,27 +1362,53 @@ function deleteExpense(index) {
                 return;
             }
 
-            // Update the data
-            const idx = parseInt(editingIndex);
-            soldData[idx].dateSold = dateSoldVal;
-            soldData[idx].weight = weightVal + 'kg';
-            soldData[idx].pricePerKg = parseFloat(pricePerKgVal);
-            soldData[idx].totalPrice = parseFloat(weightVal) * parseFloat(pricePerKgVal);
+            try {
+                const userId = localStorage.getItem('userID');
+                const idx = parseInt(editingIndex);
+                const soldItem = soldData[idx];
+                const expId = soldItem.ExpID;
+                const totalPrice = parseFloat(weightVal) * parseFloat(pricePerKgVal);
 
-            // Show success message
-            Swal.fire({
-                icon: 'success',
-                title: 'Sold record updated',
-                showConfirmButton: false,
-                timer: 1500
-            });
+                const response = await fetch('http://localhost:8080/api/expenses-records/edit-expense', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        ExpID: expId,
+                        UserID: userId,
+                        Date: dateSoldVal,
+                        Amount: parseFloat(pricePerKgVal),
+                        Category: 'Sold'
+                    })
+                });
 
-            // Refresh table
-            renderSoldTable();
+                if (!response.ok) {
+                    throw new Error('Failed to update sold record');
+                }
 
-            // Close modal
-            editSoldModal.classList.remove('show');
-            document.body.style.overflow = '';
+                // Show success message
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Sold record updated',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+
+                // Refresh tables
+                fetchSoldTable();
+                fetchExpensesandReports();
+
+                // Close modal
+                editSoldModal.classList.remove('show');
+                document.body.style.overflow = '';
+
+            } catch (error) {
+                console.error('Error updating sold record:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to update sold record. Please try again.'
+                });
+            }
         });
     }
 
@@ -1247,8 +1466,8 @@ async function openModal(isNew = true) {
 
         // Clear inputs for new expense
         if (dateInput) dateInput.value = '';
-        if (farmSelect) farmSelect.value = '';
-        if (pigSelect) pigSelect.value = '';
+        if (farmSelect) { farmSelect.value = ''; farmSelect.disabled = false; }
+        if (pigSelect) { pigSelect.value = ''; pigSelect.disabled = false; }
         if (categorySelect) categorySelect.value = '';
         if (priceInput) priceInput.value = '';
 
@@ -1290,15 +1509,19 @@ if (addPigBtn) {
     if (clearBtn) {
         clearBtn.addEventListener('click', () => {
             if (dateInput)  { dateInput.value = ''; updateDateWrapperState(); }
-            if (farmSelect) { farmSelect.value = ''; toggleHasValue(farmSelect); }
-            if (pigSelect)  { pigSelect.value = ''; toggleHasValue(pigSelect); }
+            if (farmSelect) { farmSelect.value = ''; farmSelect.disabled = false; toggleHasValue(farmSelect); }
+            if (pigSelect)  { pigSelect.value = ''; pigSelect.disabled = false; toggleHasValue(pigSelect); }
             if (categorySelect) { categorySelect.value = ''; toggleHasValue(categorySelect); }
             if (priceInput) { priceInput.value = ''; toggleHasValue(priceInput); }
+            
+            // Reset editing state
+            isEditing = false;
+            editingIndex = null;
         });
     }
 
 if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
+    saveBtn.addEventListener('click', async () => {
         const priceVal    = priceInput ? priceInput.value : '';
         const categoryVal = categorySelect ? categorySelect.value : '';
 
@@ -1325,52 +1548,86 @@ if (saveBtn) {
 
         if (hasError) return;
 
-        // ----------------------------
-        // Save or Update
-        // ----------------------------
-        if (isEditing && editingIndex !== null) {
-            // Update existing
-            expensesData[editingIndex] = {
-                date: dateInput.value,
-                farm: farmSelect.value,
-                pig: pigSelect.value,
-                category: categoryVal,
-                price: Number(priceVal)
-            };
+        const userId = localStorage.getItem('userID');
+        const dateVal = dateInput.value;
+        const amount = Number(priceVal);
+
+        try {
+            if (isEditing && editingIndex !== null) {
+                // Update existing expense
+                const expenseItem = expensesData[editingIndex];
+                const expId = expenseItem.ExpID;
+
+                const response = await fetch('http://localhost:8080/api/expenses-records/edit-expense', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        ExpID: expId,
+                        UserID: userId,
+                        Date: dateVal,
+                        Amount: amount,
+                        Category: categoryVal
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update expense');
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Expense updated',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            } else {
+                // Add new expense
+                const pigId = pigSelect.value;
+                
+                const response = await fetch('http://localhost:8080/api/expenses-records/add-expense', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        UserID: userId,
+                        PigID: pigId,
+                        Date: dateVal,
+                        Amount: amount,
+                        Category: categoryVal
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to add expense');
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Expense added',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            }
+
+            // Refresh tables
+            fetchExpensesTable();
+            fetchExpensesandReports();
+
+            // Reset modal
+            if (clearBtn) clearBtn.click();
+            closeModal();
+
+            // Reset editing state
+            isEditing = false;
+            editingIndex = null;
+
+        } catch (error) {
+            console.error('Error saving expense:', error);
             Swal.fire({
-                icon: 'success',
-                title: 'Expense updated',
-                showConfirmButton: false,
-                timer: 1500
-            });
-        } else {
-            // Add new
-            expensesData.push({
-                date: dateInput.value,
-                farm: farmSelect.value,
-                pig: pigSelect.value,
-                category: categoryVal,
-                price: Number(priceVal)
-            });
-            Swal.fire({
-                icon: 'success',
-                title: 'Expense added',
-                showConfirmButton: false,
-                timer: 1500
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to save expense. Please try again.'
             });
         }
-
-        // Refresh table
-        currentExpensesPage = Math.ceil(expensesData.length / PAGE_SIZE_EXPENSES);
-        renderExpensesTable();
-
-        // Reset modal
-        if (clearBtn) clearBtn.click();
-        closeModal();
-
-        // Reset editing state
-        isEditing = false;
-        editingIndex = null;
     });
 }
 

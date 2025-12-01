@@ -17,7 +17,17 @@ import {
     addExpense,
     editExpense,
     deleteExpense,
-    cancelSoldPig
+    cancelSoldPig,
+    getUserExpensesFiltered,
+    getTotalExpensesFiltered,
+    getEstimatedIncomeFiltered,
+    getProjectedProfitFiltered,
+    getFeedExpensesFiltered,
+    getMedicineExpensesFiltered,
+    getTransportationExpensesFiltered,
+    getPigletsExpensesFiltered,
+    getLaborExpensesFiltered,
+    getUtilitiesExpensesFiltered
 } from "../Logic/ExpensesIncome.js";
 
 // ============================================
@@ -297,6 +307,120 @@ export const cancelSoldPigRecord = async(req, res, next) => {
             message: 'Sold record cancelled. Pig status reverted to ToSale', 
             data: result 
         });
+    } catch (err) {
+        next(err);
+    }
+}
+
+// ============================================
+// FILTERED CONTROLLERS (with filters)
+// ============================================
+
+// FILTERED: BAR CHART DATA
+export const getUserExpensesDataFiltered = async(req, res, next) => {
+    try {
+        const { userId, filters } = req.body;
+        const rows = await getUserExpensesFiltered(userId, filters);
+        res.send({ EIData: rows });
+    } catch (err) {
+        next(err);
+    }
+}
+
+// FILTERED: TOTAL EXPENSES
+export const getTotalExpensesDataFiltered = async(req, res, next) => {
+    try {
+        const { userId, filters } = req.body;
+        const rows = await getTotalExpensesFiltered(userId, filters);
+        res.send({ TotalExpense: rows });
+    } catch (err) {
+        next(err);
+    }
+}
+
+// FILTERED: ESTIMATED INCOME
+export const getEstimatedIncomeDataFiltered = async(req, res, next) => {
+    try {
+        const { userId, filters } = req.body;
+        const data = await getEstimatedIncomeFiltered(userId, filters);
+        res.send({ EstimatedIncome: data });
+    } catch (err) {
+        next(err);
+    }
+}
+
+// FILTERED: PROJECTED PROFIT
+export const getProjectedProfitDataFiltered = async(req, res, next) => {
+    try {
+        const { userId, filters } = req.body;
+        const data = await getProjectedProfitFiltered(userId, filters);
+        res.send({ ProjectedProfit: data });
+    } catch (err) {
+        next(err);
+    }
+}
+
+// FILTERED: FEED EXPENSES
+export const getFeedExpensesDataFiltered = async(req, res, next) => {
+    try {
+        const { userId, filters } = req.body;
+        const data = await getFeedExpensesFiltered(userId, filters);
+        res.send({ FeedExpenses: data });
+    } catch (err) {
+        next(err);
+    }
+}
+
+// FILTERED: MEDICINE EXPENSES
+export const getMedicineExpensesDataFiltered = async(req, res, next) => {
+    try {
+        const { userId, filters } = req.body;
+        const data = await getMedicineExpensesFiltered(userId, filters);
+        res.send({ MedicineExpenses: data });
+    } catch (err) {
+        next(err);
+    }
+}
+
+// FILTERED: TRANSPORTATION EXPENSES
+export const getTransportationExpensesDataFiltered = async(req, res, next) => {
+    try {
+        const { userId, filters } = req.body;
+        const data = await getTransportationExpensesFiltered(userId, filters);
+        res.send({ TransportationExpenses: data });
+    } catch (err) {
+        next(err);
+    }
+}
+
+// FILTERED: PIGLETS EXPENSES
+export const getPigletsExpensesDataFiltered = async(req, res, next) => {
+    try {
+        const { userId, filters } = req.body;
+        const data = await getPigletsExpensesFiltered(userId, filters);
+        res.send({ PigletsExpenses: data });
+    } catch (err) {
+        next(err);
+    }
+}
+
+// FILTERED: LABOR EXPENSES
+export const getLaborExpensesDataFiltered = async(req, res, next) => {
+    try {
+        const { userId, filters } = req.body;
+        const data = await getLaborExpensesFiltered(userId, filters);
+        res.send({ LaborExpenses: data });
+    } catch (err) {
+        next(err);
+    }
+}
+
+// FILTERED: UTILITIES EXPENSES
+export const getUtilitiesExpensesDataFiltered = async(req, res, next) => {
+    try {
+        const { userId, filters } = req.body;
+        const data = await getUtilitiesExpensesFiltered(userId, filters);
+        res.send({ UtilitiesExpenses: data });
     } catch (err) {
         next(err);
     }

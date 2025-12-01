@@ -1,921 +1,547 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ============================
-         BASIC PAGE SETTINGS
-    ============================ -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Poinky - View Pigs</title>
 
-    <!-- ============================
-         FONTS & ICONS
-    ============================ --> 
+    <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- ============================
-         MAIN STYLES
-    ============================ -->
+    <!-- Styles -->
     <link rel="stylesheet" href="css/Farm.css">
-
-    <!-- ============================
-         MODAL STYLES
-    ============================ -->
-    <link rel="stylesheet" href="css/NotifModal.css">
-    <link rel="stylesheet" href="css/DetailsModal.css">
-    <link rel="stylesheet" href="css/AddPigModal.css">
-    <link rel="stylesheet" href="css/AddWeightModal.css">
-    <link rel="stylesheet" href="css/SuccessModal.css">
-    <link rel="stylesheet" href="css/StatusModal.css">
-    <link rel="stylesheet" href="css/SoldModal.css">
-    <link rel="stylesheet" href="css/DetailsEditModal.css">
+    <link rel="stylesheet" href="css/FarmInputs.css">
+    <link rel="stylesheet" href="css/FarmStatus.css">
 </head>
-
 <body>
 
-<!-- =====================================
-     SIDEBAR NAVIGATION
-===================================== -->
-<div class="sidebar">
-    <div class="brand">
-        <img src="assets/dash-icons/ICON.png" alt="Poinky Logo" class="brand-logo">
-        <span class="brand-name">Poinky</span>
-    </div>
-
-    <nav class="menu">
-        <ul class="menu-list">
-
-            <!-- Dashboard -->
-            <li class="menu-item">
-                <a href="dashboard.html" class="menu-link">
-                    <i class="fa-solid fa-house menu-icon"></i>
-                    <span class="menu-text">Dashboard</span>
-                </a>
-            </li>
-
-            <!-- Farm (Active Page) -->
-            <li class="menu-item active">
-                <a href="farm.html" class="menu-link">
-                    <i class="fas fa-warehouse menu-icon"></i>
-                    <span class="menu-text">Farm</span>
-                </a>
-            </li>
-
-            <!-- Expenses -->
-            <li class="menu-item">
-                <a href="expenses.html" class="menu-link">
-                    <i class="fas fa-file-invoice-dollar menu-icon"></i>
-                    <span class="menu-text">Expenses & Reports</span>
-                </a>
-            </li>
-
-            <!-- Reminders -->
-            <li class="menu-item">
-                <a href="reminders.html" class="menu-link">
-                    <i class="fa-solid fa-bell menu-icon"></i>
-                    <span class="menu-text">Reminders</span>
-                </a>
-            </li>
-
-        </ul>
-    </nav>
-</div>
-
-<!-- =====================================
-     MAIN CONTENT
-===================================== -->
-<div class="main-content">
-
-    <!-- ============================
-         HEADER SECTION
-    ============================ -->
-    <div class="header-bg">
-
-        <!-- TOP BAR (Profile + Notifications) -->
-        <div class="top-bar">
-            <div class="user-actions">
-
-                <!-- Notifications Button -->
-                <button class="notification-btn" id="notificationBtn" aria-label="Notifications">
-                    <i class="fa-regular fa-bell notification-icon"></i>
-                    <span class="notification-badge">1</span>
-                </button>
-
-                <!-- User Profile Button -->
-                <button class="user-profile-btn" aria-label="User Profile">
-                    <i class="fa-solid fa-circle-user user-icon"></i>
-                </button>
-
-            </div>
+    <!-- ========================= -->
+    <!--         SIDEBAR          -->
+    <!-- ========================= -->
+    <aside class="sidebar">
+        <div class="brand">
+            <img src="assets/dash-icons/ICON.png" alt="Poinky Logo" class="brand-logo">
+            <span class="brand-name">Poinky</span>
         </div>
 
-        <!-- HEADER TITLE + SEARCH -->
-        <div class="header-content">
-            <h1 class="page-title">
-                <img src="assets/dash-icons/WPig.png" alt="Pig Icon" class="page-icon">
-                View Pigs
-            </h1>
-
-            <!-- SEARCH BAR -->
-            <div class="search-container">
-                <input type="search" placeholder="Search pigs by name, ID, or status..." class="search-input" id="searchInput">
-                <i class="fa-solid fa-magnifying-glass search-icon"></i>
-            </div>
-        </div>
-
-    </div> <!-- end header -->
-
-    <!-- =====================================
-         MAIN TABLE & FARM TABS
-    ===================================== -->
-    <main class="data-container">
-
-        <!-- FARM SELECTION TABS -->
-        <div class="tabs-header" role="tablist">
-            <button class="tab active" data-farm="1">Farm 1</button>
-            <button class="tab" data-farm="2">Farm 2</button>
-            <button class="tab" data-farm="3">Farm 3</button>
-
-            <!-- Add New Farm -->
-            <button class="tab-add" aria-label="Add New Farm">
-                <i class="fa-solid fa-plus"></i>
-            </button>
-        </div>
-
-        <!-- RIGHT-CLICK CONTEXT MENU (Rename/Delete Farm) -->
-        <div id="farmContextMenu" class="farm-context-menu">
-            <button id="renameFarmBtn" class="context-menu-item rename-item">
-                <i class="fas fa-edit"></i> Rename Farm
-            </button>
-            <button id="deleteFarmBtn" class="context-menu-item delete-item">
-                <i class="fas fa-trash"></i> Delete Farm
-            </button>
-        </div>
-
-        <!-- RENAME FARM MODAL -->
-        <div id="renameFarmModal" class="modal" role="dialog" aria-modal="true">
-            <div class="modal-content">
-
-                <div class="weight-modal-header">
-                    <h3>Rename Farm</h3>
-                    <button id="closeRenameFarmModal" class="modal-close-red">&times;</button>
-                </div>
-
-                <form id="renameFarmForm">
-                    <div class="weight-form-group">
-                        <label for="newFarmName">Farm Name</label>
-                        <input type="text" id="newFarmName" required>
-                    </div>
-
-                    <div class="weight-modal-actions">
-                        <button type="button" id="cancelRenameFarm" class="btn-gray">Cancel</button>
-                        <button type="submit" class="btn-green">Save Changes</button>
-                    </div>
-                </form>
-
-            </div>
-        </div>
-
-        <!-- =====================================
-             PIGS TABLE SECTION
-        ===================================== -->
-        <div class="table-content-box">
-
-            <!-- HEADER ABOVE TABLE -->
-            <div class="content-header">
-                <div class="title-section">
-                    <h2 class="section-title">Active Pigs (<span id="activePigsCount">0</span>)</h2>
-                    <p class="section-subtitle">Manage and monitor your pig inventory</p>
-                </div>
-
-                <!-- ADD PIG BUTTON -->
-                <button class="btn-add-pig" id="addPigBtn">
-                    <i class="fa-solid fa-plus"></i>
-                    <span>Add Pig</span>
-                </button>
-            </div>
-
-            <!-- BULK ACTIONS + STATUS FILTERS -->
-            <div class="actions-bar">
-
-                <!-- SELECT ALL + STATUS DROPDOWN -->
-                <div class="bulk-actions">
-                    <div class="bulk-select">
-                        <input type="checkbox" id="selectAll" class="select-all-checkbox">
-                        <label for="selectAll" class="select-all-label">Select All</label>
-                    </div>
-
-                    <!-- Status Dropdown (Change Status) -->
-                    <div class="dropdown" id="statusDropdown">
-                        <button class="dropdown-toggle">
-                            <span>Change Status</span>
-                            <i class="fa-solid fa-chevron-down dropdown-icon"></i>
-                        </button>
-
-                        <div class="dropdown-menu">
-                            <button class="dropdown-item" data-status="growing">Growing</button>
-                            <button class="dropdown-item" data-status="tosale">To Sale</button>
-                            <button class="dropdown-item" data-status="sold">Sold</button>
-                            <button class="dropdown-item" data-status="deceased">Deceased</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- FILTER BUTTONS -->
-                <div class="status-filters" role="tablist">
-                    <button class="filter-item active" data-filter="all">All <span class="filter-count">0</span></button>
-                    <button class="filter-item" data-filter="growing">Growing <span class="filter-count">0</span></button>
-                    <button class="filter-item" data-filter="tosale">To Sale <span class="filter-count">0</span></button>
-                    <button class="filter-item" data-filter="sold">Sold <span class="filter-count">0</span></button>
-                    <button class="filter-item" data-filter="deceased">Deceased <span class="filter-count">0</span></button>
-                </div>
-
-            </div>
-
-            <!-- TABLE -->
-            <div class="table-container">
-                <table class="pigs-table" id="pigsTable">
-
-                    <thead>
-                        <tr>
-                            <th class="col-checkbox"></th>
-                            <th class="col-name">Pig Name/ID</th>
-                            <th class="col-age">Age</th>
-                            <th class="col-weight">Weight</th>
-                            <th class="col-gender">Gender</th>
-                            <th class="col-status">Status</th>
-                        </tr>
-                    </thead>
-
-                    <tbody id="pigsTableBody">
-                        <!-- JS Will Insert Rows Here -->
-                    </tbody>
-
-                </table>
-            </div>
-
-            <!-- FOOTER PAGINATION -->
-            <div class="table-footer">
-
-                <div class="pagination-info">
-                    Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> pigs
-                </div>
-
-                <div class="pagination-controls">
-                    <button class="pagination-btn prev-btn" disabled>
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </button>
-
-                    <span class="pagination-page">Page 1</span>
-
-                    <button class="pagination-btn next-btn" disabled>
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
-                </div>
-
-            </div>
-
-        </div> <!-- end table-content-box -->
-
-    </main>
-</div>
-
-<!-- =====================================
-     ADD PIG MODAL
-===================================== -->
-<div id="addPigModal" class="modal" role="dialog" aria-modal="true">
-    <div class="modal-content add-pig-modal-content">
-
-        <button class="close-button" id="closeAddPigModal">&times;</button>
-        <h2 class="modal-title add-pig-title">Add Pig</h2>
-
-        <form id="addPigForm">
-
-            <!-- Pig Name / ID -->
-            <div class="form-group">
-                <div class="input-wrapper">
-                    <input 
-                        type="text" 
-                        id="pigName" 
-                        name="pigName" 
-                        required 
-                        placeholder=" " 
-                    >
-                    <label for="pigName">Pig Name / ID</label>
-                </div>
-            </div>
-
-            <!-- Breed -->
-            <div class="form-group">
-                <div class="input-wrapper">
-                    <select id="pigBreed" name="pigBreed" class="form-select" required>
-                        <option value="" selected disabled></option>
-                        <option value="Duroc">Duroc</option>
-                        <option value="Yorkshire">Yorkshire</option>
-                        <option value="Landrace">Landrace</option>
-                        <option value="Hampshire">Hampshire</option>
-                        <option value="Berkshire">Berkshire</option>
-                        <option value="Other">Other</option>
-                    </select>
-                    <label for="pigBreed">Breed</label>
-                </div>
-            </div>
-
-            <!-- Gender -->
-            <div class="form-group">
-                <div class="input-wrapper">
-                    <select id="pigGender" name="pigGender" class="form-select" required>
-                        <option value="" selected disabled></option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                    </select>
-                    <label for="pigGender">Gender</label>
-                </div>
-            </div>
-
-            <!-- Age -->
-            <div class="form-group">
-                <div class="input-wrapper">
-                    <input 
-                        type="number" 
-                        id="pigAge" 
-                        name="pigAge" 
-                        min="0" 
-                        required 
-                        placeholder=" " 
-                    >
-                    <label for="pigAge">Age (Months)</label>
-                </div>
-            </div>
-
-            <!-- Date Acquired -->
-            <div class="form-group">
-                <div class="input-wrapper date-wrapper">
-                    <input 
-                        type="date" 
-                        id="pigDate" 
-                        name="pigDate" 
-                        required 
-                        placeholder=" "
-                    >
-                    <label for="pigDate">Date Acquired</label>
-                    <span class="calendar-icon"></span>
-                </div>
-            </div>
-
-            <!-- Weight -->
-            <div class="form-group">
-                <div class="input-wrapper weight-wrapper">
-                    <input 
-                        type="number" 
-                        id="pigWeight" 
-                        name="pigWeight" 
-                        step="0.1" 
-                        min="0" 
-                        required 
-                        placeholder=" " 
-                    >
-                    <div class="unit-box">kg</div>
-                    <label for="pigWeight">Initial Weight</label>
-                </div>
-            </div>
-
-            <!-- Buttons -->
-            <div class="modal-actions">
-                <button type="button" class="btn btn-clear" id="clearAddPigForm">Clear</button>
-                <button type="submit" class="btn btn-save">Save</button>
-            </div>
-
-        </form>
-    </div>
-</div>
-
-<!-- =====================================
-    SUCCESS MODAL (ADD PIG)
-===================================== -->
-<div id="successModal" class="modal" role="dialog" aria-modal="true">
-    <div class="modal-content success-modal-content">
-        <div class="success-circle">
-            <i class="fas fa-check"></i>
-        </div>
-        <p id="successModalMessage" class="success-message">Pig added successfully!</p>
-    </div>
-</div>
-
-<!-- =====================================
-     NOTIFICATION MODAL
-===================================== -->
-<div class="notification-modal" id="notificationModal" role="dialog" aria-modal="true">
-    <div class="notification-modal-content">
-
-        <div class="notification-header">
-            <h3>Notifications</h3>
-            <button class="notification-close" id="closeNotificationModal">&times;</button>
-        </div>
-
-        <!-- Notifications List -->
-        <div class="notification-list"></div>
-
-    </div>
-</div>
-
-<!-- =====================================
-     PIG DETAILS MODAL
-===================================== -->
-<div class="modal" id="pigDetailsModal" role="dialog" aria-modal="true">
-    <div class="modal-content details-modal-content">
-
-        <!-- Corner Close -->
-        <button class="modal-close-corner" id="closeDetailsModal">&times;</button>
-
-        <div class="details-layout">
-
-            <!-- LEFT SIDE INFO -->
-            <div class="details-sidebar">
-
-                <div class="details-header">
-
-                    <div class="details-icon-wrapper">
-                        <!-- FIXED ICON PATH HERE -->
-                        <img src="assets/dash-icons/Pig.png" class="details-pig-icon" alt="Pig Icon">
-                    </div>
-
-                    <h3>Details</h3>
-
-                    <!-- Dropdown Actions (Edit / Delete) -->
-                    <div class="pig-actions-container">
-                        <i class="fas fa-ellipsis-v action-menu-icon" id="pigDetailsMenuIcon"></i>
-
-                        <div class="action-menu-dropdown" id="pigActionMenu">
-                            <button id="editPigDetailsBtn"><i class="fas fa-edit"></i> Edit Details</button>
-                            <button id="deletePigBtn" class="delete-btn"><i class="fas fa-trash-alt"></i> Delete Pig</button>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- Pig Info Fields -->
-                <div class="info-group"><label>Pig Name/ID:</label><span id="detailName">Cha</span></div>
-                <div class="info-group"><label>Breed:</label><span id="detailBreed">Large White</span></div>
-                <div class="info-group"><label>Gender:</label><span id="detailGender">Female</span></div>
-                <div class="info-group"><label>Date Acquired:</label><span id="detailDate">July 20, 2025</span></div>
-                <div class="info-group"><label>Initial Weight:</label><span id="detailInitialWeight">20 kg</span></div>
-                <div class="info-group"><label>Current Weight:</label><span id="detailCurrentWeight" class="highlight-weight">84 kg</span></div>
-                <div class="info-group"><label>Status:</label><span id="detailStatus">Growing</span></div>
-
-            </div>
-
-            <!-- RIGHT SIDE TABS -->
-            <div class="details-main">
-
-                <div class="details-tabs">
-                    <div class="tab-icons">
-                        <button class="detail-tab active" data-tab="weight"><i class="fa-solid fa-scale-balanced"></i></button>
-                        <button class="detail-tab" data-tab="expenses"><i class="fa-solid fa-book-open"></i></button>
-                        <button class="detail-tab" data-tab="health"><i class="fa-solid fa-syringe"></i></button>
-                    </div>
-                </div>
-
-                <!-- WEIGHT TAB -->
-                <div class="tab-content active" id="tab-weight">
-
-                    <div class="tab-header-row">
-                        <h4>Weight Records</h4>
-                        <button class="btn-add-record"><i class="fa-solid fa-plus"></i>Add Weight</button>
-                    </div>
-
-                    <div class="records-table-container">
-                        <table class="records-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Weight</th>
-                                    <th>Picture</th>
-                                </tr>
-                            </thead>
-                            <tbody id="weightRecordsBody"></tbody>
-                        </table>
-                    </div>
-
-                </div>
-
-                <!-- EXPENSES TAB -->
-                <div class="tab-content" id="tab-expenses" style="display:none;">
-
-                    <div class="tab-header-row">
-                        <h4>Expenses Records</h4>
-                        <button class="btn-add-record" id="addExpenseBtn"><i class="fa-solid fa-plus"></i> Add Expenses</button>
-                    </div>
-
-                    <div class="records-table-container">
-                        <table class="records-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Expenses</th>
-                                    <th>Category</th>
-                                </tr>
-                            </thead>
-                            <tbody id="expensesRecordsBody"></tbody>
-                        </table>
-                    </div>
-
-                </div>
-
-                <!-- HEALTH / VACCINATION TAB -->
-                <div class="tab-content" id="tab-health" style="display:none;">
-
-                    <div class="tab-header-row">
-                        <h4>Vaccination Records</h4>
-                        <button class="btn-add-record" id="addVaccinationBtn"><i class="fa-solid fa-plus"></i> Add Vaccination</button>
-                    </div>
-
-                    <div class="records-table-container">
-                        <table class="records-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Due Date</th>
-                                    <th>Vaccine Type</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="vaccinationRecordsBody"></tbody>
-                        </table>
-                    </div>
-
-                </div>
-
-            </div> <!-- end details-main -->
-
-        </div> <!-- end details-layout -->
-
-    </div>
-</div>
-
-<!-- =====================================
-     ADD WEIGHT MODAL
-===================================== -->
-<div class="modal" id="addWeightModal" style="z-index: 3000;" role="dialog" aria-modal="true">
-    <div class="modal-content weight-modal-content">
-
-        <div class="weight-modal-header">
-            <h3 class="weight-title">Add Weight</h3>
-            <button class="modal-close-red" id="closeWeightModal">&times;</button>
-        </div>
-
-        <form id="addWeightForm">
-
-            <!-- DATE (FLOATING LABEL) -->
-            <div class="weight-form-group">
-                <div class="input-wrapper date-wrapper">
-                    <input type="date" id="newWeightDate" required>
-                    <label for="newWeightDate">Date</label>
-                    <span class="calendar-icon"></span>
-                </div>
-            </div>
-
-            <!-- WEIGHT (FLOATING LABEL + KG BOX) -->
-            <div class="weight-form-group">
-                <div class="input-wrapper weight-wrapper">
-                    <input type="number" id="newWeightValue" step="0.1" placeholder=" " required>
-                    <label for="newWeightValue">Weight</label>
-                    <div class="unit-box">kg</div>
-                </div>
-            </div>
-
-            <!-- FILE UPLOAD -->
-            <div class="weight-form-group">
-                <label for="newWeightImg" class="file-label">
-                    <span id="fileNameDisplay">Upload Image</span>
-                    <i class="fa-solid fa-arrow-up-from-bracket"></i>
-                </label>
-                <input type="file" id="newWeightImg" accept="image/*" hidden>
-            </div>
-
-            <!-- BUTTONS -->
-            <div class="weight-modal-actions">
-                <button type="button" class="btn-gray" id="clearWeightForm">Clear</button>
-                <button type="submit" class="btn-green">Save</button>
-            </div>
-
-        </form>
-
-    </div>
-</div>
-
-
-<!-- =====================================
-     ADD EXPENSE MODAL
-===================================== -->
-<div class="modal" id="addExpenseModal" style="z-index: 3000;" role="dialog" aria-modal="true">
-    <div class="modal-content weight-modal-content">
-
-        <div class="weight-modal-header">
-            <h3 class="weight-title">Add Expenses</h3>
-            <button class="modal-close-red" id="closeExpenseModal">&times;</button>
-        </div>
-
-        <form id="addExpenseForm">
-
-            <!-- DATE (FLOATING LABEL + ICON) -->
-            <div class="weight-form-group">
-                <div class="input-wrapper date-wrapper">
-                    <input type="date" id="newExpenseDate" required>
-                    <label for="newExpenseDate">Date</label>
-                    <span class="calendar-icon"></span>
-                </div>
-            </div>
-
-            <!-- PRICE (FLOATING LABEL + ₱ BOX) -->
-            <div class="weight-form-group">
-                <div class="input-wrapper weight-wrapper">
-                    <!-- note: placeholder is a single space for :placeholder-shown -->
-                    <input type="number" id="newExpensePrice" step="0.01" placeholder=" " required>
-                    <label for="newExpensePrice">Price</label>
-                    <div class="unit-box">₱</div>
-                </div>
-            </div>
-
-            <!-- CATEGORY (FLOATING LABEL SELECT) -->
-            <div class="weight-form-group">
-                <div class="input-wrapper select-wrapper">
-                    <select id="newExpenseCategory" required>
-                        <option value="" hidden disabled selected>Category</option>
-                        <option value="Feeds">Feeds</option>
-                        <option value="Piglets">Piglets</option>
-                        <option value="Medicine">Medicine</option>
-                        <option value="Utilities">Utilities</option>
-                        <option value="Labor">Labor</option>
-                        <option value="Maintenance">Maintenance</option>
-                    </select>
-                    <label for="newExpenseCategory">Category</label>
-                </div>
-            </div>
-
-            <div class="weight-modal-actions">
-                <button type="button" class="btn-gray" id="clearExpenseForm">Clear</button>
-                <button type="submit" class="btn-green">Save</button>
-            </div>
-
-        </form>
-
-    </div>
-</div>
-
-
-<!-- =====================================
-     ADD VACCINATION MODAL
-===================================== -->
-<div class="modal" id="addVaccinationModal" style="z-index: 3000;" role="dialog" aria-modal="true">
-    <div class="modal-content weight-modal-content">
-
-        <div class="weight-modal-header">
-            <h3 class="weight-title">Add Vaccination</h3>
-            <button class="modal-close-red" id="closeVaccinationModal">&times;</button>
-        </div>
-
-        <form id="addVaccinationForm">
-
-            <!-- VACCINATION DATE -->
-            <div class="weight-form-group">
-                <div class="input-wrapper date-wrapper">
-                    <input type="date" id="newVaccinationDate" required>
-                    <label for="newVaccinationDate">Vaccination Date</label>
-                    <span class="calendar-icon"></span>
-                </div>
-            </div>
-
-            <!-- DUE DATE -->
-            <div class="weight-form-group">
-                <div class="input-wrapper date-wrapper">
-                    <input type="date" id="newVaccinationDueDate" required>
-                    <label for="newVaccinationDueDate">Due Date</label>
-                    <span class="calendar-icon"></span>
-                </div>
-            </div>
-
-            <!-- VACCINATION TYPE -->
-            <div class="weight-form-group">
-                <div class="input-wrapper select-wrapper">
-                    <select id="newVaccinationType" required>
-                        <option value="" hidden disabled selected>Vaccination Type</option>
-                        <option value="Clear">Clear</option>
-                        <option value="Booster MLV">Booster MLV</option>
-                        <option value="Bacterine Toxoid">Bacterine Toxoid</option>
-                        <option value="Recombinant">Recombinant</option>
-                        <option value="Autogenous">Autogenous</option>
-                    </select>
-                    <label for="newVaccinationType">Vaccination Type</label>
-                </div>
-            </div>
-
-            <div class="weight-modal-actions">
-                <button type="button" class="btn-gray" id="clearVaccinationForm">Clear</button>
-                <button type="submit" class="btn-green">Save</button>
-            </div>
-
-        </form>
-
-    </div>
-</div>
-
-
-<!-- =====================================
-     EDIT WEIGHT MODAL
-===================================== -->
-<div id="editWeightModal" class="modal" role="dialog" aria-modal="true">
-    <div class="modal-content weight-modal-content">
-
-        <div class="weight-modal-header">
-            <h3 class="weight-title">Edit Record</h3>
-            <button class="modal-close-red" id="closeEditWeightModal">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-
-        <form id="editWeightForm">
-
-            <!-- DATE (FLOATING LABEL) -->
-            <div class="weight-form-group">
-                <div class="input-wrapper">
-                    <input type="date" id="editWeightDate" placeholder=" " required>
-                    <label for="editWeightDate">Date</label>
-                </div>
-            </div>
-
-            <!-- WEIGHT (FLOATING LABEL + KG SUFFIX) -->
-            <div class="weight-form-group">
-                <div class="input-wrapper weight-input-wrapper">
-                    <input type="number" id="editWeightValue" placeholder=" " step="0.1" required>
-                    <label for="editWeightValue">Weight</label>
-                    <span class="weight-suffix">kg</span>
-                </div>
-            </div>
-
-            <!-- FILE UPLOAD (MAINTAINS YOUR ORIGINAL STYLE) -->
-            <div class="weight-form-group">
-                <label for="editWeightImg" class="file-label">
-                    <span id="editFileNameDisplay">Upload Image</span>
-                    <i class="fa-solid fa-arrow-up-from-bracket"></i>
-                </label>
-                <input type="file" id="editWeightImg" accept="image/*" hidden>
-            </div>
-
-            <!-- ACTION BUTTONS -->
-            <div class="weight-modal-actions">
-                <button type="button" class="btn-gray" id="btnCancelEditWeight">Cancel</button>
-                <button type="submit" class="btn-green">Save</button>
-            </div>
-
-        </form>
-
-    </div>
-</div>
-
-
-<!-- =====================================
-     SOLD PRICE INPUT MODAL
-===================================== -->
-<div id="priceInputModal" class="modal-stat swal-mimic-modal" style="display:none;" role="dialog" aria-modal="true">
-    <div class="modal-content-stat small-modal">
-
-        <!-- Close Button -->
-        <span class="close swal-close-icon" id="closePriceInputModal">
-            <i class="fas fa-times"></i>
-        </span>
+        <nav class="menu">
+            <ul class="menu-list">
+                <li class="menu-item">
+                    <a href="Dashboard.html" class="menu-link">
+                        <i class="fa-solid fa-house menu-icon"></i>
+                        <span class="menu-text">Dashboard</span>
+                    </a>
+                </li>
+
+                <li class="menu-item active">
+                    <a href="Farm.html" class="menu-link">
+                        <i class="fas fa-warehouse menu-icon"></i>
+                        <span class="menu-text">Farm</span>
+                    </a>
+                </li>
+
+                <li class="menu-item">
+                    <a href="expenses.html" class="menu-link">
+                        <i class="fas fa-file-invoice-dollar menu-icon"></i>
+                        <span class="menu-text">Expenses & Reports</span>
+                    </a>
+                </li>
+
+                <li class="menu-item">
+                    <a href="reminders.html" class="menu-link">
+                        <i class="fa-solid fa-bell menu-icon"></i>
+                        <span class="menu-text">Reminders</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- ========================= -->
+    <!--       MAIN CONTENT        -->
+    <!-- ========================= -->
+    <div class="main-content">
 
         <!-- Header -->
-        <div class="modal-header-sales">
-            <h3 class="weight-title">Enter Pig Price (per kg)</h3>
-        </div>
+        <header class="header-bg">
+            <div class="top-bar">
+                <div class="user-actions">
+                    <button class="notification-btn" id="notificationBtn">
+                        <i class="fa-regular fa-bell notification-icon"></i>
+                        <span class="notification-badge">1</span>
+                    </button>
 
-        <form id="priceInputForm">
-
-            <!-- Floating Label + Currency Box -->
-            <div class="weight-form-group">
-                <div class="input-wrapper weight-input-wrapper">
-                    <input type="number" id="priceInput" placeholder=" " step="0.01" required>
-                    <label for="priceInput">Price</label>
-                    <span class="weight-suffix">₱</span>
+                    <button id="profileBtn" class="user-profile-btn" aria-label="User Profile">
+                        <i class="fa-solid fa-circle-user user-icon"></i>
+                    </button>
                 </div>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="weight-modal-actions">
-                <button type="button" class="btn-gray" id="clearPriceInput">Clear</button>
-                <button type="submit" class="btn-green" id="calculatePrice">Calculate</button>
+            <div class="header-content">
+                <h1 class="page-title">
+                    <img src="assets/dash-icons/WPig.png" class="page-icon" alt="Pig Icon">
+                    View Pigs
+                </h1>
+
+                <div class="search-container">
+                    <input type="search" class="search-input" id="searchInput" placeholder="Search">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- ========================= -->
+        <!--     MAIN DATA SECTION    -->
+        <!-- ========================= -->
+        <main class="data-container">
+
+            <!-- Tabs -->
+            <div class="tabs-header" role="tablist">
+                <button class="tab active" data-farm="1" role="tab" aria-selected="true">Farm 1</button>
+                <button class="tab" data-farm="2" role="tab" aria-selected="false">Farm 2</button>
+                <button class="tab" data-farm="3" role="tab" aria-selected="false">Farm 3</button>
+                <button class="tab-add" type="button"><i class="fa-solid fa-plus"></i></button>
             </div>
 
-        </form>
+            <!-- Table Box -->
+            <section class="table-content-box">
 
+                <!-- Header -->
+                <div class="content-header">
+                    <div class="title-section">
+                        <h2 class="section-title">Active Pigs (<span id="activePigsCount">0</span>)</h2>
+                        <p class="section-subtitle">Manage and monitor your pig inventory</p>
+                    </div>
+
+                    <button class="btn-add-pig" id="addPigBtn" type="button">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Add Pig</span>
+                    </button>
+                </div>
+
+                <!-- Actions -->
+                <div class="actions-bar">
+
+                    <!-- Bulk -->
+                    <div class="bulk-actions">
+                        <div class="bulk-select">
+                            <input type="checkbox" id="selectAll">
+                            <label for="selectAll">Select All</label>
+                        </div>
+
+                        <div class="dropdown" id="statusDropdown">
+                            <button class="dropdown-toggle" type="button">
+                                <span>Change Status</span>
+                                <i class="fa-solid fa-chevron-down dropdown-icon"></i>
+                            </button>
+
+                            <div class="dropdown-menu">
+                                <button class="dropdown-item" data-status="growing">Growing</button>
+                                <button class="dropdown-item" data-status="tosale">To Sale</button>
+                                <button class="dropdown-item" data-status="sold">Sold</button>
+                                <button class="dropdown-item" data-status="deceased">Deceased</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="status-filters">
+                        <button class="filter-item active" data-filter="all">All <span class="filter-count">0</span></button>
+                        <button class="filter-item" data-filter="growing">Growing <span class="filter-count">0</span></button>
+                        <button class="filter-item" data-filter="tosale">To Sale <span class="filter-count">0</span></button>
+                        <button class="filter-item" data-filter="sold">Sold <span class="filter-count">0</span></button>
+                        <button class="filter-item" data-filter="deceased">Deceased <span class="filter-count">0</span></button>
+                    </div>
+
+                </div>
+
+                <!-- Table -->
+                <div class="table-container">
+                    <table class="pigs-table">
+                        <thead>
+                            <tr>
+                                <th class="select-col">Select</th>
+                                <th>Pig Name / ID</th>
+                                <th>Age</th>
+                                <th>Weight</th>
+                                <th>Gender</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pigsTableBody">
+                            <!-- JS Injects Rows -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Footer -->
+                <div class="table-footer">
+                    <div class="pagination-info">
+                        Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> pigs
+                    </div>
+
+                    <div class="pagination-controls">
+                        <button class="pagination-btn prev-btn" disabled><i class="fa-solid fa-chevron-left"></i></button>
+                        <span class="pagination-page">Page 1</span>
+                        <button class="pagination-btn next-btn" disabled><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                </div>
+
+            </section>
+        </main>
     </div>
-</div>
- <style>
 
+    <!-- ===================================================== -->
+    <!--                    ADD PIG MODAL                       -->
+    <!-- ===================================================== -->
+    <div id="addPigModal" class="modal" style="display:none;">
+        <div class="modal-content add-pig-modal-content">
 
+            <button class="close-button" id="closeAddPigModal">&times;</button>
+            <h2 class="modal-title add-pig-title">Add Pig</h2>
 
+            <form id="addPigForm">
 
+                <!-- Pig Name -->
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <input type="text" id="pigName" placeholder=" " required>
+                        <label for="pigName">Pig Name / ID</label>
+                    </div>
+                </div>
 
- </style>
+                <!-- Breed -->
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <select id="pigBreed" class="form-select" required>
+                            <option value="" disabled selected></option>
+                            <option>Bokshire</option>
+                            <option>Duroc</option>
+                            <option>Hampshire</option>
+                            <option>Candrace</option>
+                            <option>Landrace</option>
+                            <option>Large White</option>
+                            <option>Large Black</option>
+                        </select>
+                        <label for="pigBreed">Breed</label>
+                    </div>
+                </div>
 
-<!-- =====================================
-     SOLD CONFIRMATION MODAL
-===================================== -->
-<div id="soldConfirmationModal" class="modal-stat swal-mimic-modal" style="display:none;" role="dialog" aria-modal="true">
-    <div class="modal-content-stat small-modal">
+                <!-- Gender -->
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <select id="pigGender" class="form-select" required>
+                            <option value="" disabled selected></option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                        <label for="pigGender">Gender</label>
+                    </div>
+                </div>
 
-        <span class="close swal-close-icon" id="closeSoldConfirmationModal">
-            <i class="fas fa-times"></i>
-        </span>
+                <!-- Age -->
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <select id="pigAge" class="form-select" required>
+                            <option value="" disabled selected></option>
+                            <option>1</option><option>2</option><option>3</option><option>4</option>
+                            <option>5</option><option>6</option><option>7</option><option>8</option>
+                            <option>9</option><option>10</option><option>11</option><option>12</option>
+                        </select>
+                        <label for="pigAge">Age (Months)</label>
+                    </div>
+                </div>
 
-        <div class="modal-header-total-price">
-            <h3 class="swal-title-red">Total Price</h3>
+                <!-- Date Acquired -->
+                <div class="form-group">
+                    <div class="input-wrapper date-wrapper">
+                        <input type="date" id="pigDate" placeholder=" " required>
+                        <label for="pigDate">Date Acquired</label>
+                        <span class="calendar-icon"></span>
+                    </div>
+                </div>
+
+                <!-- Initial Weight -->
+                <div class="form-group">
+                    <div class="input-wrapper weight-wrapper">
+                        <input type="number" step="0.1" min="0" id="pigWeight" placeholder=" " required>
+                        <div class="unit-box">kg</div>
+                        <label for="pigWeight">Initial Weight</label>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="dialog-footer">
+                    <button type="button" class="btn btn-clear" id="clearAddPigForm">Clear</button>
+                    <button type="submit" class="btn btn-save">Save</button>
+                </div>
+
+            </form>
         </div>
-
-        <input type="text" id="finalSoldPriceDisplay" readonly class="swal-input">
-        <!-- Details area for confirmation text (per-kg info, pig count) -->
-        <div id="soldConfirmationDetails" class="sold-details" style="margin-top:12px; color:#333; font-size:14px; text-align:left;"></div>
-
-        <div class="modal-actions-inline">
-            <button type="button" class="btn-red" id="cancelSoldPrice">Cancel</button>
-            <button type="button" class="btn-green" id="confirmSoldPrice">Confirm</button>
-        </div>
-
     </div>
-</div>
 
-    <!-- =====================================
-         GENERIC CUSTOM CONFIRM MODAL
-         (used instead of SweetAlert for confirmations)
-    ===================================== -->
-    <div id="customConfirmModal" class="modal-stat swal-mimic-modal" style="display:none;" role="dialog" aria-modal="true">
-        <div class="modal-content-stat small-modal">
-            <span class="close swal-close-icon" id="closeCustomConfirm">
-                <i class="fas fa-times"></i>
-            </span>
+    <!-- ===================================================== -->
+    <!--                 PIG DETAILS (IFRAME)                  -->
+    <!-- ===================================================== -->
+    <div id="pigDetailsModal" class="modal" style="display:none;">
+        <div class="modal-content iframe-modal-content">
 
-            <div class="modal-header-sales">
-                <h3 class="weight-title" id="customConfirmTitle">Confirm</h3>
+            <!-- FIX: Close Button Added -->
+            <button class="btn-close" id="closeDetailsModal">&times;</button>
+
+            <iframe id="pigDetailsFrame" src="" frameborder="0" class="pig-details-iframe"></iframe>
+        </div>
+    </div>
+
+    <style>
+        .iframe-modal-content {
+            max-width: 1000px;
+            width: 95%;
+            height: auto;
+            padding: 0;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+        .btn-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--primary-pink);
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            width: 32px;
+            height: 32px;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 10;
+        }
+        .pig-details-iframe {
+            width: 100%;
+            height: 488px;
+            border: none;
+        }
+    </style>
+
+    <!-- ===================================================== -->
+    <!--               ADD WEIGHT MODAL (ALREADY OK)           -->
+    <!-- ===================================================== -->
+    <div class="modal" id="addWeightModal" style="display:none;">
+        <div class="modal-content weight-modal-content">
+
+            <div class="weight-modal-header">
+                <h3 class="dialog-title">Add Weight</h3>
+                <button class="modal-close-red" id="closeWeightModal">&times;</button>
             </div>
 
-            <div id="customConfirmMessage" style="color:#333; font-size:14px; min-height:48px; margin-bottom:18px; text-align:left;"></div>
+            <form id="addWeightForm">
 
-            <div style="display:flex; gap:10px; justify-content:center;">
-                <button type="button" class="btn-red" id="customConfirmCancel">No</button>
-                <button type="button" class="btn-green" id="customConfirmConfirm">Yes</button>
-            </div>
+                <!-- Weight Hint -->
+                <div id="weightHint" style="font-size: 12px; color: #999; margin-bottom: 12px; padding: 8px; background: #f9f9f9; border-radius: 4px; display: none;"></div>
+
+                <!-- Date -->
+                <div class="form-group">
+                    <div class="input-wrapper date-wrapper">
+                        <input type="date" id="newWeightDate" placeholder=" " required>
+                        <label for="newWeightDate">Date</label>
+                        <span class="calendar-icon"></span>
+                    </div>
+                </div>
+
+                <!-- Weight -->
+                <div class="form-group">
+                    <div class="input-wrapper weight-wrapper">
+                        <input type="number" step="0.1" min="0" id="newWeightValue" placeholder=" " required>
+                        <div class="unit-box">kg</div>
+                        <label for="newWeightValue">Weight</label>
+                    </div>
+                </div>
+
+                <!-- Upload Image -->
+                <div class="form-group">
+                    <label class="file-label" for="newWeightImg">
+                        <span id="fileNameDisplay">Upload Image</span>
+                        <i class="fa-solid fa-arrow-up-from-bracket"></i>
+                    </label>
+                    <input type="file" id="newWeightImg" accept="image/*" style="display:none;">
+                </div>
+
+                <div class="dialog-footer">
+                    <button type="button" class="btn btn-clear" id="clearWeightForm">Clear</button>
+                    <button type="submit" class="btn btn-save">Save</button>
+                </div>
+
+            </form>
         </div>
     </div>
 
-<!-- =====================================
-     EDIT PIG DETAILS MODAL
-===================================== -->
-<div id="editPigDetailsModal" class="modal" role="dialog" aria-modal="true">
+    <!-- ===================================================== -->
+    <!--                ADD EXPENSE MODAL                      -->
+    <!-- ===================================================== -->
+    <div class="modal" id="addExpenseModal" style="display:none;">
+        <div class="modal-content weight-modal-content">
+
+            <div class="weight-modal-header">
+                <h3 class="dialog-title">Add Expense</h3>
+                <button class="modal-close-red" id="closeExpenseModal">&times;</button>
+            </div>
+
+            <form id="addExpenseForm">
+
+                <!-- Expense Hint -->
+                <div id="expenseHint" style="font-size: 12px; color: #999; margin-bottom: 12px; padding: 8px; background: #f9f9f9; border-radius: 4px; display: none;"></div>
+
+                <!-- Date -->
+                <div class="form-group">
+                    <div class="input-wrapper date-wrapper">
+                        <input type="date" id="expenseDate" placeholder=" " required>
+                        <label for="expenseDate">Enter Date</label>
+                        <span class="calendar-icon"></span>
+                    </div>
+                </div>
+
+                <!-- Price -->
+                <div class="form-group">
+                    <div class="input-wrapper weight-wrapper">
+                        <input type="number" step="0.01" min="0" id="expensePrice" placeholder=" " required>
+                        <div class="unit-box">₱</div>
+                        <label for="expensePrice">Price</label>
+                    </div>
+                </div>
+
+                <!-- Category -->
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <select id="expenseCategory" class="form-select" required>
+                            <option value="" disabled selected></option>
+                            <option value="FEEDS">FEEDS</option>
+                            <option value="PIGLETS">PIGLETS</option>
+                            <option value="MEDICINE">MEDICINE</option>
+                            <option value="UTILITIES">Utilities</option>
+                            <option value="LABOR">Labor</option>
+                            <option value="MAINTENANCE">Maintenance</option>
+                        </select>
+                        <label for="expenseCategory">Category</label>
+                    </div>
+                </div>
+
+                <div class="dialog-footer">
+                    <button type="button" class="btn btn-clear" id="clearExpenseForm">Clear</button>
+                    <button type="submit" class="btn btn-save">Save</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- ===================================================== -->
+    <!--                ADD VACCINATION MODAL                   -->
+    <!-- ===================================================== -->
+    <div class="modal" id="addVaccinationModal" style="display:none;">
+        <div class="modal-content weight-modal-content">
+
+            <div class="weight-modal-header">
+                <h3 class="dialog-title">Add Vaccination</h3>
+                <button class="modal-close-red" id="closeVaccinationModal">&times;</button>
+            </div>
+
+            <form id="addVaccinationForm">
+
+                <!-- DATE Today -->
+                <div class="form-group">
+                    <div class="input-wrapper date-wrapper">
+                        <input type="date" id="vaccDate" placeholder=" " required>
+                        <label for="vaccDate">Date (Today)</label>
+                        <span class="calendar-icon"></span>
+                    </div>
+                </div>
+
+                <!-- Due Date -->
+                <div class="form-group">
+                    <div class="input-wrapper date-wrapper">
+                        <input type="date" id="vaccDueDate" placeholder=" " required>
+                        <label for="vaccDueDate">Due Date</label>
+                        <span class="calendar-icon"></span>
+                    </div>
+                </div>
+
+                <!-- Vaccination Type -->
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <select id="vaccType" class="form-select" required>
+                            <option value="" disabled selected></option>
+                            <option>Booster</option>
+                            <option>MLV</option>
+                            <option>Bacterine</option>
+                            <option>Toxoid</option>
+                            <option>Recombinant</option>
+                            <option>Autogenous</option>
+                        </select>
+                        <label for="vaccType">Vaccination Type</label>
+                    </div>
+                </div>
+
+                <div class="dialog-footer">
+                    <button type="button" class="btn btn-clear" id="clearVaccinationForm">Clear</button>
+                    <button type="submit" class="btn btn-save">Save</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+
+
+    <!-- ===================================================== -->
+<!--                EDIT PIG DETAILS MODAL                 -->
+<!-- ===================================================== -->
+<div class="modal" id="editPigDetailsModal" style="display:none;">
     <div class="modal-content weight-modal-content">
 
         <div class="weight-modal-header">
-            <h3 class="weight-title">Edit Pig Details</h3>
-            <button id="closeEditPigDetailsModal" class="modal-close-red">&times;</button>
+            <h3 class="dialog-title">Edit Pig Details</h3>
+            <button class="modal-close-red" id="closeEditPigDetailsModal">&times;</button>
         </div>
 
         <!-- Display Short ID -->
         <div class="edit-pig-id-display" id="editPigShortIdDisplay">
-            Editing: 1 (1)
+            Editing: -
         </div>
 
         <form id="editPigDetailsForm">
 
             <!-- Pig Name -->
-            <div class="weight-form-group">
+            <div class="form-group">
                 <div class="input-wrapper">
-                    <input type="text" id="editPigName" placeholder="Pig Name/ID" required>
-                    <label for="editPigName"></label>
+                    <input type="text" id="editPigName" placeholder=" " required>
+                    <label for="editPigName">Pig Name / ID</label>
                 </div>
             </div>
 
             <!-- Breed -->
-            <div class="weight-form-group">
-                <div class="input-wrapper select-wrapper">
-                    <select id="editPigBreed" required>
-                        <option value="Duroc">Duroc</option>
-                        <option value="Yorkshire">Yorkshire</option>
-                        <option value="Hampshire">Hampshire</option>
-                        <option value="Landrace">Landrace</option>
-                        <option value="Pietrain">Pietrain</option>
-                        <option value="Berkshire">Berkshire</option>
-                        <option value="Chester White">Chester White</option>
-                        <option value="Other">Other</option>
+            <div class="form-group">
+                <div class="input-wrapper">
+                    <select id="editPigBreed" class="form-select" required>
+                        <option value="" disabled selected></option>
+                        <option>Bokshire</option>
+                        <option>Duroc</option>
+                        <option>Hampshire</option>
+                        <option>Candrace</option>
+                        <option>Landrace</option>
+                        <option>Large White</option>
+                        <option>Large Black</option>
                     </select>
                     <label for="editPigBreed">Breed</label>
                 </div>
             </div>
 
             <!-- Gender -->
-            <div class="weight-form-group">
-                <div class="input-wrapper select-wrapper">
-                    <select id="editPigGender" required>
+            <div class="form-group">
+                <div class="input-wrapper">
+                    <select id="editPigGender" class="form-select" required>
+                        <option value="" disabled selected></option>
                         <option value="male">Male</option>
                         <option value="female">Female</option>
                     </select>
@@ -923,31 +549,281 @@
                 </div>
             </div>
 
+            <!-- Age -->
+            <div class="form-group">
+                <div class="input-wrapper">
+                    <select id="editPigAge" class="form-select" required>
+                        <option value="" disabled selected></option>
+                        <option>1</option><option>2</option><option>3</option><option>4</option>
+                        <option>5</option><option>6</option><option>7</option><option>8</option>
+                        <option>9</option><option>10</option><option>11</option><option>12</option>
+                    </select>
+                    <label for="editPigAge">Age (Months)</label>
+                </div>
+            </div>
+
             <!-- Date Acquired -->
-            <div class="weight-form-group">
+            <div class="form-group">
                 <div class="input-wrapper date-wrapper">
-                    <input type="date" id="editPigDate" required>
+                    <input type="date" id="editPigDate" placeholder=" " required>
                     <label for="editPigDate">Date Acquired</label>
                     <span class="calendar-icon"></span>
                 </div>
             </div>
 
-            <div class="weight-modal-actions">
-                <button type="button" id="cancelEditPigDetails" class="btn-gray">Cancel</button>
-                <button type="submit" class="btn-green">Save Changes</button>
+            <div class="dialog-footer">
+                <button type="button" class="btn btn-clear" id="clearEditPigDetailsForm">Clear</button>
+                <button type="submit" class="btn btn-save">Save</button>
             </div>
 
         </form>
-
     </div>
 </div>
 
 
-<!-- =====================================
-     JAVASCRIPT FILES
-===================================== -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="js/Farm.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <!-- Scripts -->
+    <script src="js/Farm.js"></script>
+    <script>
+        // Fallback/debug: ensure profile button toggles modal
+        (function(){
+            try{
+                const pb = document.getElementById('profileBtn');
+                const pm = document.getElementById('profileModal');
+                // Console info for debugging in browser
+                console.log('ProfileBtn exists:', !!pb, 'ProfileModal exists:', !!pm);
+                if(!pb || !pm) return;
+                // If external script didn't attach listeners, attach a safe fallback
+                const hasListener = pb._hasProfileListener;
+                if(!hasListener){
+                    pb.addEventListener('click', (e)=>{ e.stopPropagation(); pm.classList.toggle('open'); });
+                    document.addEventListener('click', ()=> pm.classList.remove('open'));
+                    pb._hasProfileListener = true;
+                }
+            }catch(err){ console.warn('Profile modal fallback error:', err); }
+        })();
+    </script>
+
+
+
+    <!-- ===================================================== -->
+<!--                 GLOBAL ALERT MODAL                    -->
+<!-- ===================================================== -->
+<div id="alertModal" class="modal alert-modal" style="display:none;">
+    <div class="modal-content alert-modal-content">
+        <div class="alert-icon-wrapper">
+            <i id="alertIcon" class="fa-solid fa-check"></i>
+        </div>
+
+        <p id="alertMessage" class="alert-message">
+            This is an alert message.
+        </p>
+
+        <div class="alert-buttons-wrapper">
+            <button id="alertOkBtn" class="alert-ok-btn">
+                OK
+            </button>
+            <button id="alertUndoBtn" class="alert-undo-btn" style="display:none;">
+                Undo
+            </button>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- =========================================================
+     CHANGE STATUS MODAL (Dynamic Content)
+========================================================= -->
+<div id="statusModal" class="modal status-modal">
+    <div class="status-modal-card" id="statusModalContent">
+        <!-- JS inserts dynamic content here -->
+    </div>
+</div>
+
+<!-- ============================
+     FARM TAB ACTIONS MODAL
+=============================== -->
+<div id="farmTabActionsModal" class="modal" style="display:none;">
+    <div class="modal-content small-modal">
+
+        <div class="weight-modal-header">
+            <h3 class="weight-title" id="farmTabActionsTitle">Farm Options</h3>
+            <button id="closeFarmTabActionsModal" class="modal-close-red">&times;</button>
+        </div>
+
+        <div class="modal-body" style="padding: 20px 0;">
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button id="farmTabRenameBtn" class="btn btn-action-modal" style="width: 100%; padding: 12px; text-align: left; border: none; background: #f5f5f5; cursor: pointer; border-radius: 6px; font-size: 14px; transition: all 0.2s ease;">
+                    <i class="fa-solid fa-pen" aria-hidden="true"></i> Rename Farm
+                </button>
+                <button id="farmTabDeleteBtn" class="btn btn-action-modal btn-danger-text" style="width: 100%; padding: 12px; text-align: left; border: none; background: #fff3f3; cursor: pointer; border-radius: 6px; font-size: 14px; color: #dc3545; transition: all 0.2s ease;">
+                    <i class="fa-solid fa-trash" aria-hidden="true"></i> Delete Farm
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ============================
+     DELETE FARM CONFIRMATION
+=============================== -->
+<div id="deleteFarmConfirmModal" class="modal">
+    <div class="modal-content small-modal">
+
+        <div class="weight-modal-header">
+            <h3 class="weight-title">Delete Farm</h3>
+            <button id="closeDeleteFarmConfirmModal" class="modal-close-red">&times;</button>
+        </div>
+
+        <p id="deleteFarmConfirmText" class="confirm-text">
+            Are you sure you want to delete this farm?
+            <br>This action cannot be undone.
+        </p>
+
+        <div style="margin-top:10px;">
+            <label for="confirmDeleteFarmInput" style="font-size:13px; color:#666; display:block; margin-bottom:6px;">Type <strong>Delete</strong> to confirm</label>
+            <input id="confirmDeleteFarmInput" type="text" placeholder="Type Delete to confirm" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+        </div>
+
+            <div class="modal-actions">
+            <button class="btn-secondary" id="cancelDeleteFarm">Cancel</button>
+            <button class="btn-danger btn-delete-farm" id="confirmDeleteFarm" disabled><i class="fa-solid fa-trash" aria-hidden="true"></i> Delete</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- ============================
+     RENAME FARM MODAL
+=============================== -->
+<div id="renameFarmModal" class="modal">
+    <div class="modal-content small-modal">
+
+        <div class="weight-modal-header">
+            <h3 class="weight-title">Rename Farm</h3>
+            <button id="closeRenameFarmModal" class="modal-close-red">&times;</button>
+        </div>
+
+        <form id="renameFarmForm">
+            <div class="weight-form-group">
+                <div class="input-wrapper">
+                    <input type="text" id="newFarmName" placeholder=" " required>
+                    <label for="newFarmName">Farm Name</label>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="cancelRenameFarm">Cancel</button>
+                <button type="submit" class="btn-primary">Save</button>
+            </div>
+        </form>
+        
+    </div>
+</div>
+
+
+<!-- ============================
+     DELETE PIG CONFIRMATION
+=============================== -->
+<div id="deletePigConfirmModal" class="modal">
+    <div class="modal-content small-modal">
+
+        <div class="weight-modal-header">
+            <h3 class="weight-title">Delete Pig</h3>
+            <button id="closeDeletePigConfirmModal" class="modal-close-red">&times;</button>
+        </div>
+
+        <p id="deletePigConfirmText" class="confirm-text">
+            Are you sure you want to delete this pig?<br>This action cannot be undone.
+        </p>
+
+        <div style="margin-top:10px;">
+            <label for="confirmDeletePigInput" style="font-size:13px; color:#666; display:block; margin-bottom:6px;">Type <strong>Delete</strong> to confirm</label>
+            <input id="confirmDeletePigInput" type="text" placeholder="Type Delete to confirm" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+        </div>
+
+        <div class="modal-actions" style="margin-top:16px;">
+            <button class="btn-secondary" id="cancelDeletePig">Cancel</button>
+            <button class="btn-danger btn-delete-pig" id="confirmDeletePig" disabled><i class="fa-solid fa-trash" aria-hidden="true"></i> Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================
+     DELETE RECORD CONFIRMATION MODAL
+=============================== -->
+<div id="deleteRecordConfirmModal" class="modal" style="display:none;">
+    <div class="modal-content small-modal">
+
+        <div class="weight-modal-header">
+            <h3 class="weight-title" id="deleteRecordTitle">Delete Record</h3>
+            <button id="closeDeleteRecordConfirmModal" class="modal-close-red">&times;</button>
+        </div>
+
+        <p id="deleteRecordConfirmText" class="confirm-text">
+            Are you sure you want to delete this record?<br>This action cannot be undone.
+        </p>
+
+        <div class="modal-actions" style="margin-top:16px;">
+            <button class="btn-secondary" id="cancelDeleteRecord">Cancel</button>
+            <button class="btn-danger" id="confirmDeleteRecord"><i class="fa-solid fa-trash" aria-hidden="true"></i> Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- Profile Modal -->
+        <div class="profile-modal" id="profileModal">
+            <div class="profile-modal-content">
+                <div class="profile-header">
+                    <i class="fa-solid fa-circle-user profile-avatar"></i>
+                    <p class="profile-username">Username</p>
+                </div>
+
+                <a href="ProfileSettings.html" class="profile-item profile-settings-link">
+                    <i class="fa-solid fa-gear"></i> Profile Settings
+                </a>
+
+                <div class="profile-item logout" id="logoutBtn">
+                    <i class="fa-solid fa-right-from-bracket"></i> Log Out
+                </div>
+            </div>
+        </div>
+
+        <!-- Logout Modal -->
+        <div class="logout-modal" id="logoutModal" aria-hidden="true">
+            <div class="logout-modal-dialog">
+                <h2>Confirm Logout</h2>
+                <p>Are you sure you want to log out?</p>
+                <div class="logout-modal-buttons">
+                    <button class="logout-cancel-btn" id="logoutCancelBtn">No</button>
+                    <button class="logout-confirm-btn" id="logoutConfirmBtn">Yes</button>
+                </div>
+            </div>
+        </div>
+
 
 </body>
 </html>

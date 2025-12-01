@@ -45,6 +45,8 @@ export async function getUserExpenses(userId){
 export async function getUserExpensesTable(userId) {
     const [rows] = await pool.query(`
         SELECT
+            e.ExpID AS ExpID,
+            e.PigID AS PigID,
             DATE_FORMAT(e.Date, '%Y-%m-%d') AS ExpenseDate,
             f.FarmName AS FarmName,
             p.PigName AS PigName,
@@ -63,6 +65,7 @@ export async function getUserExpensesTable(userId) {
 export async function getSoldTable(userId) {
     const [rows] = await pool.query(`
         SELECT
+        e.ExpID AS ExpID,
         DATE_FORMAT(e.Date, '%Y-%m-%d') AS DateSold,
         f.FarmName AS FarmName,
         p.PigName AS PigName,
@@ -316,4 +319,212 @@ export async function cancelSoldPig(expenseId, userId) {
     `, [pigId, userId]);
     
     return updateResult;
+}
+
+/*---------------------
+| FILTERED FUNCTIONS  |
+-------------------- */
+
+// HELPER FUNCTION: Build WHERE clause for filters
+function buildFilterWhereClause(userId, filters) {
+    let whereClause = 'WHERE f.UserID = ?';
+    const params = [userId];
+
+    if (filters.farm) {
+        whereClause += ' AND f.FarmName = ?';
+        params.push(filters.farm);
+    }
+
+    if (filters.pig) {
+        whereClause += ' AND p.PigName = ?';
+        params.push(filters.pig);
+    }
+
+    if (filters.month) {
+        whereClause += ' AND MONTH(e.Date) = ?';
+        params.push(filters.month);
+    }
+
+    if (filters.year) {
+        whereClause += ' AND YEAR(e.Date) = ?';
+        params.push(filters.year);
+    }
+
+    return { whereClause, params };
+}
+
+// FILTERED: Get user expenses with chart data (bar chart)
+export async function getUserExpensesFiltered(userId, filters = {}) {
+    const { whereClause, params } = buildFilterWhereClause(userId, filters);
+
+    const query = `
+        SELECT MONTH(e.Date) as month,
+        SUM(CASE WHEN e.Category = 'Sold' THEN e.Amount ELSE 0 END) AS income,
+        SUM(CASE WHEN e.Category != 'Sold' THEN e.Amount ELSE 0 END) AS expenses
+        FROM expenses e
+        INNER JOIN pig p ON e.PigID = p.PigID
+        INNER JOIN farm f ON p.FarmID = f.FarmID
+        ${whereClause}
+        GROUP BY MONTH(e.Date)
+        ORDER BY month
+    `;
+
+    const [rows] = await pool.query(query, params);
+
+    const result = [];
+    for (let m = 1; m <= 12; m++) {
+        const row = rows.find(r => r.month === m);
+        result.push({
+            month: m,
+            income: row?.income || 0,
+            expenses: row?.expenses || 0
+        });
+    }
+    return result;
+}
+
+// FILTERED: Get total expenses
+export async function getTotalExpensesFiltered(userId, filters = {}) {
+    const { whereClause, params } = buildFilterWhereClause(userId, filters);
+
+    const query = `
+        SELECT SUM(e.Amount) AS TotalExpense
+        FROM expenses e
+        INNER JOIN pig p ON e.PigID = p.PigID
+        INNER JOIN farm f ON p.FarmID = f.FarmID
+        ${whereClause} AND e.Category != 'Sold'
+    `;
+
+    const [rows] = await pool.query(query, params);
+    return rows;
+}
+
+// FILTERED: Get estimated income
+export async function getEstimatedIncomeFiltered(userId, filters = {}) {
+    const { whereClause, params } = buildFilterWhereClause(userId, filters);
+
+    const query = `
+        SELECT SUM(e.Amount) AS EstimatedIncome
+        FROM expenses e
+        INNER JOIN pig p ON e.PigID = p.PigID
+        INNER JOIN farm f ON p.FarmID = f.FarmID
+        ${whereClause} AND e.Category = 'Sold'
+    `;
+
+    const [rows] = await pool.query(query, params);
+    return rows;
+}
+
+// FILTERED: Get projected profit
+export async function getProjectedProfitFiltered(userId, filters = {}) {
+    const { whereClause, params } = buildFilterWhereClause(userId, filters);
+
+    const query = `
+        SELECT
+        SUM(CASE WHEN e.Category = 'Sold' THEN e.Amount ELSE 0 END) -
+        SUM(CASE WHEN e.Category != 'Sold' THEN e.Amount ELSE 0 END) AS ProjectedProfit
+        FROM expenses e
+        INNER JOIN pig p ON e.PigID = p.PigID
+        INNER JOIN farm f ON p.FarmID = f.FarmID
+        ${whereClause}
+    `;
+
+    const [rows] = await pool.query(query, params);
+    return rows;
+}
+
+// FILTERED: Feed Expenses
+export async function getFeedExpensesFiltered(userId, filters = {}) {
+    const { whereClause, params } = buildFilterWhereClause(userId, filters);
+
+    const query = `
+        SELECT SUM(e.Amount) AS TotalFeedExpenses
+        FROM expenses e
+        INNER JOIN pig p ON e.PigID = p.PigID
+        INNER JOIN farm f ON p.FarmID = f.FarmID
+        ${whereClause} AND e.Category = 'Feed'
+    `;
+
+    const [rows] = await pool.query(query, params);
+    return rows.length > 0 ? rows : [{ TotalFeedExpenses: null }];
+}
+
+// FILTERED: Medicine Expenses
+export async function getMedicineExpensesFiltered(userId, filters = {}) {
+    const { whereClause, params } = buildFilterWhereClause(userId, filters);
+
+    const query = `
+        SELECT SUM(e.Amount) AS TotalMedicineExpenses
+        FROM expenses e
+        INNER JOIN pig p ON e.PigID = p.PigID
+        INNER JOIN farm f ON p.FarmID = f.FarmID
+        ${whereClause} AND e.Category = 'Medicine'
+    `;
+
+    const [rows] = await pool.query(query, params);
+    return rows.length > 0 ? rows : [{ TotalMedicineExpenses: null }];
+}
+
+// FILTERED: Transportation Expenses
+export async function getTransportationExpensesFiltered(userId, filters = {}) {
+    const { whereClause, params } = buildFilterWhereClause(userId, filters);
+
+    const query = `
+        SELECT SUM(e.Amount) AS TotalTransportationExpenses
+        FROM expenses e
+        INNER JOIN pig p ON e.PigID = p.PigID
+        INNER JOIN farm f ON p.FarmID = f.FarmID
+        ${whereClause} AND e.Category = 'Transportation'
+    `;
+
+    const [rows] = await pool.query(query, params);
+    return rows.length > 0 ? rows : [{ TotalTransportationExpenses: null }];
+}
+
+// FILTERED: Piglets Expenses
+export async function getPigletsExpensesFiltered(userId, filters = {}) {
+    const { whereClause, params } = buildFilterWhereClause(userId, filters);
+
+    const query = `
+        SELECT SUM(e.Amount) AS TotalPigletsExpenses
+        FROM expenses e
+        INNER JOIN pig p ON e.PigID = p.PigID
+        INNER JOIN farm f ON p.FarmID = f.FarmID
+        ${whereClause} AND e.Category = 'Piglets'
+    `;
+
+    const [rows] = await pool.query(query, params);
+    return rows.length > 0 ? rows : [{ TotalPigletsExpenses: null }];
+}
+
+// FILTERED: Labor Expenses
+export async function getLaborExpensesFiltered(userId, filters = {}) {
+    const { whereClause, params } = buildFilterWhereClause(userId, filters);
+
+    const query = `
+        SELECT SUM(e.Amount) AS TotalLaborExpenses
+        FROM expenses e
+        INNER JOIN pig p ON e.PigID = p.PigID
+        INNER JOIN farm f ON p.FarmID = f.FarmID
+        ${whereClause} AND e.Category = 'Labor'
+    `;
+
+    const [rows] = await pool.query(query, params);
+    return rows.length > 0 ? rows : [{ TotalLaborExpenses: null }];
+}
+
+// FILTERED: Utilities Expenses
+export async function getUtilitiesExpensesFiltered(userId, filters = {}) {
+    const { whereClause, params } = buildFilterWhereClause(userId, filters);
+
+    const query = `
+        SELECT SUM(e.Amount) AS TotalUtilitiesExpenses
+        FROM expenses e
+        INNER JOIN pig p ON e.PigID = p.PigID
+        INNER JOIN farm f ON p.FarmID = f.FarmID
+        ${whereClause} AND e.Category = 'Utilities'
+    `;
+
+    const [rows] = await pool.query(query, params);
+    return rows.length > 0 ? rows : [{ TotalUtilitiesExpenses: null }];
 }

@@ -18,7 +18,17 @@ import {
     addNewExpense,
     editExistingExpense,
     deleteExistingExpense,
-    cancelSoldPigRecord
+    cancelSoldPigRecord,
+    getUserExpensesDataFiltered,
+    getTotalExpensesDataFiltered,
+    getEstimatedIncomeDataFiltered,
+    getProjectedProfitDataFiltered,
+    getFeedExpensesDataFiltered,
+    getMedicineExpensesDataFiltered,
+    getTransportationExpensesDataFiltered,
+    getPigletsExpensesDataFiltered,
+    getLaborExpensesDataFiltered,
+    getUtilitiesExpensesDataFiltered
 } from '../Controllers/expincController.js';
 
 const router = express.Router();
@@ -57,5 +67,19 @@ router.post('/delete-expense', deleteExistingExpense);
 // SOLD PIG MANAGEMENT ROUTES
 // ============================================
 router.post('/cancel-sold-pig', cancelSoldPigRecord);
+
+// ============================================
+// FILTERED ROUTES (with farm, pig, month, year filters)
+// ============================================
+router.post('/Expenses-Income-Filtered', getUserExpensesDataFiltered);
+router.post('/Total-Expenses-Filtered', getTotalExpensesDataFiltered);
+router.post('/Estimated-Income-Filtered', getEstimatedIncomeDataFiltered);
+router.post('/Projected-Profit-Filtered', getProjectedProfitDataFiltered);
+router.post('/Feed-Expenses-Filtered', getFeedExpensesDataFiltered);
+router.post('/Medicine-Expenses-Filtered', getMedicineExpensesDataFiltered);
+router.post('/Transportation-Expenses-Filtered', getTransportationExpensesDataFiltered);
+router.post('/Piglets-Expenses-Filtered', getPigletsExpensesDataFiltered);
+router.post('/Labor-Expenses-Filtered', getLaborExpensesDataFiltered);
+router.post('/Utilities-Expenses-Filtered', getUtilitiesExpensesDataFiltered);
 
 export default router;
