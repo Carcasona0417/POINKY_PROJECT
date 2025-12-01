@@ -76,6 +76,19 @@ let pendingDeleteData            = null;  // stores data for pending deletion co
 const getCurrentFarm = () => farms.find(farm => farm.id === currentFarmId);
 const getFarmById    = (id) => farms.find(farm => farm.id === Number(id));
 
+// Return a canonical PigID suitable for URLs: prefer pigObj.PigID when available
+function getCanonicalPigId(pigId, farmId) {
+    try {
+        if (typeof window.getPigDataById === 'function') {
+            const pigObj = window.getPigDataById(pigId, farmId);
+            if (pigObj && pigObj.PigID) return pigObj.PigID;
+        }
+    } catch (e) {
+        // ignore
+    }
+    return pigId;
+}
+
 // -------------------------
 // Persistence helpers
 // -------------------------
@@ -159,7 +172,16 @@ window.openPigDetails = function (pigId, farmId) {
     currentDetailPigId  = Number(pigId);
     currentDetailFarmId = Number(farmId);
 
-    const url = `pig-details.html?id=${encodeURIComponent(pigId)}&farm=${encodeURIComponent(farmId)}`;
+    // Prefer canonical PigID (e.g., 'P028') when available from the client-side pig object.
+    // This ensures the pig-details iframe requests the backend using the correct PigID
+    // instead of a numeric demo id which may not match DB values.
+    let canonicalPigId = pigId;
+    try {
+        const pigObj = window.getPigDataById ? window.getPigDataById(pigId, farmId) : null;
+        if (pigObj && pigObj.PigID) canonicalPigId = pigObj.PigID;
+    } catch (err) { /* ignore */ }
+
+    const url = `pig-details.html?id=${encodeURIComponent(canonicalPigId)}&farm=${encodeURIComponent(farmId)}`;
     pigDetailsFrame.src = url;
 
     // Fallback: post pig data to iframe via postMessage once it loads
@@ -767,6 +789,103 @@ document.addEventListener("DOMContentLoaded", function () {
     const tabs          = document.querySelectorAll(".tab");
     const tabAdd        = document.querySelector(".tab-add");
 
+    // Backend API base for farms
+    const FARM_API_BASE = 'http://localhost:8080/api/farm';
+    const PIG_API_BASE  = 'http://localhost:8080/api/pigs';
+
+    // Rebuild the tab buttons from `farms` array (keeps `tabAdd` present)
+    function rebuildFarmTabs() {
+        if (!tabsContainer || !tabAdd) return;
+        // remove existing farm tabs (but keep tabAdd)
+        const existing = Array.from(tabsContainer.querySelectorAll('.tab'));
+        existing.forEach(t => { if (t !== tabAdd) t.remove(); });
+
+        farms.forEach(farm => {
+            const btn = document.createElement('button');
+            btn.className = 'tab';
+            btn.setAttribute('role', 'tab');
+            btn.setAttribute('aria-selected', 'false');
+            btn.setAttribute('data-farm', farm.id);
+            btn.textContent = farm.name;
+            btn.addEventListener('click', () => switchToFarm(farm.id));
+            btn.addEventListener('dblclick', function (e) { showTabActionsDropdown(this, farm.id); e.stopPropagation(); });
+            tabsContainer.insertBefore(btn, tabAdd);
+        });
+    }
+
+    // Fetch farms for logged-in user from backend and populate local state
+    async function fetchUserFarmsFromBackend() {
+        const userID = localStorage.getItem('userID');
+        if (!userID) return;
+        try {
+            const res = await fetch(`${FARM_API_BASE}/get-user-farms`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: userID })
+            });
+            const data = await res.json();
+            if (data && data.success && Array.isArray(data.farms)) {
+                // Map server farms to local shape; keep server FarmID on `serverId`
+                farms = data.farms.map(f => ({ id: nextFarmId++, name: f.FarmName || f.name || 'Farm', pigs: [], serverId: f.FarmID || f.FarmID }));
+                computeNextIdsFromData();
+                saveFarmsToStorage();
+                rebuildFarmTabs();
+                if (farms.length) switchToFarm(farms[0].id);
+            }
+        } catch (err) {
+            console.warn('Failed to fetch farms from backend', err);
+        }
+    }
+
+    // Fetch pigs for a farm from backend (if farm has serverId). Merges server pigs with local pigs.
+    async function fetchPigsForFarm(farm) {
+        if (!farm) return;
+        if (!farm.serverId) return; // nothing to fetch
+        try {
+            const res = await fetch(`${PIG_API_BASE}/get-pigs-by-farm`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ farmId: farm.serverId })
+            });
+            const data = await res.json();
+            if (data && data.success && Array.isArray(data.pigs)) {
+                // Map server pigs to local pig objects, preserving any local-only pigs
+                const serverPigs = data.pigs.map(sp => {
+                    // create a minimal pig object compatible with existing UI
+                    const name = sp.PigName || sp.PigName || 'Pig';
+                    const localId = nextPigId++;
+                    return {
+                        id: localId,
+                        name: name,
+                        breed: sp.Breed || '',
+                        gender: sp.Gender ? sp.Gender.toLowerCase() : '',
+                        age: sp.Age || '',
+                        date: sp.Date || '',
+                        shortId: name.substring(0,3).toUpperCase(),
+                        weight: (sp.Weight !== undefined) ? `${sp.Weight}kg` : '0kg',
+                        status: (sp.PigStatus || 'growing').toLowerCase(),
+                        weightHistory: [],
+                        expenses: [],
+                        statusHistory: [],
+                        serverId: sp.PigID || sp.PigID
+                    };
+                });
+
+                // Keep local pigs that don't have serverId (unsynced ones)
+                const localOnly = (farm.pigs || []).filter(p => !p.serverId);
+
+                farm.pigs = [...serverPigs, ...localOnly];
+                computeNextIdsFromData();
+                saveFarmsToStorage();
+            }
+        } catch (err) {
+            console.warn('Failed to fetch pigs for farm from backend', err);
+        }
+    }
+
+    // Try to load farms from backend for logged-in user (non-blocking)
+    fetchUserFarmsFromBackend().catch(() => {});
+
     // Filters / search / status dropdown
     const filterItems    = document.querySelectorAll(".filter-item");
     const dropdown       = document.getElementById("statusDropdown");
@@ -981,35 +1100,72 @@ document.addEventListener("DOMContentLoaded", function () {
     // 🌾 FARM MANAGEMENT
     // =========================================================================
 
-    function addNewFarm() {
+    async function addNewFarm() {
+        const name = `Farm ${nextFarmId}`;
+        const userID = localStorage.getItem('userID');
+
+        // Attempt to create on backend if user is logged in
+        if (userID) {
+            try {
+                const res = await fetch(`${FARM_API_BASE}/add-farm`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ FarmName: name, UserID: userID })
+                });
+                const data = await res.json();
+                if (data && data.success) {
+                    const serverId = data.FarmID;
+                    const newFarm = { id: nextFarmId, name, pigs: [], serverId };
+                    farms.push(newFarm);
+                    saveFarmsToStorage();
+
+                    const newTab = document.createElement('button');
+                    newTab.className = 'tab';
+                    newTab.setAttribute('role', 'tab');
+                    newTab.setAttribute('aria-selected', 'false');
+                    newTab.setAttribute('data-farm', newFarm.id);
+                    newTab.textContent = newFarm.name;
+                    tabsContainer.insertBefore(newTab, tabAdd);
+                    newTab.addEventListener('click', () => switchToFarm(newFarm.id));
+                    newTab.addEventListener('dblclick', function (e) { showTabActionsDropdown(this, newFarm.id); e.stopPropagation(); });
+
+                    switchToFarm(newFarm.id);
+                    nextFarmId++;
+                    return;
+                }
+            } catch (err) {
+                console.warn('Failed to add farm to backend, falling back to local:', err);
+                // fall through to local-only creation
+            }
+        }
+
+        // Fallback: local-only farm (no backend or user not logged in)
         const newFarm = {
             id:   nextFarmId,
-            name: `Farm ${nextFarmId}`,
+            name,
             pigs: []
         };
 
         farms.push(newFarm);
-        // persist
         saveFarmsToStorage();
 
-        const newTab = document.createElement("button");
-        newTab.className = "tab";
-        newTab.setAttribute("role", "tab");
-        newTab.setAttribute("aria-selected", "false");
-        newTab.setAttribute("data-farm", newFarm.id);
+        const newTab = document.createElement('button');
+        newTab.className = 'tab';
+        newTab.setAttribute('role', 'tab');
+        newTab.setAttribute('aria-selected', 'false');
+        newTab.setAttribute('data-farm', newFarm.id);
         newTab.textContent = newFarm.name;
 
         tabsContainer.insertBefore(newTab, tabAdd);
 
-        newTab.addEventListener("click", () => switchToFarm(newFarm.id));
-        // double-click should open the rename/delete UI for this new farm
+        newTab.addEventListener('click', () => switchToFarm(newFarm.id));
         newTab.addEventListener('dblclick', function (e) { showTabActionsDropdown(this, newFarm.id); e.stopPropagation(); });
 
         switchToFarm(newFarm.id);
         nextFarmId++;
     }
 
-    function switchToFarm(farmId) {
+    async function switchToFarm(farmId) {
         // Use a live query so dynamically added tabs are included
         const allTabs = document.querySelectorAll('.tab');
         allTabs.forEach(tab => {
@@ -1024,6 +1180,9 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
         currentFarmId = farmId;
+        // attempt to fetch pigs from backend for this farm, then load UI
+        const farm = getFarmById(farmId);
+        await fetchPigsForFarm(farm);
         loadFarmData();
     }
 
@@ -1045,7 +1204,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (pigNameInput) pigNameInput.focus();
     }
 
-    function addNewPig(pigData) {
+    async function addNewPig(pigData) {
         const currentFarm = getCurrentFarm();
         if (!currentFarm) return;
 
@@ -1078,12 +1237,54 @@ document.addEventListener("DOMContentLoaded", function () {
             }]
         };
 
+        // If farm exists on server, attempt to create pig server-side
+        const serverFarmId = currentFarm.serverId;
+        if (serverFarmId) {
+            try {
+                const res = await fetch(`${PIG_API_BASE}/add-pig`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        PigName: newPig.name,
+                        Breed: newPig.breed,
+                        Gender: newPig.gender,
+                        Date: newPig.date,
+                        Age: newPig.age,
+                        Weight: initialWeight,
+                        FarmID: serverFarmId
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data && data.success && data.PigID) {
+                    newPig.serverId = data.PigID;
+
+                    // If server returned an inserted weight record, use it to populate UI immediately
+                    if (data.insertedWeightRecord) {
+                        const r = data.insertedWeightRecord;
+                        newPig.weightHistory = [{ date: r.Date, weight: parseFloat(r.Weight), img: r.PhotoPath || null }];
+                        newPig.weight = (r.Weight !== null && r.Weight !== undefined) ? `${parseFloat(r.Weight)}kg` : newPig.weight;
+                    } else if (data.weightHistory && Array.isArray(data.weightHistory) && data.weightHistory.length > 0) {
+                        // Use server-side weight history (normalized)
+                        newPig.weightHistory = data.weightHistory.map(w => ({ date: w.date, weight: w.weight, img: w.img || null }));
+                        const latest = newPig.weightHistory[newPig.weightHistory.length - 1];
+                        newPig.weight = latest && latest.weight ? `${latest.weight}kg` : newPig.weight;
+                    } else if (data.initialWeight !== null && data.initialWeight !== undefined) {
+                        // no weight_records but initial weight exists
+                        newPig.weightHistory = [{ date: null, weight: data.initialWeight, img: null }];
+                        newPig.weight = `${data.initialWeight}kg`;
+                    }
+                } else {
+                    console.warn('Server add-pig responded with error, adding locally', data);
+                }
+            } catch (err) {
+                console.warn('Failed to add pig to backend, adding locally', err);
+            }
+        }
+
         currentFarm.pigs.push(newPig);
         // persist new pig
         saveFarmsToStorage();
         nextPigId++;
-        // persist added pig
-        saveFarmsToStorage();
 
         loadFarmData();
     }
@@ -1278,8 +1479,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Re-open details modal & refresh iframe with correct pig/farm IDs
             if (pigDetailsModal) pigDetailsModal.style.display = "flex";
-            if (pigDetailsFrame && currentDetailPigId && currentDetailFarmId) {
-                const refreshUrl = `pig-details.html?id=${encodeURIComponent(currentDetailPigId)}&farm=${encodeURIComponent(currentDetailFarmId)}`;
+                if (pigDetailsFrame && currentDetailPigId && currentDetailFarmId) {
+                const urlId = getCanonicalPigId(currentDetailPigId, currentDetailFarmId);
+                const refreshUrl = `pig-details.html?id=${encodeURIComponent(urlId)}&farm=${encodeURIComponent(currentDetailFarmId)}`;
                 
                 // Set up postMessage to send updated pig data once iframe reloads
                 const onFrameReload = function () {
@@ -1379,7 +1581,8 @@ document.addEventListener("DOMContentLoaded", function () {
             if (editWeightModal) editWeightModal.style.display = "none";
             if (pigDetailsModal && pigDetailsFrame && currentDetailPigId && currentDetailFarmId) {
                 pigDetailsModal.style.display = "flex";
-                const refreshUrl = `pig-details.html?id=${encodeURIComponent(currentDetailPigId)}&farm=${encodeURIComponent(currentDetailFarmId)}`;
+                const urlId = getCanonicalPigId(currentDetailPigId, currentDetailFarmId);
+                const refreshUrl = `pig-details.html?id=${encodeURIComponent(urlId)}&farm=${encodeURIComponent(currentDetailFarmId)}`;
                 
                 // Set up postMessage to send updated pig data once iframe reloads
                 const onFrameReload = function () {
@@ -1427,7 +1630,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // =========================================================================
 
     if (addPigForm) {
-        addPigForm.addEventListener("submit", function (e) {
+        addPigForm.addEventListener("submit", async function (e) {
             e.preventDefault();
 
             clearFormErrors(this);
@@ -1530,7 +1733,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 initialWeight: weight
             };
 
-            addNewPig(pigData);
+            await addNewPig(pigData);
             addPigForm.reset();
             closeAllModals();
 
@@ -1658,7 +1861,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (pigDetailsModal && pigDetailsFrame && currentDetailPigId && currentDetailFarmId) {
                 pigDetailsModal.style.display = "flex";
-                const refreshUrl = `pig-details.html?id=${encodeURIComponent(currentDetailPigId)}&farm=${encodeURIComponent(currentDetailFarmId)}`;
+                const urlId = getCanonicalPigId(currentDetailPigId, currentDetailFarmId);
+                const refreshUrl = `pig-details.html?id=${encodeURIComponent(urlId)}&farm=${encodeURIComponent(currentDetailFarmId)}`;
                 
                 // Set up postMessage to send updated pig data once iframe reloads
                 const onFrameReload = function () {
@@ -1781,7 +1985,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (pigDetailsModal) pigDetailsModal.style.display = "flex";
             if (pigDetailsFrame && currentDetailPigId && currentDetailFarmId) {
-                const refreshUrl = `pig-details.html?id=${encodeURIComponent(currentDetailPigId)}&farm=${encodeURIComponent(currentDetailFarmId)}`;
+                const urlId = getCanonicalPigId(currentDetailPigId, currentDetailFarmId);
+                const refreshUrl = `pig-details.html?id=${encodeURIComponent(urlId)}&farm=${encodeURIComponent(currentDetailFarmId)}`;
                 
                 // Set up postMessage to send updated pig data once iframe reloads
                 const onFrameReload = function () {
@@ -1931,7 +2136,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (pigDetailsModal) pigDetailsModal.style.display = "flex";
             if (pigDetailsFrame && currentDetailPigId && currentDetailFarmId) {
-                const refreshUrl = `pig-details.html?id=${encodeURIComponent(currentDetailPigId)}&farm=${encodeURIComponent(currentDetailFarmId)}`;
+                const urlId = getCanonicalPigId(currentDetailPigId, currentDetailFarmId);
+                const refreshUrl = `pig-details.html?id=${encodeURIComponent(urlId)}&farm=${encodeURIComponent(currentDetailFarmId)}`;
                 
                 // Set up postMessage to send updated pig data once iframe reloads
                 const onFrameReload = function () {
@@ -3247,7 +3453,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (confirmDeleteFarmBtn) {
-        confirmDeleteFarmBtn.addEventListener('click', () => {
+        confirmDeleteFarmBtn.addEventListener('click', async () => {
             // proceed to delete currentEditFarmId
             const id = currentEditFarmId;
             if (!id) return;
@@ -3256,6 +3462,27 @@ document.addEventListener("DOMContentLoaded", function () {
             if (idx === -1) {
                 showAlert('error', 'Farm not found.');
                 return;
+            }
+
+            const farm = farms[idx];
+
+            // If this farm was created on the server, attempt server-side delete first
+            const serverId = farm.serverId;
+            if (serverId) {
+                try {
+                    const res = await fetch(`${FARM_API_BASE}/delete-farm`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ FarmID: serverId })
+                    });
+                    const data = await res.json();
+                    if (!data || !data.success) {
+                        showAlert('warning', 'Server failed to delete farm; falling back to local delete.');
+                    }
+                } catch (err) {
+                    console.warn('Server delete failed, falling back to local:', err);
+                    showAlert('warning', 'Could not contact server; deleted locally.');
+                }
             }
 
             // remove tab element
@@ -3268,6 +3495,9 @@ document.addEventListener("DOMContentLoaded", function () {
             if (currentFarmId === id) {
                 currentFarmId = farms.length > 0 ? farms[0].id : null;
             }
+
+            // persist
+            saveFarmsToStorage();
 
             if (deleteFarmConfirmModal) deleteFarmConfirmModal.style.display = 'none';
             document.body.style.overflow = 'auto';
@@ -3440,7 +3670,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     if (renameFarmForm) {
-        renameFarmForm.addEventListener('submit', function (e) {
+        renameFarmForm.addEventListener('submit', async function (e) {
             e.preventDefault();
             const name = (newFarmNameInput?.value || '').trim();
             if (!name) {
@@ -3452,11 +3682,32 @@ document.addEventListener("DOMContentLoaded", function () {
                 showAlert('error', 'Farm not found.');
                 return;
             }
-            farm.name = name;
 
-            // update tab label if it exists
+            // If farm exists on server, attempt server-side rename
+            const serverId = farm.serverId;
+            if (serverId) {
+                try {
+                    const res = await fetch(`${FARM_API_BASE}/rename-farm`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ FarmID: serverId, FarmName: name })
+                    });
+                    const data = await res.json();
+                    if (!data || !data.success) {
+                        showAlert('warning', 'Server failed to rename farm; name updated locally.');
+                    }
+                } catch (err) {
+                    console.warn('Server rename failed, updating locally:', err);
+                    showAlert('warning', 'Could not contact server; name updated locally.');
+                }
+            }
+
+            // Update local state and UI
+            farm.name = name;
             const tabEl = document.querySelector(`.tab[data-farm="${currentEditFarmId}"]`);
             if (tabEl) tabEl.textContent = name;
+
+            saveFarmsToStorage();
 
             if (renameFarmModal) renameFarmModal.style.display = 'none';
             document.body.style.overflow = 'auto';

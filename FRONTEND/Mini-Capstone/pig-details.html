@@ -462,6 +462,10 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
         document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
         btn.classList.add("active");
         document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+        // If weight tab opened, lazy-load weight history
+        if (btn.dataset.tab === 'weight') {
+            try { fetchWeightHistory(); } catch (e) { console.warn('fetchWeightHistory error', e); }
+        }
     });
 });
 
@@ -505,6 +509,7 @@ document.addEventListener("click", () => dropdown.style.display = "none");
     const btnEditPig    = document.getElementById("btnEditPig");
 
     let pigLoadedFromMessage = false;
+    let weightLoaded = false; // prevent duplicate fetches
 
     // =======================================================
     // CALL PARENT ACTION SAFE (TRY DIRECT → FALLBACK POSTMESSAGE)
@@ -586,12 +591,13 @@ document.addEventListener("click", () => dropdown.style.display = "none");
     // =======================================================
     // RENDER PIG DATA
     // =======================================================
-    function renderPig(pig) {
+    async function renderPig(pig) {
         nameEl.textContent   = pig.name;
         breedEl.textContent  = pig.breed;
         genderEl.textContent = pig.gender;
         dateEl.textContent   = pig.date;
 
+        // Initial values (may be updated after fetching server weight history)
         iwEl.textContent = pig.weightHistory?.[0]?.weight
             ? pig.weightHistory[0].weight + " kg" : "-";
 
@@ -618,29 +624,126 @@ document.addEventListener("click", () => dropdown.style.display = "none");
         }
 
         // WEIGHT TABLE
+        // Render weight table using existing pig.weightHistory (may be placeholder)
+        renderWeightSection(pig);
+
+        // Attempt to fetch authoritative weight history from server after rendering.
+        // Await it here so we have a clear stack and can handle errors synchronously.
+        try {
+            await fetchWeightHistory();
+        } catch (e) {
+            console.warn('fetchWeightHistory failed', e);
+        }
+
+
+    // Render weight UI section (initial + table) from a pig-like object with weightHistory
+    function renderWeightSection(pig) {
         weightBody.innerHTML = "";
         if (!pig.weightHistory?.length) {
             emptyRow(weightBody, 4, "No weight records.");
-        } else {
-            [...pig.weightHistory].reverse().forEach((rec, idx) => {
-                const actualIndex = pig.weightHistory.length - 1 - idx;
-                weightBody.innerHTML += `
-                    <tr>
-                        <td>${rec.date}</td>
-                        <td>${rec.weight} kg</td>
-                            <td><img src="${rec.img || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22%3E%3C/svg%3E'}" class="pig-thumb" onclick="openImageViewer(this.src)" onerror="this.style.display='none'"></td>
-                        <td>
-                            <button class="action-btn action-btn-edit" onclick="editWeightRecord(${actualIndex})" title="Edit" aria-label="Edit weight" ${isInactive ? 'disabled' : ''}>
-                                <i class="fas fa-edit" aria-hidden="true"></i>
-                            </button>
-                            <button class="action-btn action-btn-delete" onclick="deleteWeightRecord(${actualIndex})" title="Delete" aria-label="Delete weight">
-                                <i class="fas fa-trash" aria-hidden="true"></i>
-                            </button>
-                        </td>
-                    </tr>`;
-            });
+            iwEl.textContent = "-";
+            cwEl.textContent = pig.weight ? pig.weight : "-";
+            return;
         }
 
+        // Initial weight is first record
+        iwEl.textContent = pig.weightHistory[0].weight ? pig.weightHistory[0].weight + ' kg' : '-';
+
+        // Current weight is latest record
+        const latest = pig.weightHistory[pig.weightHistory.length - 1];
+        cwEl.textContent = latest && latest.weight ? `${latest.weight} kg` : (pig.weight ? pig.weight : '-');
+
+        [...pig.weightHistory].slice().reverse().forEach((rec, idx) => {
+            const actualIndex = pig.weightHistory.length - 1 - idx;
+            weightBody.innerHTML += `
+                <tr>
+                    <td>${rec.date}</td>
+                    <td>${rec.weight} kg</td>
+                    <td><img src="${rec.img || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22%3E%3C/svg%3E'}" class="pig-thumb" onclick="openImageViewer(this.src)" onerror="this.style.display='none'"></td>
+                    <td>
+                        <button class="action-btn action-btn-edit" onclick="editWeightRecord(${actualIndex})" title="Edit" aria-label="Edit weight" ${pig.status === 'sold' || pig.status === 'deceased' ? 'disabled' : ''}>
+                            <i class="fas fa-edit" aria-hidden="true"></i>
+                        </button>
+                        <button class="action-btn action-btn-delete" onclick="deleteWeightRecord(${actualIndex})" title="Delete" aria-label="Delete weight">
+                            <i class="fas fa-trash" aria-hidden="true"></i>
+                        </button>
+                    </td>
+                </tr>`;
+        });
+    }
+
+    // Fetch weight history from backend for current pig and render
+    async function fetchWeightHistory() {
+        if (weightLoaded) return;
+        try {
+            // Try multiple candidate API bases in order: parent origin, page origin, fallback localhost:8080.
+            // This avoids calling a static dev server (e.g. Live Server on :5501) which doesn't expose /api.
+            let candidates = [];
+            let parentOrigin = null;
+            try {
+                parentOrigin = window.parent && window.parent.location && window.parent.location.origin;
+                if (parentOrigin && parentOrigin !== 'null') candidates.push(parentOrigin);
+            } catch (e) { parentOrigin = null; }
+            let pageOrigin = null;
+            try {
+                pageOrigin = (window.location && window.location.origin && window.location.origin !== 'null') ? window.location.origin : null;
+                if (pageOrigin) candidates.push(pageOrigin);
+            } catch (e) { pageOrigin = null; }
+            // default backend fallback
+            const backendFallback = 'http://localhost:8080';
+            candidates.push(backendFallback);
+            // dedupe while preserving order
+            candidates = candidates.filter((v,i,a) => a.indexOf(v) === i);
+            // If page is served by a Live Server (common ports 5500/5501), prefer the backendFallback first
+            const isLiveServer = pageOrigin && (pageOrigin.includes(':5500') || pageOrigin.includes(':5501'));
+            if (isLiveServer) {
+                candidates = candidates.filter(c => c !== backendFallback);
+                candidates.unshift(backendFallback);
+            }
+            console.debug('fetchWeightHistory: API candidates', candidates);
+
+            let res = null;
+            let usedBase = null;
+            for (const base of candidates) {
+                const url = `${base.replace(/\/$/, '')}/api/pigs/${encodeURIComponent(pigId)}/weights`;
+                try {
+                    // attempt fetch; if it fails or returns non-ok, try next candidate
+                    const attempt = await fetch(url, { method: 'GET' });
+                    if (attempt && attempt.ok) {
+                        res = attempt;
+                        usedBase = base;
+                        break;
+                    } else {
+                        // log non-ok status and continue
+                        console.debug('fetchWeightHistory: %s responded %s', url, attempt.status);
+                    }
+                } catch (err) {
+                    // network/CORS error — try next candidate
+                    console.debug('fetchWeightHistory: failed to reach %s — %o', url, err && err.message);
+                }
+            }
+            if (!res) throw new Error('Failed to fetch weight history from any API base');
+            const data = await res.json();
+            console.debug('fetchWeightHistory: using API base', usedBase, data && data.success ? 'success' : 'no-data');
+            if (data && data.success) {
+                // Normalize: data.weightHistory is expected array
+                const ph = { weightHistory: data.weightHistory || [], weight: null, status: null };
+                // set weight string if available (latest)
+                if (ph.weightHistory.length > 0) {
+                    const latest = ph.weightHistory[ph.weightHistory.length - 1];
+                    ph.weight = latest.weight ? `${latest.weight} kg` : null;
+                } else if (data.initialWeight !== null && data.initialWeight !== undefined) {
+                    ph.weightHistory = [{ date: null, weight: data.initialWeight, img: null }];
+                    ph.weight = `${data.initialWeight} kg`;
+                }
+                renderWeightSection(ph);
+                // mark loaded only after successful render
+                weightLoaded = true;
+            }
+        } catch (err) {
+            console.warn('fetchWeightHistory error', err);
+        }
+    }
         // EXPENSES TABLE
         expenseBody.innerHTML = "";
         if (!pig.expenses?.length) {

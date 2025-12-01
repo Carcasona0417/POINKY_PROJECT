@@ -42,3 +42,19 @@ export async function getUserFarms(userId) {
 }
 
 // ADD delete and edit
+
+export async function renameFarm(FarmID, FarmName) {
+    const [result] = await pool.query(
+        `UPDATE farm SET FarmName = ? WHERE FarmID = ?`,
+        [FarmName, FarmID]
+    );
+    return result;
+}
+
+export async function deleteFarm(FarmID) {
+    const [result] = await pool.query(
+        `DELETE FROM farm WHERE FarmID = ?`,
+        [FarmID]
+    );
+    return result;
+}
