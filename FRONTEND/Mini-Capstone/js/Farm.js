@@ -1316,7 +1316,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Main UI buttons
     const addPigBtn       = document.getElementById("addPigBtn");
-    const notificationBtn = document.getElementById("notificationBtn");
 
     // Modals
     const addPigModal         = document.getElementById("addPigModal");
@@ -1326,7 +1325,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const addVaccinationModal = document.getElementById("addVaccinationModal");
     const pigDetailsModal     = document.getElementById("pigDetailsModal");
     const pigDetailsFrame     = document.getElementById("pigDetailsFrame");
-    const notificationModal   = document.getElementById("notificationModal");     // optional
     const editPigDetailsModal = document.getElementById("editPigDetailsModal");   // NEW
     const deletePigConfirmModal = document.getElementById("deletePigConfirmModal");
 
@@ -1496,7 +1494,6 @@ document.addEventListener("DOMContentLoaded", function () {
             addExpenseModal,
             addVaccinationModal,
             pigDetailsModal,
-            notificationModal,
             editPigDetailsModal
         ].forEach(modal => {
             if (modal) modal.style.display = "none";
@@ -1506,11 +1503,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.body.style.overflow = "auto";
     }
 
-    function openNotificationModal() {
-        if (!notificationModal) return;
-        notificationModal.style.display = "block";
-        document.body.style.overflow = "hidden";
-    }
+
 
     // =========================================================================
     // 🌾 FARM MANAGEMENT
@@ -4624,7 +4617,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Main buttons
     if (addPigBtn)       addPigBtn.addEventListener("click", openAddPigModal);
-    if (notificationBtn) notificationBtn.addEventListener("click", openNotificationModal);
 
     // =========================================================================
     // 🚀 INIT
@@ -4649,60 +4641,4 @@ document.addEventListener("DOMContentLoaded", function () {
     init();
 });  // end DOMContentLoaded
 
-// Profile Modal Setup
-document.addEventListener("DOMContentLoaded", () => {
-    const profileBtn = document.getElementById("profileBtn");
-    const profileModal = document.getElementById("profileModal");
-
-    if (!profileBtn || !profileModal) return;
-
-    profileBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        profileModal.classList.toggle("open");
-    });
-
-    profileModal.addEventListener("click", (e) => e.stopPropagation());
-
-    document.addEventListener("click", () => {
-        profileModal.classList.remove("open");
-    });
-
-    document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") profileModal.classList.remove("open");
-    });
-
-    // Logout modal handling
-    const logoutBtn = document.getElementById('logoutBtn');
-    const logoutModal = document.getElementById('logoutModal');
-    const logoutConfirmBtn = document.getElementById('logoutConfirmBtn');
-    const logoutCancelBtn = document.getElementById('logoutCancelBtn');
-
-    if (logoutBtn && logoutModal) {
-        logoutBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            profileModal.classList.remove('open');
-            logoutModal.classList.add('open');
-            logoutModal.setAttribute('aria-hidden', 'false');
-        });
-
-        if (logoutConfirmBtn) {
-            logoutConfirmBtn.addEventListener('click', () => {
-                window.location.href = 'index.html';
-            });
-        }
-
-        if (logoutCancelBtn) {
-            logoutCancelBtn.addEventListener('click', () => {
-                logoutModal.classList.remove('open');
-                logoutModal.setAttribute('aria-hidden', 'true');
-            });
-        }
-
-        logoutModal.addEventListener('click', (e) => {
-            if (e.target === logoutModal) {
-                logoutModal.classList.remove('open');
-                logoutModal.setAttribute('aria-hidden', 'true');
-            }
-        });
-    }
-});
+// Profile modal functionality removed from this file. See deleted profile scripts.

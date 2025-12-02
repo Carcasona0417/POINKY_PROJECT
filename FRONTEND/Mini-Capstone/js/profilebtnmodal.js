@@ -1,4 +1,4 @@
-// Profile Modal Setup
+// profilebtnmodal.js removed per request — profile modal behavior cleared
 document.addEventListener("DOMContentLoaded", () => {
     const profileBtn = document.getElementById("profileBtn");
     const profileModal = document.getElementById("profileModal");

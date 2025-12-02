@@ -33,6 +33,16 @@ export async function getUserReminders(userId) {
         WHERE r.UserID = ?
         ORDER BY r.Date ASC
     `, [userId]);
+        
+    const today = new Date();
+
+    rows.forEach(r => {
+        const remDate = new Date(r.Date);
+        const diff = Math.ceil((remDate - today) / (1000 * 60 * 60 * 24));
+        r.IsThreeDaysLeft = (diff === 3);
+        r.IsDueToday = (diff === 0);
+    });
+
     return rows;
 }
 

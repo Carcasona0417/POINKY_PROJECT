@@ -32,8 +32,8 @@
 # TO DO LISTS
 
 - Notification should be able to fetch data from the reminders
-- Integrate backend logic for Reminders
-- Integrate backedn logic  for expenses - this will be including CRUD !!!
+
+
 - email should only recieve @gmail none other
 - username should not store number
 - condition for 8 characters 1 special and 1 uppercase (password)
@@ -63,11 +63,13 @@
  - done with the expenses an reports display including both tables
  - added logic CRUD for expenses 
  - Fixed the filter and the edit,add,delete, and cancel has been connected to the database
+
 - done with the logic for farm 
-- done displaying farm and pigs
+- done displaying farm and pigs in farm
 - done function for adding weight pigs and farm
  
- - Done fixing the weight records and expenses records
+ - Done fixing the weight records and expenses 
+ - Done with the reminders
 
 
 # CHANGES 
