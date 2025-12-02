@@ -25,6 +25,7 @@
 - Bar Chart does not show farm expenses but it appears to be displaying feed expenses in backend ----- FIXED DURING TESTING
 - Total in the Pie chart does not concatenate ----- FIXED DURING TESTING
 - Pie chart won't show the breakdown instead it shows all in feeds ----- FIXED DURING TESTING
+
 - edit delete button are not working well in the farm page
 
 
@@ -66,6 +67,8 @@
 - done displaying farm and pigs
 - done function for adding weight pigs and farm
  
+ - Done fixing the weight records and expenses records
+
 
 # CHANGES 
 - I change the API instead of /login-register I change it into /login for login and /register for register because it's the url of each pages

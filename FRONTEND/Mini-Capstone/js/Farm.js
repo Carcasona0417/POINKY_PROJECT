@@ -284,6 +284,113 @@ async function callUpdatePigAPI(pigId, pigData) {
     }
 }
 
+// Update pig status on server (tries serverId or PigID).
+// Accepts a desiredStatus and an optional historyEntry to append server-side.
+// Returns server response or throws. If pig has no server identifier, returns null.
+async function updatePigStatusOnServer(pig, farm, desiredStatus, historyEntry) {
+    try {
+        const serverIdentifier = pig.serverId || pig.PigID;
+        if (!serverIdentifier) {
+            return null; // local-only pig; nothing to call
+        }
+
+        // Build payload expected by the server. Adjust fields if your API expects different names.
+        const payload = {
+            PigStatus: desiredStatus,
+            // If a history entry is provided, send it; otherwise send current history
+            statusHistory: (historyEntry ? (pig.statusHistory || []).concat([historyEntry]) : pig.statusHistory) || []
+        };
+
+        const result = await callUpdatePigAPI(serverIdentifier, payload);
+        return result;
+    } catch (err) {
+        console.warn('updatePigStatusOnServer error:', err);
+        throw err;
+    }
+}
+
+// Persist a status-change as an expense record on the server (best-effort).
+// amount: numeric amount (price per kg when applicable), category: display string.
+async function persistStatusExpense({ pig, farm, amount = 0, category = '', date = null }) {
+    try {
+        const actualPigId = pig.PigID || pig.serverId || pig.id;
+        if (!actualPigId) {
+            console.debug('persistStatusExpense: no pig identifier available');
+            return null;
+        }
+
+        const userId = localStorage.getItem('userID') || null;
+        const payload = {
+            PigID: actualPigId,
+            Date: date || (new Date().toISOString().split('T')[0]),
+            Amount: Number(amount) || 0,
+            Category: category || (formatStatusText(pig.status) || ''),
+            UserID: userId || undefined
+        };
+
+        // include FarmID if available (server id)
+        if (farm && (farm.serverId || farm.FarmID)) {
+            payload.FarmID = farm.serverId || farm.FarmID;
+        }
+
+        // Use same candidate-base logic as other expense calls
+        const backendFallback = 'http://localhost:8080';
+        let candidates = [];
+        try {
+            const parentOrigin = window.parent && window.parent.location && window.parent.location.origin;
+            if (parentOrigin && parentOrigin !== 'null') candidates.push(parentOrigin);
+        } catch (e) {}
+        try {
+            const pageOrigin = window.location && window.location.origin;
+            if (pageOrigin && pageOrigin !== 'null') candidates.push(pageOrigin);
+        } catch (e) {}
+        candidates.push(backendFallback);
+        candidates = candidates.filter((v,i,a) => a.indexOf(v) === i);
+        const pageOrigin = window.location && window.location.origin || '';
+        if (pageOrigin.includes(':5500') || pageOrigin.includes(':5501')) {
+            candidates = candidates.filter(c => c !== backendFallback);
+            candidates.unshift(backendFallback);
+        }
+
+        let res = null;
+        let usedBase = null;
+        let lastError = null;
+        for (const base of candidates) {
+            try {
+                const url = base.replace(/\/$/, '') + '/api/expenses-records/add-expense-for-pig';
+                const attempt = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (attempt && attempt.ok) {
+                    res = attempt;
+                    usedBase = base;
+                    break;
+                } else {
+                    const errData = await attempt.json().catch(() => null);
+                    console.debug('persistStatusExpense: non-ok response', base, attempt && attempt.status, errData);
+                }
+            } catch (err) {
+                lastError = err;
+                console.debug('persistStatusExpense: failed to reach', base, err && err.message);
+            }
+        }
+
+        const data = res ? await res.json().catch(() => null) : null;
+        if (!res) {
+            console.warn('persistStatusExpense: server failed to save expense', lastError);
+            return { success: false, error: lastError };
+        }
+
+        console.log('persistStatusExpense: saved on server via', usedBase, data);
+        return { success: true, data };
+    } catch (err) {
+        console.warn('persistStatusExpense error:', err);
+        return { success: false, error: err };
+    }
+}
+
 // API helper to delete pig
 async function callDeletePigAPI(pigId) {
     try {
@@ -1599,6 +1706,27 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const ageDisplay = pig.age ? `${pig.age} mo.` : "-";
 
+        // Compute current weight from weightHistory (preferred) otherwise fall back to pig.weight
+        let currentWeight = "-";
+        try {
+            if (Array.isArray(pig.weightHistory) && pig.weightHistory.length > 0) {
+                const last = pig.weightHistory[pig.weightHistory.length - 1].weight;
+                if (last === null || last === undefined || last === "") {
+                    currentWeight = "-";
+                } else if (typeof last === 'number') {
+                    // show one decimal when necessary, but avoid trailing .0 if integer
+                    currentWeight = `${Number(last) % 1 === 0 ? Number(last) : Number(last).toFixed(1)}kg`;
+                } else {
+                    // assume string already formatted
+                    currentWeight = String(last).toString().endsWith('kg') ? String(last) : `${String(last)}kg`;
+                }
+            } else if (pig.weight) {
+                currentWeight = pig.weight;
+            }
+        } catch (e) {
+            currentWeight = pig.weight || "-";
+        }
+
         row.innerHTML = `
             <td class="col-checkbox">
                 <input 
@@ -1615,7 +1743,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 </span>
             </td>
             <td class="col-age">${ageDisplay}</td>
-            <td class="col-weight">${pig.weight}</td>
+            <td class="col-weight">${currentWeight}</td>
             <td class="col-gender">
                 <i class="fa-solid fa-${pig.gender === "female" ? "venus" : "mars"} gender-icon ${pig.gender}"></i>
                 ${pig.gender === "female" ? "Female" : "Male"}
@@ -3246,7 +3374,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (statusModal) {
-        statusModal.addEventListener("click", (e) => {
+        statusModal.addEventListener("click", async (e) => {
             // Click outside card closes modal
             if (e.target === statusModal) {
                 closeStatusModal();
@@ -3288,12 +3416,38 @@ document.addEventListener("DOMContentLoaded", function () {
                     break;
 
                 // GROWING confirm
-                case "confirm-growing":
-                    pig.status = "growing";
-                    closeStatusModal();
-                    loadFarmData();
-                    showAlert("success", `${pig.name} changed into Growing.`);
+                case "confirm-growing": {
+                    const desiredStatus = "growing";
+                    const historyEntry = null;
+
+                    try {
+                        const res = await updatePigStatusOnServer(pig, currentFarm, desiredStatus, historyEntry);
+                        // apply locally after server confirmed (or for local-only pigs)
+                        pig.status = desiredStatus;
+                        // create expense record for this status-change (amount 0)
+                        const dateNow = new Date().toISOString().split('T')[0];
+                        const category = formatStatusText(desiredStatus);
+                        const expenseRes = await persistStatusExpense({ pig, farm: currentFarm, amount: 0, category, date: dateNow });
+
+                        // update local pig.expenses when server returned an ExpID
+                        if (!Array.isArray(pig.expenses)) pig.expenses = [];
+                        const localExp = { date: dateNow, price: 0, category };
+                        if (expenseRes && expenseRes.success && expenseRes.data && expenseRes.data.data && expenseRes.data.data.ExpID) {
+                            localExp.ExpID = expenseRes.data.data.ExpID;
+                        }
+                        pig.expenses.push(localExp);
+
+                        saveFarmsToStorage();
+                        closeStatusModal();
+                        loadFarmData();
+                        showAlert("success", `${pig.name} changed into Growing.`);
+                    } catch (err) {
+                        closeStatusModal();
+                        loadFarmData();
+                        showAlert("error", `Failed to update status on server: ${err?.message || err}`);
+                    }
                     break;
+                }
 
                 // Proceed from bulk price entry to receipt (single shared price)
                 case "proceed-sold-receipt": {
@@ -3312,12 +3466,36 @@ document.addEventListener("DOMContentLoaded", function () {
                 // (confirm-sold is handled as the final step of the 'sold' price flow)
 
                 // DECEASED confirm
-                case "confirm-deceased":
-                    pig.status = "deceased";
-                    closeStatusModal();
-                    loadFarmData();
-                    showAlert("success", `${pig.name} changed into Deceased.`);
+                case "confirm-deceased": {
+                    const desiredStatus = "deceased";
+                    const historyEntry = null;
+
+                    try {
+                        const res = await updatePigStatusOnServer(pig, currentFarm, desiredStatus, historyEntry);
+                        pig.status = desiredStatus;
+
+                        const dateNow = new Date().toISOString().split('T')[0];
+                        const category = formatStatusText(desiredStatus);
+                        const expenseRes = await persistStatusExpense({ pig, farm: currentFarm, amount: 0, category, date: dateNow });
+
+                        if (!Array.isArray(pig.expenses)) pig.expenses = [];
+                        const localExp = { date: dateNow, price: 0, category };
+                        if (expenseRes && expenseRes.success && expenseRes.data && expenseRes.data.data && expenseRes.data.data.ExpID) {
+                            localExp.ExpID = expenseRes.data.data.ExpID;
+                        }
+                        pig.expenses.push(localExp);
+
+                        saveFarmsToStorage();
+                        closeStatusModal();
+                        loadFarmData();
+                        showAlert("success", `${pig.name} changed into Deceased.`);
+                    } catch (err) {
+                        closeStatusModal();
+                        loadFarmData();
+                        showAlert("error", `Failed to update status on server: ${err?.message || err}`);
+                    }
                     break;
+                }
 
                 // TO SALE: step 1 → validate price, then show confirm price
                 case "calc-price": {
@@ -3389,34 +3567,81 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 // SOLD: final confirm from price flow (status becomes "sold")
                 case "confirm-sold": {
-                    // attach price info to statusHistory for traceability
                     const lastWeight = getLastWeight();
                     const pricePerKg = parseFloat(statusFlow.pricePerKg || 0);
                     const total = lastWeight != null ? (lastWeight * pricePerKg).toFixed(2) : null;
 
-                    pig.status = "sold";
-                    pig.statusHistory = pig.statusHistory || [];
-                    pig.statusHistory.push({
+                    const desiredStatus = "sold";
+                    const historyEntry = {
                         date: new Date().toISOString().split('T')[0],
                         status: 'sold',
                         pricePerKg: pricePerKg || null,
                         total: total || null,
                         notes: 'Sold (price set)'
-                    });
+                    };
 
-                    closeStatusModal();
-                    loadFarmData();
-                    showAlert("success", `${pig.name} changed into Sold.`);
+                    try {
+                        const res = await updatePigStatusOnServer(pig, currentFarm, desiredStatus, historyEntry);
+                        // apply locally after server confirmed (or for local-only pigs)
+                        pig.status = desiredStatus;
+                        pig.statusHistory = pig.statusHistory || [];
+                        pig.statusHistory.push(historyEntry);
+
+                        const dateNow = new Date().toISOString().split('T')[0];
+                        const category = formatStatusText(desiredStatus);
+                        const amount = pricePerKg || 0;
+                        const expenseRes = await persistStatusExpense({ pig, farm: currentFarm, amount, category, date: dateNow });
+
+                        if (!Array.isArray(pig.expenses)) pig.expenses = [];
+                        const localExp = { date: dateNow, price: amount, category };
+                        if (expenseRes && expenseRes.success && expenseRes.data && expenseRes.data.data && expenseRes.data.data.ExpID) {
+                            localExp.ExpID = expenseRes.data.data.ExpID;
+                        }
+                        pig.expenses.push(localExp);
+
+                        saveFarmsToStorage();
+                        closeStatusModal();
+                        loadFarmData();
+                        showAlert("success", `${pig.name} changed into Sold.`);
+                    } catch (err) {
+                        closeStatusModal();
+                        loadFarmData();
+                        showAlert("error", `Failed to update status on server: ${err?.message || err}`);
+                    }
                     break;
                 }
 
                 // TO SALE: final confirm (status becomes "tosale")
-                case "confirm-tosale":
-                    pig.status = "tosale";
-                    closeStatusModal();
-                    loadFarmData();
-                    showAlert("success", `${pig.name} changed into To Sale.`);
+                case "confirm-tosale": {
+                    const desiredStatus = "tosale";
+                    const historyEntry = null;
+
+                    try {
+                        const res = await updatePigStatusOnServer(pig, currentFarm, desiredStatus, historyEntry);
+                        pig.status = desiredStatus;
+
+                        const dateNow = new Date().toISOString().split('T')[0];
+                        const category = formatStatusText(desiredStatus);
+                        const expenseRes = await persistStatusExpense({ pig, farm: currentFarm, amount: 0, category, date: dateNow });
+
+                        if (!Array.isArray(pig.expenses)) pig.expenses = [];
+                        const localExp = { date: dateNow, price: 0, category };
+                        if (expenseRes && expenseRes.success && expenseRes.data && expenseRes.data.data && expenseRes.data.data.ExpID) {
+                            localExp.ExpID = expenseRes.data.data.ExpID;
+                        }
+                        pig.expenses.push(localExp);
+
+                        saveFarmsToStorage();
+                        closeStatusModal();
+                        loadFarmData();
+                        showAlert("success", `${pig.name} changed into To Sale.`);
+                    } catch (err) {
+                        closeStatusModal();
+                        loadFarmData();
+                        showAlert("error", `Failed to update status on server: ${err?.message || err}`);
+                    }
                     break;
+                }
 
                 // BULK SOLD: final confirm from receipt
                 case "confirm-sold-batch": {
