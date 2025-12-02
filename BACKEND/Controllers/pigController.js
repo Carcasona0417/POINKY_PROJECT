@@ -55,7 +55,10 @@ export const addPig = async (req,res) => {
 
     } catch (err) {
         console.error(err);
-      res.status(500).send({ success: false, message: "Error adding pig" });
+        if (err.code === 'DUPLICATE_WEIGHT_DATE') {
+            return res.status(400).json({ success: false, message: 'you cannot add records on the same day on this pig' });
+        }
+        res.status(500).send({ success: false, message: "Error adding pig" });
 
     }
 }
@@ -126,6 +129,9 @@ export const addWeightRecord = async (req, res, next) => {
         res.status(201).json({ success: true, message: 'Weight record added successfully', record: newRecord });
     } catch (err) {
         console.error('addWeightRecord error:', err.message || err);
+        if (err.code === 'DUPLICATE_WEIGHT_DATE') {
+            return res.status(400).json({ success: false, message: 'you cannot add records on the same day on this pig' });
+        }
         if (err.message?.includes('FOREIGN KEY') || err.message?.includes('Pig') || err.code === 'ER_NO_REFERENCED_ROW') {
             return res.status(404).json({ success: false, message: 'Pig not found in database' });
         }

@@ -15,6 +15,7 @@ import {
     getPigsForUser,
     getExpenseCategories,
     addExpense,
+    addExpenseforPigs,
     editExpense,
     deleteExpense,
     cancelSoldPig,
@@ -233,6 +234,23 @@ export const addNewExpense = async(req, res, next) => {
             message: 'Expense added successfully', 
             data: result 
         });
+    } catch (err) {
+        next(err);
+    }
+}
+
+// ADD NEW EXPENSE (from Farm UI for a particular pig)
+export const addExpenseForPig = async(req, res, next) => {
+    try {
+        const { PigID, Date, Amount, Category, UserID } = req.body;
+
+        // PigID is required for this flow because the farm UI attaches an expense to a pig
+        if (!PigID || !Date || !Amount || !Category) {
+            return res.status(400).json({ success: false, message: 'Missing required fields' });
+        }
+
+        const result = await addExpenseforPigs({ PigID, Date, Amount, Category, UserID });
+        res.status(201).json({ success: true, message: 'Expense added successfully', data: result });
     } catch (err) {
         next(err);
     }

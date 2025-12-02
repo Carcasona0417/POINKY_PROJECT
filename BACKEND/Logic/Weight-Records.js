@@ -34,12 +34,38 @@ export async function getNextWeightId() {
 
 // Simple function to add a weight record
 export async function addWeightRecord(pigId, weight, date, photoPath = null) {
+    // Normalize date to YYYY-MM-DD if a Date-like was provided
+    let normalizedDate = date;
+    try {
+        if (date && !(typeof date === 'string')) {
+            normalizedDate = (new Date(date)).toISOString().slice(0,10);
+        }
+    } catch (e) {
+        // keep original date; DB may validate
+    }
+
+    // Prevent duplicate weight entry for the same pig and date
+    try {
+        const [existing] = await pool.query(`
+            SELECT 1 FROM weight_records WHERE PigID = ? AND Date = ? LIMIT 1
+        `, [pigId, normalizedDate]);
+        if (existing && existing.length > 0) {
+            const err = new Error('Duplicate weight record for this pig and date');
+            err.code = 'DUPLICATE_WEIGHT_DATE';
+            throw err;
+        }
+    } catch (checkErr) {
+        // If the check threw a duplicate error, bubble it up
+        if (checkErr.code === 'DUPLICATE_WEIGHT_DATE') throw checkErr;
+        // otherwise continue — allow DB to report other errors
+    }
+
     const weightId = await getNextWeightId();
     const [result] = await pool.query(`
         INSERT INTO weight_records (WeightID, Date, Weight, PigID, PhotoPath)
         VALUES (?, ?, ?, ?, ?)
-    `, [weightId, date, weight, pigId, photoPath]);
-    return { WeightID: weightId, Date: date, Weight: parseFloat(weight), PigID: pigId, PhotoPath: photoPath };
+    `, [weightId, normalizedDate, weight, pigId, photoPath]);
+    return { WeightID: weightId, Date: normalizedDate, Weight: parseFloat(weight), PigID: pigId, PhotoPath: photoPath };
 }
 
 // Simple function to get weight history for a pig

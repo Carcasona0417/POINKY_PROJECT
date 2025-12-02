@@ -9,12 +9,16 @@ async function generateExpenseID() {
         LIMIT 1
     `);
 
-    if (rows.length === 0) return "EXP001";
+    if (rows.length === 0) return "E001";
 
-    const lastID = rows[0].ExpID; // e.g. EXP005
-    const number = parseInt(lastID.substring(3)) + 1;
+    const lastID = rows[0].ExpID; // E005
+    // Extract trailing numeric portion to support different prefixes
+    const m = String(lastID).match(/(\d+)$/);
+    const lastNum = m ? parseInt(m[1], 10) : 0;
+    const number = lastNum + 1;
 
-    return "EXP" + number.toString().padStart(3, "0");
+    // Use short 'E' prefix to match desired format like E001
+    return "E" + number.toString().padStart(3, "0");
 }
 
 // this for barchart
@@ -244,15 +248,74 @@ export function getExpenseCategories() {
 
 // ADD NEW EXPENSE
 export async function addExpense(data) {
-    const { UserID, PigID, Date, Amount, Category } = data;
+    const { UserID, PigID, FarmID, Date, Amount, Category } = data;
     
     const ExpID = await generateExpenseID();
     
+    // If FarmID is not provided, attempt to derive it from the pig record
+    let farmIdToUse = FarmID;
+    if (!farmIdToUse && PigID) {
+        const [pigRows] = await pool.query(`SELECT FarmID FROM pig WHERE PigID = ? LIMIT 1`, [PigID]);
+        if (pigRows && pigRows.length > 0) farmIdToUse = pigRows[0].FarmID;
+    }
+
     const [result] = await pool.query(`
-        INSERT INTO expenses (ExpID, UserID, PigID, Date, Amount, Category)
-        VALUES (?, ?, ?, ?, ?, ?)
-    `, [ExpID, UserID, PigID, Date, Amount, Category]);
+        INSERT INTO expenses (ExpID, UserID, PigID, FarmID, Date, Amount, Category)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, [ExpID, UserID, PigID, farmIdToUse, Date, Amount, Category]);
     
+    return { ...result, ExpID };
+}
+
+// ADD EXPENSE FOR PIGS (used by Farm UI where pig context is known)
+export async function addExpenseforPigs(data) {
+    const { PigID, Date, Amount, Category, UserID } = data;
+
+    // PigID is required because the farm UI adds expense for a specific pig
+    if (!PigID) {
+        throw new Error('PigID is required to add an expense for a pig');
+    }
+
+    // Determine user if not provided by looking up the pig -> farm -> user
+    let userId = UserID;
+    if (!userId) {
+        const [rows] = await pool.query(`
+            SELECT f.UserID
+            FROM pig p
+            JOIN farm f ON p.FarmID = f.FarmID
+            WHERE p.PigID = ?
+            LIMIT 1
+        `, [PigID]);
+
+        if (!rows || rows.length === 0) {
+            throw new Error('Unable to determine user for provided PigID');
+        }
+
+        userId = rows[0].UserID;
+    }
+
+    const ExpID = await generateExpenseID();
+
+    // Determine FarmID for this pig so the expense can reference it
+    const [pigRows] = await pool.query(`SELECT FarmID FROM pig WHERE PigID = ? LIMIT 1`, [PigID]);
+    const farmId = (pigRows && pigRows.length > 0) ? pigRows[0].FarmID : null;
+
+    const [result] = await pool.query(`
+        INSERT INTO expenses (ExpID, UserID, PigID, FarmID, Date, Amount, Category)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, [ExpID, userId, PigID, farmId, Date, Amount, Category]);
+
+    // If this expense marks the pig as sold, update pig status as well
+    if (Category === 'Sold') {
+        await pool.query(`
+            UPDATE pig
+            SET PigStatus = 'Sold'
+            WHERE PigID = ? AND FarmID IN (
+                SELECT FarmID FROM farm WHERE UserID = ?
+            )
+        `, [PigID, userId]);
+    }
+
     return { ...result, ExpID };
 }
 

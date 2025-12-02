@@ -25,7 +25,7 @@
 - Bar Chart does not show farm expenses but it appears to be displaying feed expenses in backend ----- FIXED DURING TESTING
 - Total in the Pie chart does not concatenate ----- FIXED DURING TESTING
 - Pie chart won't show the breakdown instead it shows all in feeds ----- FIXED DURING TESTING
--
+- edit delete button are not working well in the farm page
 
 
 # TO DO LISTS
@@ -62,6 +62,9 @@
  - done with the expenses an reports display including both tables
  - added logic CRUD for expenses 
  - Fixed the filter and the edit,add,delete, and cancel has been connected to the database
+- done with the logic for farm 
+- done displaying farm and pigs
+- done function for adding weight pigs and farm
  
 
 # CHANGES 

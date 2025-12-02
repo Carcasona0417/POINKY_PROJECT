@@ -156,7 +156,7 @@ window.openPigDetails = function (pigId, farmId) {
 
     if (!pigDetailsModal || !pigDetailsFrame) return;
 
-    currentDetailPigId  = Number(pigId);
+    currentDetailPigId  = pigId;
     currentDetailFarmId = Number(farmId);
 
     const url = `pig-details.html?id=${encodeURIComponent(pigId)}&farm=${encodeURIComponent(farmId)}`;
@@ -205,7 +205,7 @@ window.openAddWeightFromDetails = function (pigId, farmId) {
 
     if (!addWeightModal) return;
 
-    currentDetailPigId  = Number(pigId);
+    currentDetailPigId  = pigId;
     currentDetailFarmId = Number(farmId);
 
     // Hide details while editing weight
@@ -235,7 +235,7 @@ window.openAddExpenseFromDetails = function (pigId, farmId) {
 
     if (!addExpenseModal) return;
 
-    currentDetailPigId  = Number(pigId);
+    currentDetailPigId  = pigId;
     currentDetailFarmId = Number(farmId);
 
     if (pigDetailsModal) pigDetailsModal.style.display = "none";
@@ -258,7 +258,7 @@ window.openAddVaccinationFromDetails = function (pigId, farmId) {
 
     if (!addVaccinationModal) return;
 
-    currentDetailPigId  = Number(pigId);
+    currentDetailPigId  = pigId;
     currentDetailFarmId = Number(farmId);
 
     if (pigDetailsModal) pigDetailsModal.style.display = "none";
@@ -278,7 +278,7 @@ window.openEditPigDetailsFromDetails = function (pigId, farmId) {
 
     if (!editModal) return;
 
-    currentDetailPigId  = Number(pigId);
+    currentDetailPigId  = pigId;
     currentDetailFarmId = Number(farmId);
 
     const farm = farmId ? getFarmById(farmId) : getCurrentFarm();
@@ -330,7 +330,7 @@ window.openDeletePigFromDetails = function (pigId, farmId) {
     const delModal = document.getElementById('deletePigConfirmModal');
     if (!delModal) return;
 
-    currentDetailPigId  = Number(pigId);
+    currentDetailPigId  = pigId;
     currentDetailFarmId = Number(farmId);
 
     const farm = farmId ? getFarmById(farmId) : getCurrentFarm();

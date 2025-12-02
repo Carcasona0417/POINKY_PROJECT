@@ -6,121 +6,15 @@
 
 // =========================================================================
 // 🧠 GLOBAL STATE (accessible by iframe + main page)
+// NOTE: Demo/static data removed — application will load farms/pigs
+//       from `localStorage` or the backend API. This prevents stale
+//       hard-coded values and ensures real DB data is used.
 // =========================================================================
-let farms = [
-    {
-        id: 1,
-        name: "Sunny Farm",
-        farmId: "F001",
-        pigs: [
-            {
-                id: 1,
-                name: "Bacon",
-                breed: "Yorkshire",
-                gender: "male",
-                age: "12",
-                date: "2024-12-01",
-                shortId: "BAC",
-                weight: "50.50kg",
-                status: "growing",
-                PigID: "P001",
-                weightHistory: [{ date: "2025-01-01", weight: 50.50 }],
-                expenses: [],
-                statusHistory: [{ date: "2024-12-01", status: "growing", notes: "Initial" }]
-            },
-            {
-                id: 2,
-                name: "Hamlet",
-                breed: "Berkshire",
-                gender: "male",
-                age: "10",
-                date: "2024-11-15",
-                shortId: "HAM",
-                weight: "45kg",
-                status: "growing",
-                PigID: "P002",
-                weightHistory: [{ date: "2025-01-01", weight: 45 }],
-                expenses: [],
-                statusHistory: [{ date: "2024-11-15", status: "growing", notes: "Initial" }]
-            }
-        ]
-    },
-    {
-        id: 2,
-        name: "Green Pastures",
-        farmId: "F002",
-        pigs: [
-            {
-                id: 3,
-                name: "Piglet",
-                breed: "Duroc",
-                gender: "female",
-                age: "5",
-                date: "2025-02-01",
-                shortId: "PIG",
-                weight: "30kg",
-                status: "growing",
-                PigID: "P003",
-                weightHistory: [{ date: "2025-02-01", weight: 30 }],
-                expenses: [],
-                statusHistory: [{ date: "2025-02-01", status: "growing", notes: "Initial" }]
-            }
-        ]
-    },
-    {
-        id: 3,
-        name: "Abc",
-        farmId: "F003",
-        pigs: [
-            {
-                id: 4,
-                name: "Snout",
-                breed: "Hampshire",
-                gender: "female",
-                age: "8",
-                date: "2024-10-20",
-                shortId: "SNO",
-                weight: "28kg",
-                status: "growing",
-                PigID: "P004",
-                weightHistory: [{ date: "2025-01-01", weight: 28 }],
-                expenses: [],
-                statusHistory: [{ date: "2024-10-20", status: "growing", notes: "Initial" }]
-            },
-            {
-                id: 5,
-                name: "OJ",
-                breed: "Bokshire",
-                gender: "male",
-                age: "14",
-                date: "2024-09-10",
-                shortId: "OJ",
-                weight: "66kg",
-                status: "growing",
-                PigID: "P034",
-                weightHistory: [{ date: "2025-01-01", weight: 66 }],
-                expenses: [],
-                statusHistory: [{ date: "2024-09-10", status: "growing", notes: "Initial" }]
-            }
-        ]
-    },
-    { 
-        id: 4, 
-        name: "My Test Farm",
-        farmId: "F004",
-        pigs: [] 
-    },
-    { 
-        id: 5, 
-        name: "My Test Farm",
-        farmId: "F005",
-        pigs: [] 
-    }
-];
+let farms = [];
 
-let currentFarmId                = 1;
-let nextFarmId                   = 4;
-let nextPigId                    = 4; // IDs 1..3 used by demo pigs
+let currentFarmId                = null;
+let nextFarmId                   = 1;
+let nextPigId                    = 1;
 let currentDetailPigId           = null;  // pig whose details we’re viewing
 let currentDetailFarmId          = null;  // farm of that pig
 let currentEditWeightRecordIndex = null;
@@ -132,6 +26,17 @@ let pendingDeleteData            = null;  // stores data for pending deletion co
 // Helpers usable everywhere
 const getCurrentFarm = () => farms.find(farm => farm.id === currentFarmId);
 const getFarmById    = (id) => farms.find(farm => farm.id === Number(id));
+
+// Robust pig object lookup inside a farm: match local numeric id, PigID, or serverId
+function findPigObj(farm, pigId) {
+    if (!farm || !Array.isArray(farm.pigs)) return null;
+    return farm.pigs.find(p => (
+        p.id === Number(pigId) ||
+        p.PigID === pigId ||
+        p.serverId === pigId ||
+        String(p.id) === String(pigId)
+    ));
+}
 
 // Return a canonical PigID suitable for URLs: prefer pigObj.PigID when available
 function getCanonicalPigId(pigId, farmId) {
@@ -461,7 +366,8 @@ window.openPigDetails = function (pigId, farmId) {
 
     if (!pigDetailsModal || !pigDetailsFrame) return;
 
-    currentDetailPigId  = Number(pigId);
+    // Preserve original pig identifier: it can be a numeric local id OR a server PigID string
+    currentDetailPigId  = pigId;
     currentDetailFarmId = Number(farmId);
 
     // Prefer canonical PigID (e.g., 'P028') when available from the client-side pig object.
@@ -559,7 +465,8 @@ window.openAddExpenseFromDetails = function (pigId, farmId) {
 
     if (!addExpenseModal) return;
 
-    currentDetailPigId  = Number(pigId);
+    // preserve original pig identifier (may be numeric id or server PigID like 'P036')
+    currentDetailPigId  = pigId;
     currentDetailFarmId = Number(farmId);
 
     if (pigDetailsModal) pigDetailsModal.style.display = "none";
@@ -582,7 +489,7 @@ window.openAddVaccinationFromDetails = function (pigId, farmId) {
 
     if (!addVaccinationModal) return;
 
-    currentDetailPigId  = Number(pigId);
+    currentDetailPigId  = pigId;
     currentDetailFarmId = Number(farmId);
 
     if (pigDetailsModal) pigDetailsModal.style.display = "none";
@@ -602,7 +509,7 @@ window.openEditPigDetailsFromDetails = function (pigId, farmId) {
 
     if (!editModal) return;
 
-    currentDetailPigId  = Number(pigId);
+    currentDetailPigId  = pigId;
     currentDetailFarmId = Number(farmId);
 
     const farm = farmId ? getFarmById(farmId) : getCurrentFarm();
@@ -689,13 +596,13 @@ window.openDeletePigFromDetails = function (pigId, farmId) {
     const delModal = document.getElementById('deletePigConfirmModal');
     if (!delModal) return;
 
-    currentDetailPigId  = Number(pigId);
+    currentDetailPigId  = pigId;
     currentDetailFarmId = Number(farmId);
 
     const farm = farmId ? getFarmById(farmId) : getCurrentFarm();
     if (!farm) return;
 
-    const pig = farm.pigs.find(p => p.id === Number(pigId));
+    const pig = findPigObj(farm, pigId);
     const confirmText = document.getElementById('deletePigConfirmText');
     if (confirmText) confirmText.innerHTML = `Are you sure you want to delete <strong>${pig?.name || 'this pig'}</strong>?<br>This action cannot be undone.`;
 
@@ -718,14 +625,14 @@ window.openEditWeightFromDetails = function (pigId, farmId, data) {
     const addWeightModal = document.getElementById("addWeightModal");
     if (!addWeightModal) return;
 
-    currentDetailPigId = Number(pigId);
+    currentDetailPigId = pigId;
     currentDetailFarmId = Number(farmId);
     currentEditWeightRecordIndex = data?.index;
 
     const farm = farmId ? getFarmById(farmId) : getCurrentFarm();
     if (!farm) return;
 
-    const pig = farm.pigs.find(p => p.id === Number(pigId));
+    const pig = findPigObj(farm, pigId);
     if (!pig || currentEditWeightRecordIndex === undefined) return;
 
     const record = pig.weightHistory[currentEditWeightRecordIndex];
@@ -792,14 +699,14 @@ window.openEditExpenseFromDetails = function (pigId, farmId, data) {
     const addExpenseModal = document.getElementById("addExpenseModal");
     if (!addExpenseModal) return;
 
-    currentDetailPigId = Number(pigId);
+    currentDetailPigId = pigId;
     currentDetailFarmId = Number(farmId);
     currentEditExpenseIndex = data?.index;
 
     const farm = farmId ? getFarmById(farmId) : getCurrentFarm();
     if (!farm) return;
 
-    const pig = farm.pigs.find(p => p.id === Number(pigId));
+    const pig = findPigObj(farm, pigId);
     if (!pig || currentEditExpenseIndex === undefined) return;
 
     const record = pig.expenses[currentEditExpenseIndex];
@@ -842,7 +749,7 @@ window.deleteExpenseFromDetails = function (pigId, farmId, data) {
     const farm = farmId ? getFarmById(farmId) : getCurrentFarm();
     if (!farm) return;
 
-    const pig = farm.pigs.find(p => p.id === Number(pigId));
+    const pig = findPigObj(farm, pigId);
     if (!pig) return;
 
     const index = data?.index;
@@ -863,14 +770,14 @@ window.openEditVaccinationFromDetails = function (pigId, farmId, data) {
     const addVaccinationModal = document.getElementById("addVaccinationModal");
     if (!addVaccinationModal) return;
 
-    currentDetailPigId = Number(pigId);
+    currentDetailPigId = pigId;
     currentDetailFarmId = Number(farmId);
     currentEditVaccinationIndex = data?.index;
 
     const farm = farmId ? getFarmById(farmId) : getCurrentFarm();
     if (!farm) return;
 
-    const pig = farm.pigs.find(p => p.id === Number(pigId));
+    const pig = findPigObj(farm, pigId);
     if (!pig || currentEditVaccinationIndex === undefined) return;
 
     const record = pig.vaccinations[currentEditVaccinationIndex];
@@ -899,7 +806,7 @@ window.deleteVaccinationFromDetails = function (pigId, farmId, data) {
     const farm = farmId ? getFarmById(farmId) : getCurrentFarm();
     if (!farm) return;
 
-    const pig = farm.pigs.find(p => p.id === Number(pigId));
+    const pig = findPigObj(farm, pigId);
     if (!pig) return;
 
     const index = data?.index;
@@ -1198,8 +1105,23 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             const data = await postJSON(`${FARM_API_BASE}/get-user-farms`, { userId: userID });
             if (data && data.success && Array.isArray(data.farms)) {
-            // Map server farms to local shape; keep server FarmID on `serverId`
-            farms = data.farms.map(f => ({ id: nextFarmId++, name: f.FarmName || f.name || 'Farm', pigs: [], serverId: f.FarmID }));
+                // Merge server farms with any existing local farms to preserve local pigs/expenses
+                const existingLocalFarms = Array.isArray(farms) ? farms.slice() : [];
+
+                const merged = data.farms.map(sf => {
+                    // Try to find matching local farm by serverId
+                    const existing = existingLocalFarms.find(lf => lf.serverId === sf.FarmID || lf.serverId === String(sf.FarmID));
+                    const localId = existing ? existing.id : nextFarmId++;
+                    return {
+                        id: localId,
+                        name: sf.FarmName || sf.name || (existing && existing.name) || 'Farm',
+                        // preserve existing pigs if present, otherwise start empty and let fetchPigsForFarm fill them
+                        pigs: existing?.pigs || [],
+                        serverId: sf.FarmID
+                    };
+                });
+
+                farms = merged;
                 computeNextIdsFromData();
                 saveFarmsToStorage();
                 rebuildFarmTabs();
@@ -1217,33 +1139,51 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             const data = await postJSON(`${PIG_API_BASE}/get-pigs-by-farm`, { farmId: farm.serverId });
             if (data && data.success && Array.isArray(data.pigs)) {
-                // Map server pigs to local pig objects, preserving any local-only pigs
-                const serverPigs = data.pigs.map(sp => {
-                    // create a minimal pig object compatible with existing UI
-                    const name = sp.PigName || sp.PigName || 'Pig';
-                    const localId = nextPigId++;
+                // Merge server pigs with any existing local pigs so we don't wipe
+                // out locally-stored expenses, weightHistory or statusHistory.
+                const existingLocal = Array.isArray(farm.pigs) ? farm.pigs.slice() : [];
+
+                const serverPigsMerged = data.pigs.map(sp => {
+                    const name = sp.PigName || 'Pig';
+                    // try to find an existing local pig by serverId
+                    const existing = existingLocal.find(lp => lp.serverId === sp.PigID || lp.PigID === sp.PigID);
+                    const localId = existing ? existing.id : nextPigId++;
+
+                    // Server-provided arrays (expenses) should be considered authoritative for
+                    // records that have been synced (they have an ExpID). To avoid resurrecting
+                    // records deleted on the server we replace the expense list with the
+                    // server list and only append local-only (unsynced) items which lack ExpID.
+                    const serverExpenses = Array.isArray(sp.expenses) ? sp.expenses.slice() : [];
+                    const localExpenses = Array.isArray(existing?.expenses) ? existing.expenses.slice() : [];
+                    const mergedExpenses = serverExpenses.slice();
+                    // Append only local expenses that have no ExpID (unsynced local-only items)
+                    localExpenses.forEach(e => {
+                        if (!e || !e.ExpID) mergedExpenses.push(e);
+                    });
+
                     return {
                         id: localId,
                         name: name,
-                        breed: sp.Breed || '',
-                        gender: sp.Gender ? sp.Gender.toLowerCase() : '',
-                        age: sp.Age || '',
-                        date: sp.Date || '',
+                        breed: sp.Breed || (existing && existing.breed) || '',
+                        gender: sp.Gender ? sp.Gender.toLowerCase() : (existing && existing.gender) || '',
+                        age: sp.Age || (existing && existing.age) || '',
+                        date: sp.Date || (existing && existing.date) || '',
                         shortId: name.substring(0,3).toUpperCase(),
-                    weight: sp.weight || `${sp.Weight || 0}kg`,
-                    initialWeight: sp.initialWeight || `${sp.Weight || 0}kg`,
-                        status: (sp.PigStatus || 'growing').toLowerCase(),
-                        weightHistory: sp.weightHistory || [],
-                        expenses: [],
-                        statusHistory: [],
+                        weight: existing?.weight || (sp.Weight ? `${sp.Weight}kg` : ''),
+                        initialWeight: existing?.initialWeight || (sp.Weight ? `${sp.Weight}kg` : ''),
+                        status: (sp.PigStatus || existing?.status || 'growing').toLowerCase(),
+                        weightHistory: existing?.weightHistory || sp.weightHistory || [],
+                        // use server expenses + any local-only unsynced expenses
+                        expenses: mergedExpenses,
+                        statusHistory: existing?.statusHistory || [],
                         serverId: sp.PigID || sp.PigID
                     };
                 });
 
-                // Keep local pigs that don't have serverId (unsynced ones)
-                const localOnly = (farm.pigs || []).filter(p => !p.serverId);
+                // Keep local-only pigs (those without serverId) so unsynced pigs remain
+                const localOnly = existingLocal.filter(p => !p.serverId);
 
-                farm.pigs = [...serverPigs, ...localOnly];
+                farm.pigs = [...serverPigsMerged, ...localOnly];
                 computeNextIdsFromData();
                 saveFarmsToStorage();
             }
@@ -2365,7 +2305,37 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            const pig = farm.pigs.find(p => p.id === currentDetailPigId);
+
+            // If currentDetailPigId has become the numeric NaN (e.g. due to an old file coercion),
+            // try to recover the ID from the iframe URL so the lookup can succeed.
+            if (typeof currentDetailPigId === 'number' && isNaN(currentDetailPigId)) {
+                try {
+                    const frame = document.getElementById('pigDetailsFrame');
+                    if (frame && frame.src) {
+                        const u = new URL(frame.src, window.location.href);
+                        const idFromSrc = u.searchParams.get('id');
+                        if (idFromSrc) currentDetailPigId = decodeURIComponent(idFromSrc);
+                    }
+                } catch (e) { /* ignore recovery errors */ }
+            }
+
+            // Debug: show current id and pigs list to help diagnose lookup issues
+            try {
+                console.groupCollapsed('AddExpense Debug');
+                console.log('currentDetailPigId:', currentDetailPigId);
+                console.log('farm id:', currentDetailFarmId, 'farm.pigs count:', farm.pigs.length);
+                console.log(farm.pigs.map(p => ({ id: p.id, PigID: p.PigID, serverId: p.serverId, name: p.name })));
+                console.groupEnd();
+            } catch (e) { console.warn('Debug log failed', e); }
+
+            // Robust pig lookup: match local id, server id, or PigID
+            const pig = farm.pigs.find(p => (
+                p.id === currentDetailPigId ||
+                p.PigID === currentDetailPigId ||
+                p.serverId === currentDetailPigId ||
+                String(p.id) === String(currentDetailPigId)
+            ));
+
             if (!pig) {
                 showAlert("error", "Error: Pig not found.");
                 if (addExpenseModal) addExpenseModal.style.display = "none";
@@ -2385,11 +2355,90 @@ document.addEventListener("DOMContentLoaded", function () {
             if (currentEditExpenseIndex !== null && pig.expenses[currentEditExpenseIndex]) {
                 // UPDATE existing record
                 pig.expenses[currentEditExpenseIndex] = newExpense;
+                saveFarmsToStorage();
                 showAlert("success", "Expense record updated successfully!");
             } else {
-                // ADD new record
+                // ADD new record locally
                 pig.expenses.push(newExpense);
+                saveFarmsToStorage();
                 showAlert("success", "Expense record added successfully!");
+
+                // Persist to server (best-effort)
+                (async function persistExpense() {
+                    try {
+                        const actualPigId = pig.PigID || pig.serverId || pig.id || currentDetailPigId;
+                        const payload = {
+                            PigID: actualPigId,
+                            Date: newExpense.date,
+                            Amount: newExpense.price,
+                            Category: newExpense.category
+                        };
+
+                        // Attempt POST against multiple candidate API bases to avoid
+                        // sending POSTs to the static Live Server (which returns 405).
+                        const backendFallback = 'http://localhost:8080';
+                        let candidates = [];
+                        try {
+                            const parentOrigin = window.parent && window.parent.location && window.parent.location.origin;
+                            if (parentOrigin && parentOrigin !== 'null') candidates.push(parentOrigin);
+                        } catch (e) {}
+                        try {
+                            const pageOrigin = window.location && window.location.origin;
+                            if (pageOrigin && pageOrigin !== 'null') candidates.push(pageOrigin);
+                        } catch (e) {}
+                        candidates.push(backendFallback);
+                        // dedupe preserving order
+                        candidates = candidates.filter((v, i, a) => a.indexOf(v) === i);
+                        // If served by Live Server (ports 5500/5501), prioritize backendFallback
+                        const pageOrigin = window.location && window.location.origin || '';
+                        if (pageOrigin.includes(':5500') || pageOrigin.includes(':5501')) {
+                            candidates = candidates.filter(c => c !== backendFallback);
+                            candidates.unshift(backendFallback);
+                        }
+
+                        let res = null;
+                        let usedBase = null;
+                        let lastError = null;
+                        for (const base of candidates) {
+                            try {
+                                const url = base.replace(/\/$/, '') + '/api/expenses-records/add-expense-for-pig';
+                                console.debug('Attempting expense POST to', url);
+                                const attempt = await fetch(url, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(payload)
+                                });
+                                if (attempt && attempt.ok) {
+                                    res = attempt;
+                                    usedBase = base;
+                                    break;
+                                } else {
+                                    const errData = await attempt.json().catch(() => null);
+                                    console.debug('Non-ok response from', base, attempt && attempt.status, errData);
+                                }
+                            } catch (err) {
+                                lastError = err;
+                                console.debug('Failed to reach', base, err && err.message);
+                            }
+                        }
+
+                        const data = res ? await res.json().catch(() => null) : null;
+                        if (!res) {
+                            console.warn('Server failed to save expense', lastError);
+                            showAlert('warning', 'Saved locally but failed to save on server.');
+                        } else {
+                            console.log('Expense saved on server (via', usedBase + ')', data);
+                            if (data && data.data && data.data.ExpID) {
+                                const last = pig.expenses[pig.expenses.length - 1];
+                                if (last) last.ExpID = data.data.ExpID;
+                                saveFarmsToStorage();
+                            }
+                        }
+                    } catch (err) {
+                        console.warn('Error persisting expense to server', err);
+                        showAlert('warning', 'Saved locally but server request failed.');
+                    }
+                })();
             }
 
             if (addExpenseModal) addExpenseModal.style.display = "none";
@@ -4357,7 +4406,19 @@ document.addEventListener("DOMContentLoaded", function () {
     // =========================================================================
 
     function init() {
-        loadFarmData();
+        try {
+            // Ensure we have an active farm id if any farms were loaded
+            if ((!currentFarmId || currentFarmId === null) && Array.isArray(farms) && farms.length > 0) {
+                currentFarmId = farms[0].id;
+            }
+
+            // Recompute next IDs from loaded data to avoid collisions
+            try { computeNextIdsFromData(); } catch (e) { /* non-fatal */ }
+
+            loadFarmData();
+        } catch (err) {
+            console.error('Initialization error in init():', err);
+        }
     }
 
     init();
