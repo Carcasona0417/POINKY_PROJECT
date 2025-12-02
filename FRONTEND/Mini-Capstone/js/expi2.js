@@ -203,11 +203,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const farmsData = await farmsRes.json();
 
-            // Fetch pigs
+            // Determine currently selected farm (may be empty on initial load)
+            const farmId = farmSelect ? (farmSelect.value || null) : null;
+
+            // Fetch pigs (optionally filtered by farm)
             const pigsRes = await fetch('http://localhost:8080/api/expenses-records/dropdown-pigs', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ userId })
+                body: JSON.stringify({ userId, farmId })
             });
             const pigsData = await pigsRes.json();
 
@@ -238,6 +241,33 @@ document.addEventListener('DOMContentLoaded', () => {
                     option.value = pig.PigID;
                     option.textContent = `${pig.PigName} (${pig.FarmName})`;
                     pigSelect.appendChild(option);
+                });
+            }
+
+            // When user changes farm in the modal, re-fetch pigs filtered by that farm
+            if (farmSelect && !farmSelect.dataset.modalListenerAttached) {
+                farmSelect.dataset.modalListenerAttached = '1';
+                farmSelect.addEventListener('change', async function onModalFarmChange() {
+                try {
+                    const selectedFarmId = farmSelect.value || null;
+                    const resp = await fetch('http://localhost:8080/api/expenses-records/dropdown-pigs', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ userId, farmId: selectedFarmId })
+                    });
+                    const data = await resp.json();
+                    if (data.success && pigSelect) {
+                        pigSelect.innerHTML = '';
+                        data.pigs.forEach(pig => {
+                            const option = document.createElement('option');
+                            option.value = pig.PigID;
+                            option.textContent = `${pig.PigName} (${pig.FarmName})`;
+                            pigSelect.appendChild(option);
+                        });
+                    }
+                } catch (err) {
+                    console.error('Failed to re-fetch pigs for selected farm (modal):', err);
+                }
                 });
             }
 
@@ -551,24 +581,30 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const farmsData = await farmsRes.json();
             
-            // Populate farm filter
+            // Populate farm filter (use FarmID as option value so filtering works)
             const currentFarmValue = farmSelect.value;
             farmSelect.innerHTML = '<option value="">Farm</option>';
             if (farmsData.success && farmsData.farms) {
                 farmsData.farms.forEach(farm => {
                     const option = document.createElement('option');
+                    // For the filter dropdown we need the option.value to match data shown in the table
+                    // (table uses FarmName). Store the FarmID in a data attribute for API calls.
                     option.value = farm.FarmName;
+                    option.dataset.farmid = farm.FarmID;
                     option.textContent = farm.FarmName;
                     farmSelect.appendChild(option);
                 });
             }
             farmSelect.value = currentFarmValue;
 
-            // Fetch pigs from API
+            // Fetch pigs from API, sending currently selected farmId (or null)
+            // Determine farmId to send to backend from the selected option's data attribute
+            const selectedOption = farmSelect.selectedOptions && farmSelect.selectedOptions[0];
+            const selectedFilterFarmId = selectedOption ? (selectedOption.dataset.farmid || null) : null;
             const pigsRes = await fetch('http://localhost:8080/api/expenses-records/dropdown-pigs', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({userId})
+                body: JSON.stringify({ userId, farmId: selectedFilterFarmId })
             });
             const pigsData = await pigsRes.json();
 
@@ -584,6 +620,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
             pigSelect.value = currentPigValue;
+
+            // When user changes farm in the filter dropdown, re-fetch pigs for that filter
+            if (farmSelect && !farmSelect.dataset.filterListenerAttached) {
+                farmSelect.dataset.filterListenerAttached = '1';
+                farmSelect.addEventListener('change', async function onFilterFarmChange() {
+                try {
+                    // Read the FarmID from the selected option's dataset when re-fetching pigs
+                    const selOpt = farmSelect.selectedOptions && farmSelect.selectedOptions[0];
+                    const selFarm = selOpt ? (selOpt.dataset.farmid || null) : null;
+                    const r = await fetch('http://localhost:8080/api/expenses-records/dropdown-pigs', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ userId, farmId: selFarm })
+                    });
+                    const d = await r.json();
+                    if (d.success && pigSelect) {
+                        pigSelect.innerHTML = '<option value="">Pig Name/ID</option>';
+                        d.pigs.forEach(pig => {
+                            const option = document.createElement('option');
+                            option.value = pig.PigName;
+                            option.textContent = pig.PigName;
+                            pigSelect.appendChild(option);
+                        });
+                    }
+                } catch (err) {
+                    console.error('Failed to re-fetch pigs for selected farm (filter):', err);
+                }
+                });
+            }
 
             // Update month select to show month names instead of numbers
             const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
@@ -1649,7 +1714,10 @@ if (saveBtn) {
         // toggle dropdown
         filterToggle.addEventListener('click', (e) => {
             e.stopPropagation();
+            const becameVisible = !filterDropdown.classList.contains('show');
             filterDropdown.classList.toggle('show');
+            // If opening the filter dropdown, refresh its contents so listeners and options are current
+            if (becameVisible) populateFilterDropdowns();
         });
 
         // close when clicking outside

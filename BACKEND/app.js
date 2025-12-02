@@ -6,6 +6,7 @@ import dashboardRoutes from './routes/dashboardRoutes.js';
 import pigRoutes from './routes/pigRoutes.js';
 import farmRoutes from './routes/farmRoutes.js';
 import expincRoutes from './routes/expincRoutes.js';
+import remRoutes from './routes/remRoutes.js';
 
 
 import errorHandler from './middleware/errorHandler.js';
@@ -23,6 +24,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/pigs', pigRoutes);
 app.use('/api/farm', farmRoutes);
 app.use('/api/expenses-records', expincRoutes);
+app.use('/api/reminders', remRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

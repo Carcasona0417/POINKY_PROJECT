@@ -193,8 +193,8 @@ export const getFarmsDropdown = async(req, res, next) => {
 // GET PIGS FOR DROPDOWN
 export const getPigsDropdown = async(req, res, next) => {
     try {
-        const { userId } = req.body;
-        const pigs = await getPigsForUser(userId);
+        const { userId, farmId } = req.body;
+        const pigs = await getPigsForUser(userId, farmId);
         res.json({ success: true, pigs });
     } catch (err) {
         next(err);

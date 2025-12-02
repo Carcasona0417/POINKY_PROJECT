@@ -216,14 +216,23 @@ export async function getFarmsForUser(userId) {
 }
 
 // GET ALL PIGS FOR A USER (for dropdown)
-export async function getPigsForUser(userId) {
-    const [rows] = await pool.query(`
+export async function getPigsForUser(userId, farmId) {
+    // If farmId is provided, filter pigs by that farm. Otherwise return all pigs for the user.
+    let sql = `
         SELECT DISTINCT p.PigID, p.PigName, f.FarmID, f.FarmName
         FROM pig p
         INNER JOIN farm f ON p.FarmID = f.FarmID
-        WHERE f.UserID = ?
-        ORDER BY f.FarmName ASC, p.PigName ASC
-    `, [userId]);
+        WHERE f.UserID = ?`;
+
+    const params = [userId];
+    if (farmId) {
+        sql += ` AND f.FarmID = ?`;
+        params.push(farmId);
+    }
+
+    sql += `\n        ORDER BY f.FarmName ASC, p.PigName ASC`;
+
+    const [rows] = await pool.query(sql, params);
     return rows;
 }
 

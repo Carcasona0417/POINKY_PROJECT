@@ -1,4 +1,4 @@
-// Global Modals Module - Handles Notification and Profile Modals across all pages
+// Notification System
 class NotificationManager {
     constructor() {
         this.notifications = this.loadNotifications();
@@ -20,7 +20,7 @@ class NotificationManager {
                 message: "Starter feed in Agri Market.",
                 farm: "Farm 2 – Mikel",
                 date: "Sept 25",
-                read: true,
+                read: false,
                 type: "feed"
             },
             {
@@ -29,7 +29,7 @@ class NotificationManager {
                 message: "Piglets need vaccination for common diseases.",
                 farm: "Farm 1 – Main",
                 date: "Sept 28",
-                read: true,
+                read: false,
                 type: "vaccine"
             },
             {
@@ -38,7 +38,7 @@ class NotificationManager {
                 message: "Watering system needs cleaning and maintenance.",
                 farm: "Farm 2 – Mikel",
                 date: "Oct 2",
-                read: true,
+                read: false,
                 type: "maintenance"
             }
         ];
@@ -60,60 +60,35 @@ class NotificationManager {
     }
 
     setupEventListeners() {
-        // Notification icon click
-        const notificationIcon = document.getElementById('notificationIcon');
-        if (notificationIcon) {
-            notificationIcon.addEventListener('click', () => {
-                this.openModal();
-            });
-        }
+        const icon = document.getElementById('notificationIcon');
+        const modal = document.getElementById('notificationModal');
 
-        // Close modal button
-        const closeModal = document.getElementById('closeModal');
-        if (closeModal) {
-            closeModal.addEventListener('click', () => {
-                this.closeModal();
-            });
-        }
+        // Toggle modal on icon click
+        icon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            modal.classList.toggle('show');
+            if (modal.classList.contains('show')) {
+                this.renderNotifications();
+            }
+        });
 
-        // Close modal when clicking outside
-        const notificationModal = document.getElementById('notificationModal');
-        if (notificationModal) {
-            notificationModal.addEventListener('click', (e) => {
-                if (e.target.id === 'notificationModal') {
-                    this.closeModal();
-                }
-            });
-        }
+        // Close when clicking outside modal
+        document.addEventListener('click', (e) => {
+            if (!modal.contains(e.target) && !icon.contains(e.target)) {
+                modal.classList.remove('show');
+            }
+        });
 
-        // Escape key to close modal
+        // Close with Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                this.closeModal();
+                modal.classList.remove('show');
             }
         });
     }
 
-    openModal() {
-        const modal = document.getElementById('notificationModal');
-        if (modal) {
-            modal.style.display = 'block';
-            document.body.style.overflow = 'hidden';
-            this.renderNotifications();
-        }
-    }
-
-    closeModal() {
-        const modal = document.getElementById('notificationModal');
-        if (modal) {
-            modal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-    }
-
     renderNotifications() {
         const container = document.getElementById('notificationList');
-        if (!container) return;
         
         if (this.notifications.length === 0) {
             container.innerHTML = `
@@ -215,7 +190,7 @@ class NotificationManager {
     toggleDelete(id) {
         if (window.innerWidth > 768) { // Only on desktop
             const item = document.querySelector(`.notification-item[data-id="${id}"]`);
-            if (item) item.classList.toggle('show-delete');
+            item.classList.toggle('show-delete');
         }
     }
 
@@ -229,24 +204,26 @@ class NotificationManager {
 
     updateBadge() {
         const unreadCount = this.notifications.filter(n => !n.read).length;
-        const badge = document.getElementById('notificationBadge');
-        if (badge) {
-            badge.textContent = unreadCount;
-            
-            if (unreadCount === 0) {
-                badge.style.display = 'none';
-            } else {
-                badge.style.display = 'flex';
-            }
+        const badge = document.querySelector('.notificationBadge');
+        if (this.notifications.length === 0) {
+            badge.style.display = 'none';
+        } else {
+            badge.style.display = 'inline-block';
         }
     }
 
-    updateRemindersCount() {
+     updateRemindersCount() {
         const remindersCount = document.getElementById('remindersCount');
+        const upcomingReminders = document.getElementById('upcomingReminders');
+        
         if (remindersCount) {
             remindersCount.textContent = this.notifications.length;
         }
+        if (upcomingReminders) {
+            upcomingReminders.textContent = this.notifications.length;
+        }
     }
+
 
     addNotification(title, message, farm, date, type = 'general') {
         const newNotification = {
@@ -264,93 +241,71 @@ class NotificationManager {
         this.renderNotifications();
         this.updateBadge();
         this.updateRemindersCount();
-    }
+    }//end notif
+    
 }
 
-// Global Profile Modal Manager
-class ProfileModalManager {
-    constructor() {
-        this.init();
-    }
+// Initialize Notification Manager
+document.addEventListener('DOMContentLoaded', () => {
+    window.notificationManager = new NotificationManager();
+});
+// Add analytics for other expenses breakdown farm expenses: medical, transportation, others
 
-    init() {
-        this.setupEventListeners();
-    }
+// Profile Modal Setup
+document.addEventListener("DOMContentLoaded", () => {
+    const profileBtn = document.getElementById("profileBtn");
+    const profileModal = document.getElementById("profileModal");
 
-    setupEventListeners() {
-        // Profile button click
-        const profileBtn = document.getElementById('profileBtn');
-        if (profileBtn) {
-            profileBtn.addEventListener('click', () => {
-                this.openModal();
+    if (!profileBtn || !profileModal) return;
+
+    profileBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        profileModal.classList.toggle("open");
+    });
+
+    profileModal.addEventListener("click", (e) => e.stopPropagation());
+
+    document.addEventListener("click", () => {
+        profileModal.classList.remove("open");
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") profileModal.classList.remove("open");
+    });
+
+    // Logout modal handling
+    const logoutBtn = document.getElementById('logoutBtn');
+    const logoutModal = document.getElementById('logoutModal');
+    const logoutConfirmBtn = document.getElementById('logoutConfirmBtn');
+    const logoutCancelBtn = document.getElementById('logoutCancelBtn');
+
+    if (logoutBtn && logoutModal) {
+        logoutBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            profileModal.classList.remove('open');
+            logoutModal.classList.add('open');
+            logoutModal.setAttribute('aria-hidden', 'false');
+        });
+
+        if (logoutConfirmBtn) {
+            logoutConfirmBtn.addEventListener('click', () => {
+                window.location.href = 'index.html';
             });
         }
 
-        // Close modal when clicking outside
-        const profileModal = document.getElementById('profileModal');
-        if (profileModal) {
-            profileModal.addEventListener('click', (e) => {
-                if (e.target.id === 'profileModal') {
-                    this.closeModal();
-                }
+        if (logoutCancelBtn) {
+            logoutCancelBtn.addEventListener('click', () => {
+                logoutModal.classList.remove('open');
+                logoutModal.setAttribute('aria-hidden', 'true');
             });
         }
 
-        // Logout button
-        const logoutItem = document.querySelector('.profile-item.logout');
-        if (logoutItem) {
-            logoutItem.addEventListener('click', () => {
-                this.logout();
-            });
-        }
-
-        // Profile Settings button
-        const settingsItem = document.querySelector('.profile-item:not(.logout)');
-        if (settingsItem) {
-            settingsItem.addEventListener('click', () => {
-                // Navigate to profile settings page
-                window.location.href = 'profile-settings.html';
-            });
-        }
-
-        // Escape key to close modal
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.closeModal();
+        logoutModal.addEventListener('click', (e) => {
+            if (e.target === logoutModal) {
+                logoutModal.classList.remove('open');
+                logoutModal.setAttribute('aria-hidden', 'true');
             }
         });
     }
-
-    openModal() {
-        const modal = document.getElementById('profileModal');
-        if (modal) {
-            modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-    }
-
-    closeModal() {
-        const modal = document.getElementById('profileModal');
-        if (modal) {
-            modal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-    }
-
-    logout() {
-        // Clear user session
-        localStorage.removeItem('userID');
-        localStorage.removeItem('poinky-notifications');
-        // Redirect to login page
-        window.location.href = 'index.html';
-    }
-}
-
-// Initialize global managers when DOM is ready
-let notificationManager;
-let profileModalManager;
-
-document.addEventListener('DOMContentLoaded', () => {
-    notificationManager = new NotificationManager();
-    profileModalManager = new ProfileModalManager();
 });
+
