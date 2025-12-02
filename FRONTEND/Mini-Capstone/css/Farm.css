@@ -400,19 +400,20 @@ body {
 
 /* "Add Pig" main button */
 .btn-add-pig {
-    background-color: #E74A5A;
-    color: white;
+    background: #E74A5A;
     border: none;
     padding: 12px 25px;
     border-radius: 8px;
-    font-weight: 500;
-    font-family: 'Poppins', sans-serif;
-    cursor: pointer;
+    color: #fff;
+    font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 10px;
-    transition: background 0.3s;
+    gap: 8px;
+    cursor: pointer;
+    transition: .3s;
 }
+
+
 
 .btn-add-pig i {
     font-size: 14px;
@@ -603,7 +604,7 @@ body {
     border-spacing: 0;
     table-layout: fixed;
     min-width: 480px; 
-    border: 2px solid #FFB6C1;
+    border: 2px solid #000000;
     border-radius: 12px;
 }
 
