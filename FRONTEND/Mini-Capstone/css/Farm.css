@@ -1,5 +1,6 @@
+@import url('Dash.css');
 /* =========================================
-   GLOBAL VARIABLES & RESETS
+    GLOBAL VARIABLES & RESETS
 ========================================= */
 
 /* --- CSS Variables: Colors & Theme Tokens --- */
@@ -223,6 +224,7 @@ body {
     text-align: center;
     margin-top: auto;
     margin-bottom: 50px;
+    position: relative;
     z-index: 1;
 }
 
