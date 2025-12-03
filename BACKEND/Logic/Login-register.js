@@ -33,6 +33,12 @@ export async function getUserByCredentials(email) {
     return rows;
 }
 
+// Get user by UserID including password (for verification)
+export async function getUserByIdWithPassword(userId) {
+    const [rows] = await pool.query('SELECT UserID, Username, Email, Password FROM user WHERE UserID = ?', [userId]);
+    return rows && rows.length > 0 ? rows[0] : null;
+}
+
 // OTP Send Email function
 
 export async function SendOTPEmail(email){
@@ -66,4 +72,42 @@ export async function updateUserPassword(email, newPassword) {
         WHERE Email = ?`,
         [newPassword, email]);
     return result;
+}
+
+// Update password by UserID
+export async function updateUserPasswordById(userId, newPassword) {
+    const [result] = await pool.query(`
+        UPDATE user
+        SET Password = ?
+        WHERE UserID = ?
+    `, [newPassword, userId]);
+    return result;
+}
+
+// Update user's username and email by UserID
+export async function updateUserProfile(userId, username, email) {
+    if (!userId) throw new Error('UserID is required');
+    if (!username) throw new Error('Username is required');
+    if (!email) throw new Error('Email is required');
+
+    // Ensure email is not used by another user
+    const [existing] = await pool.query('SELECT UserID FROM user WHERE Email = ? AND UserID != ?', [email, userId]);
+    if (existing && existing.length > 0) {
+        throw new Error('Email already in use by another account');
+    }
+
+    const [result] = await pool.query(`
+        UPDATE user
+        SET Username = ?, Email = ?
+        WHERE UserID = ?
+    `, [username, email, userId]);
+
+    return result;
+}
+
+// Get user by UserID
+export async function getUserById(userId) {
+    if (!userId) throw new Error('UserID is required');
+    const [rows] = await pool.query('SELECT UserID, Username, Email FROM user WHERE UserID = ?', [userId]);
+    return rows && rows.length > 0 ? rows[0] : null;
 }

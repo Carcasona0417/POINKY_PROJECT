@@ -6,6 +6,8 @@ import {
     sendOTP,
     confirmOTP,
     updatePassword
+    , updateProfile,
+    getProfile
 } from '../Controllers/authController.js';
 
 const router = express.Router();
@@ -17,5 +19,7 @@ router.post('/verify-email', verifyEmail);
 router.post('/send-otp', sendOTP);
 router.post('/confirm-otp', confirmOTP);
 router.post('/update-password', updatePassword);
+router.post('/update-profile', updateProfile);
+router.post('/get-profile', getProfile);
 
 export default router;

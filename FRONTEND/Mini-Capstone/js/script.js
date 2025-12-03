@@ -315,6 +315,10 @@ if (loginForm) {
             // ADD here! Modernized alert for successful login
 
             localStorage.setItem("userID", data.user.UserID);
+            try {
+                if (data.user.Username) localStorage.setItem('username', data.user.Username);
+                if (data.user.Email) localStorage.setItem('email', data.user.Email);
+            } catch (err) { /* ignore storage errors */ }
            
             alert(data.message); 
             window.location.replace("Dashboard.html");

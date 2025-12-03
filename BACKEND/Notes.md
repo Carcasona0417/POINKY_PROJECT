@@ -32,8 +32,6 @@
 # TO DO LISTS
 
 - Notification should be able to fetch data from the reminders
-
-
 - email should only recieve @gmail none other
 - username should not store number
 - condition for 8 characters 1 special and 1 uppercase (password)
