@@ -48,21 +48,44 @@ export async function SendOTPEmail(email){
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: "oskarjene08@gmail.com",
-        pass: "dtez egni aqnt qaub"
+        user: "poinkycompany@gmail.com",
+        pass: "ipgd oset rnup ijji"
       }
     });
     
     const otp = Math.floor(100000 + Math.random() * 900000);
 
-    await transporter.sendMail({
-      to: email,    
-      subject: "Notification",
-      html: `<p>Your OTP is: <b>${otp}</b></p>`
-    });
+   await transporter.sendMail({
+    from: '"Poinky Farm Management" <no-reply@poinky.com>', // sender address
+    to: email,    
+    subject: "Your One-Time Password (OTP) Notification",
+    html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <h2 style="color: #ff6b81;">Poinky Farm Management</h2>
+            <p>Dear User,</p>
+            <p>You have requested a one-time password (OTP) for your account. Please use the OTP below to complete your action. This OTP is valid for <b>10 minutes</b>.</p>
+            
+            <p style="text-align: center; font-size: 1.5em; font-weight: bold; background-color: #f9f9f9; padding: 10px; border-radius: 5px;">
+                ${otp}
+            </p>
+
+            <p>If you did not request this, please ignore this email.</p>
+
+            <p>Thank you,<br>
+            <em>Poinky Farm Management Team</em></p>
+
+            <hr style="border: none; border-top: 1px solid #eee;">
+            <p style="font-size: 0.8em; color: #999;">
+                This is an automated message. Please do not reply to this email.
+            </p>
+        </div>
+    `
+});
+
     return otp;
 
 } 
+
 
 // function for password reset using OTP
 export async function updateUserPassword(email, newPassword) {

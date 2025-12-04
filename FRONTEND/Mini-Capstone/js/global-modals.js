@@ -1,59 +1,50 @@
 // Notification System
 class NotificationManager {
     constructor() {
-        this.notifications = this.loadNotifications();
+        this.notifications = [];
         this.init();
     }
 
-    init() {
+   async init() {
+        await this.loadNotifications();
         this.setupEventListeners();
         this.renderNotifications();
         this.updateBadge();
     }
 
-    // Sample initial notifications
-    getSampleNotifications() {
-        return [
-            {
-                id: 1,
-                title: "Buy Feed!",
-                message: "Starter feed in Agri Market.",
-                farm: "Farm 2 – Mikel",
-                date: "Sept 25",
-                read: false,
-                type: "feed"
-            },
-            {
-                id: 2,
-                title: "Vaccine Due",
-                message: "Piglets need vaccination for common diseases.",
-                farm: "Farm 1 – Main",
-                date: "Sept 28",
-                read: false,
-                type: "vaccine"
-            },
-            {
-                id: 3,
-                title: "Equipment Maintenance",
-                message: "Watering system needs cleaning and maintenance.",
-                farm: "Farm 2 – Mikel",
-                date: "Oct 2",
-                read: false,
-                type: "maintenance"
-            }
-        ];
-    }
+async loadNotifications() {
+    const userId = localStorage.getItem('userID');
 
-    loadNotifications() {
-        const saved = localStorage.getItem('poinky-notifications');
-        if (saved) {
-            return JSON.parse(saved);
-        } else {
-            const sampleNotifications = this.getSampleNotifications();
-            this.saveNotifications(sampleNotifications);
-            return sampleNotifications;
-        }
-    }
+    const res = await fetch('http://localhost:8080/api/notifications/fetch-notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+    });
+
+
+    const text = await res.text();
+    console.log("RAW RESPONSE:", text);
+    const data = JSON.parse(text); // will work ONLY if JSON is valid
+
+    
+    // Convert backend fields into your frontend structure
+    this.notifications = data.notifications.map(n => ({
+        id: n.ReminderID,
+        title: n.Title,
+        message: n.Description,
+        farm: n.FarmName,
+        date: n.Date,
+        read: false,
+        type: "reminder"
+    }));
+    
+
+    // Save to localStorage like your old logic does
+    this.saveNotifications(this.notifications);
+
+    
+}
+
 
     saveNotifications(notifications) {
         localStorage.setItem('poinky-notifications', JSON.stringify(notifications));

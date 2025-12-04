@@ -50,14 +50,3 @@ export const removeReminder = async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to delete reminder', error: err.message });
     }
 };
-
-export const notification = async (req, res) => {
-    try {
-        const { userId } = req.body;
-        const reminders = await Reminder.getUserReminders(userId);
-        const notifications = reminders.filter(r => r.IsThreeDaysLeft || r.IsDueToday);
-        res.json({ success: true, notifications });
-    } catch (err) {
-        res.status(500).json({ success: false, message: 'Failed to get notifications', error: err.message });
-    }
-};

@@ -108,7 +108,7 @@ function readFileAsDataURL(file) {
 }
 
 // API helper to call backend for weight records
-async function callWeightRecordAPI(pigId, weightData, isEdit = false) {
+async function callWeightRecordAPI(pigId, weightData, isEdit = false, weightId = null) {
     try {
         // Build candidate API bases
         let candidates = [];
@@ -133,8 +133,13 @@ async function callWeightRecordAPI(pigId, weightData, isEdit = false) {
 
         for (const base of candidates) {
             try {
-                let url = `${base.replace(/\/$/, '')}/api/pigs/${pigIdEncoded}/weights`;
-                
+                let url;
+                if (isEdit && weightId) {
+                    url = `${base.replace(/\/$/, '')}/api/pigs/${pigIdEncoded}/weights/${encodeURIComponent(weightId)}`;
+                } else {
+                    url = `${base.replace(/\/$/, '')}/api/pigs/${pigIdEncoded}/weights`;
+                }
+
                 const response = await fetch(url, {
                     method: method,
                     headers: { 'Content-Type': 'application/json' },
@@ -627,7 +632,7 @@ window.openEditPigDetailsFromDetails = function (pigId, farmId) {
 
     // Hide details while editing
     const pigDetailsModal = document.getElementById("pigDetailsModal");
-    if (pigDetailsModal) pigDetailsModal.style.display = "none";
+    if (pigDetailsModal) pigDetailsModal.style.display = "flex";
 
     // Populate form
     const nameInput   = document.getElementById("editPigName");
@@ -1061,9 +1066,26 @@ window.addEventListener("message", (ev) => {
                     window.openEditPigFromDetails(pigId, farmId);
                 }
                 break;
+            case "openEditWeightFromDetails":
+                // Some iframes post this action under "openAction" instead of
+                // the dedicated "recordAction" channel. Support both for
+                // backward-compatibility.
+                if (typeof window.openEditWeightFromDetails === "function") {
+                    const recordData = data.data || null;
+                    window.openEditWeightFromDetails(pigId, farmId, recordData);
+                }
+                break;
             case "openDeletePigFromDetails":
                 if (typeof window.openDeletePigFromDetails === "function") {
                     window.openDeletePigFromDetails(pigId, farmId);
+                }
+                break;
+            case "openDeleteRecordConfirmModal":
+                // Allow iframe to request deletion confirmation by name
+                if (typeof window.openDeleteRecordConfirmModal === "function") {
+                    const payload = data.data || {};
+                    // payload is expected to include { type, index }
+                    window.openDeleteRecordConfirmModal(payload.type, pigId, farmId, payload.index);
                 }
                 break;
             default:
@@ -1629,7 +1651,7 @@ document.addEventListener("DOMContentLoaded", function () {
             weightHistory: [{
                 date:   pigData.date,
                 weight: initialWeight,
-                img:    "Dash Icons/WPig.png"
+                img:    "dash-icons/Pig.png"
             }],
 
             expenses:      [],
@@ -1888,10 +1910,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // API call to backend
             const isEdit = currentEditWeightRecordIndex !== null && pig.weightHistory[currentEditWeightRecordIndex];
+            // Avoid sending base64 image data to server (DB has limited column length).
+            // Keep the full dataURL locally for UI, but only send a small marker or null.
+            let photoToSend = null;
+            try {
+                if (imgData && typeof imgData === 'string' && !imgData.startsWith('data:')) {
+                    photoToSend = imgData;
+                } else {
+                    // if existingImg is a filename or path, prefer it; otherwise null
+                    if (existingImg && typeof existingImg === 'string' && !existingImg.startsWith('data:')) photoToSend = existingImg;
+                    else photoToSend = null;
+                }
+            } catch (e) { photoToSend = null; }
+
             const apiPayload = {
                 weight: parseFloat(weightVal),
                 date: dateVal,
-                photoPath: imgData || (isEdit ? existingImg : null)
+                photoPath: photoToSend
             };
 
             let apiSuccess = false;
@@ -1903,7 +1938,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.log('Payload:', apiPayload);
                 
                 // Try to call backend API
-                const apiResult = await callWeightRecordAPI(actualPigId, apiPayload, isEdit);
+                let weightRecordId = null;
+                if (isEdit && pig.weightHistory && pig.weightHistory[currentEditWeightRecordIndex]) {
+                    const existing = pig.weightHistory[currentEditWeightRecordIndex];
+                    weightRecordId = existing.weightId || (`W_${existing.date}`);
+                }
+                const apiResult = await callWeightRecordAPI(actualPigId, apiPayload, isEdit, weightRecordId);
                 console.log('API Result:', apiResult);
                 apiSuccess = apiResult && apiResult.success;
                 
@@ -2326,8 +2366,27 @@ document.addEventListener("DOMContentLoaded", function () {
             pig.date    = dateVal;
             pig.shortId = nameVal.substring(0, 3).toUpperCase();
 
-            // persist the edited pig details
-            saveFarmsToStorage();
+            // Attempt to persist edited pig details to server if pig has a server identifier
+            (async function persistPigEdit() {
+                const serverId = pig.PigID || pig.serverId || null;
+                if (serverId) {
+                    try {
+                        const payload = {
+                            PigName: pig.name || undefined,
+                            Breed: pig.breed || undefined,
+                            Gender: pig.gender || undefined,
+                            Age: pig.age || undefined,
+                            Date: pig.date || undefined
+                        };
+                        await callUpdatePigAPI(serverId, payload);
+                    } catch (err) {
+                        console.warn('Failed to update pig on server, saving locally:', err);
+                        showAlert('warning', 'Could not save pig details to server; changes saved locally.');
+                    }
+                }
+                // persist locally regardless
+                saveFarmsToStorage();
+            })();
 
             if (editPigDetailsModal) editPigDetailsModal.style.display = "none";
 
@@ -3760,7 +3819,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Build simple list with pig names and weights for review
         let pigsListHtml = '';
         pigIds.forEach(pigId => {
-            const pig = farm.pigs.find(p => p.id === pigId);
+            const pig = findPigObj(farm, pigId);
             if (!pig) return;
             let currentWeight = 0;
             if (pig.weightHistory && pig.weightHistory.length > 0) {
@@ -3822,7 +3881,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let receiptRows = '';
 
         pigIds.forEach(pigId => {
-            const pig = farm.pigs.find(p => p.id === pigId);
+            const pig = findPigObj(farm, pigId);
             if (!pig) return;
 
             let currentWeight = 0;
@@ -3864,7 +3923,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 <div class="receipt-list">
                     ${pigIds.map(pigId => {
-                        const pig = farm.pigs.find(p => p.id === pigId);
+                        const pig = findPigObj(farm, pigId);
                         if (!pig) return '';
                         let currentWeight = 0;
                         if (pig.weightHistory && pig.weightHistory.length > 0) {
@@ -4392,7 +4451,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            const pig = farm.pigs.find(p => p.id === pigId);
+            const pig = findPigObj(farm, pigId);
             if (!pig) {
                 showAlert("error", "Pig not found.");
                 return;
@@ -4642,3 +4701,34 @@ document.addEventListener("DOMContentLoaded", function () {
 });  // end DOMContentLoaded
 
 // Profile modal functionality removed from this file. See deleted profile scripts.
+
+// Compatibility aliases: some iframe code calls older or alternate function names
+// when posting messages to the parent. Ensure those names always resolve
+// to the implemented handlers so the edit/delete modals reliably open.
+try {
+    if (typeof window.openEditPigFromDetails === 'function' && typeof window.openEditPigDetailsFromDetails !== 'function') {
+        window.openEditPigDetailsFromDetails = function(pigId, farmId, data) {
+            try { return window.openEditPigFromDetails(pigId, farmId, data); } catch (e) { console.warn('openEditPigDetailsFromDetails alias failed', e); }
+        };
+    }
+
+    if (typeof window.openEditPigDetailsFromDetails === 'function' && typeof window.openEditPigFromDetails !== 'function') {
+        window.openEditPigFromDetails = function(pigId, farmId, data) {
+            try { return window.openEditPigDetailsFromDetails(pigId, farmId, data); } catch (e) { console.warn('openEditPigFromDetails alias failed', e); }
+        };
+    }
+
+    if (typeof window.openDeletePigFromDetails === 'function' && typeof window.openDeletePigDetailsFromDetails !== 'function') {
+        window.openDeletePigDetailsFromDetails = function(pigId, farmId, data) {
+            try { return window.openDeletePigFromDetails(pigId, farmId, data); } catch (e) { console.warn('openDeletePigDetailsFromDetails alias failed', e); }
+        };
+    }
+
+    if (typeof window.openDeletePigDetailsFromDetails === 'function' && typeof window.openDeletePigFromDetails !== 'function') {
+        window.openDeletePigFromDetails = function(pigId, farmId, data) {
+            try { return window.openDeletePigDetailsFromDetails(pigId, farmId, data); } catch (e) { console.warn('openDeletePigFromDetails alias failed', e); }
+        };
+    }
+} catch (e) {
+    console.warn('Compatibility alias registration failed', e);
+}

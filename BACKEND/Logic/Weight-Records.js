@@ -60,11 +60,21 @@ export async function addWeightRecord(pigId, weight, date, photoPath = null) {
         // otherwise continue — allow DB to report other errors
     }
 
+    // Avoid storing base64 data URLs directly in the PhotoPath column which
+    // may be a VARCHAR and cause "Data too long for column" errors. If the
+    // provided photoPath looks like a data URL, drop it (server stores null).
+    let safePhotoPath = photoPath;
+    try {
+        if (typeof photoPath === 'string' && photoPath.startsWith('data:')) {
+            safePhotoPath = null;
+        }
+    } catch (e) { safePhotoPath = null; }
+
     const weightId = await getNextWeightId();
     const [result] = await pool.query(`
         INSERT INTO weight_records (WeightID, Date, Weight, PigID, PhotoPath)
         VALUES (?, ?, ?, ?, ?)
-    `, [weightId, normalizedDate, weight, pigId, photoPath]);
+    `, [weightId, normalizedDate, weight, pigId, safePhotoPath]);
     return { WeightID: weightId, Date: normalizedDate, Weight: parseFloat(weight), PigID: pigId, PhotoPath: photoPath };
 }
 
@@ -106,7 +116,7 @@ export async function getInitialWeight(pigId) {
 }
 
 // Function to update a weight record
-export async function updateWeightRecord(pigId, weightId, weight, date, photoPath = null) {
+export async function updateWeightRecord(pigId, weightId, weight, date, photoPath) {
     try {
         const updateFields = ['Weight = ?', 'Date = ?'];
         const updateValues = [weight, date];
@@ -140,6 +150,19 @@ export async function updateWeightRecord(pigId, weightId, weight, date, photoPat
 // Function to delete a weight record
 export async function deleteWeightRecord(pigId, weightId) {
     try {
+        // Prevent deleting the initial weight record: determine the earliest
+        // weight record for this pig (by Date) and block deletion if the
+        // requested WeightID matches that earliest record.
+        const [earliest] = await pool.query(`
+            SELECT WeightID FROM weight_records WHERE PigID = ? ORDER BY Date ASC LIMIT 1
+        `, [pigId]);
+
+        if (earliest && earliest.length > 0 && earliest[0].WeightID === weightId) {
+            const err = new Error('Cannot delete initial weight');
+            err.code = 'CANNOT_DELETE_INITIAL';
+            throw err;
+        }
+
         const [result] = await pool.query(`
             DELETE FROM weight_records
             WHERE WeightID = ? AND PigID = ?
