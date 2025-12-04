@@ -1186,6 +1186,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const pigsTableBody          = document.getElementById("pigsTableBody");
     let   pigCheckboxes          = document.querySelectorAll(".pig-checkbox");
     let   pigRows                = document.querySelectorAll(".pig-row");
+    // Pagination controls
+    const prevBtn = document.querySelector('.prev-btn');
+    const nextBtn = document.querySelector('.next-btn');
+    const pageSpan = document.querySelector('.pagination-page');
+    let currentPage = 1;
+    const pageSize = 5; // limit 5 per page
+    let lastFilteredList = null; // When filtering/searching, set this to the filtered pigs array
 
     // Tabs / farms
     const tabsContainer = document.querySelector(".tabs-header");
@@ -1774,10 +1781,31 @@ document.addEventListener("DOMContentLoaded", function () {
     function loadFarmData() {
         const currentFarm = getCurrentFarm();
         if (!currentFarm || !pigsTableBody) return;
+        // Reset pagination when switching farms
+        lastFilteredList = null;
+        currentPage = 1;
+        renderPigs();
+    }
 
-        pigsTableBody.innerHTML = "";
+    // Render pigs using pagination and optional filtered list
+    function renderPigs() {
+        const currentFarm = getCurrentFarm();
+        if (!currentFarm || !pigsTableBody) return;
 
-        if (currentFarm.pigs.length === 0) {
+        const listAll = Array.isArray(lastFilteredList) ? lastFilteredList : (Array.isArray(currentFarm.pigs) ? currentFarm.pigs : []);
+        const total = listAll.length;
+        const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+        if (currentPage < 1) currentPage = 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const start = (currentPage - 1) * pageSize;
+        const end = start + pageSize;
+        const pageItems = listAll.slice(start, end);
+
+        pigsTableBody.innerHTML = '';
+
+        if (pageItems.length === 0) {
             pigsTableBody.innerHTML = `
                 <tr>
                     <td colspan="6" class="empty-farm">
@@ -1786,7 +1814,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 </tr>
             `;
         } else {
-            currentFarm.pigs.forEach(pig => {
+            pageItems.forEach(pig => {
                 const row = createPigRow(pig);
                 pigsTableBody.appendChild(row);
             });
@@ -1798,7 +1826,15 @@ document.addEventListener("DOMContentLoaded", function () {
         setupSelectAllCheckbox(selectAllCheckbox,      pigCheckboxes);
         setupSelectAllCheckbox(tableSelectAllCheckbox, pigCheckboxes);
 
-        updatePigCounts();
+        // Update counts (showing refers to pageItems length, total refers to all pigs in farm)
+        if (activePigsCount) activePigsCount.textContent = currentFarm.pigs.filter(p => p.status !== 'sold' && p.status !== 'deceased').length;
+        if (showingCount) showingCount.textContent = pageItems.length;
+        if (totalCount) totalCount.textContent = total;
+
+        if (pageSpan) pageSpan.textContent = `Page ${currentPage} of ${totalPages}`;
+        if (prevBtn) prevBtn.disabled = currentPage <= 1;
+        if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+
         updateFilterCounts();
     }
 
@@ -3078,19 +3114,17 @@ document.addEventListener("DOMContentLoaded", function () {
     // =========================================================================
 
     function filterPigs(filterType) {
-        const rows = document.querySelectorAll(".pig-row");
-        let visibleCount = 0;
+        const currentFarm = getCurrentFarm();
+        if (!currentFarm) return;
 
-        rows.forEach(row => {
-            if (filterType === "all" || row.dataset.status === filterType) {
-                row.style.display = "";
-                visibleCount++;
-            } else {
-                row.style.display = "none";
-            }
-        });
-
-        updateDisplayCounts(visibleCount);
+        // Build filtered list from data model and reset to first page
+        if (filterType === 'all') {
+            lastFilteredList = null;
+        } else {
+            lastFilteredList = currentFarm.pigs.filter(p => p.status === filterType);
+        }
+        currentPage = 1;
+        renderPigs();
     }
 
     function updatePigCounts() {
@@ -3138,29 +3172,22 @@ document.addEventListener("DOMContentLoaded", function () {
     // =========================================================================
 
     function searchPigs(searchTerm) {
-        const rows = document.querySelectorAll(".pig-row");
-        let visibleCount = 0;
+        const currentFarm = getCurrentFarm();
+        if (!currentFarm) return;
 
-        rows.forEach(row => {
-            const nameText = row.querySelector(".col-name")?.textContent.toLowerCase() || "";
-            const idText   = row.querySelector(".pig-id-badge")?.textContent.toLowerCase() || "";
-            const status   = row.dataset.status || "";
-
-            const matchesSearch =
-                !searchTerm ||
-                nameText.includes(searchTerm) ||
-                idText.includes(searchTerm) ||
-                status.includes(searchTerm);
-
-            if (matchesSearch) {
-                row.style.display = "";
-                visibleCount++;
-            } else {
-                row.style.display = "none";
-            }
-        });
-
-        updateDisplayCounts(visibleCount);
+        const term = (searchTerm || '').toLowerCase();
+        if (!term) {
+            lastFilteredList = null;
+        } else {
+            lastFilteredList = currentFarm.pigs.filter(pig => {
+                const nameText = (pig.name || '').toLowerCase();
+                const idText = (pig.shortId || '').toLowerCase();
+                const status = (pig.status || '').toLowerCase();
+                return nameText.includes(term) || idText.includes(term) || status.includes(term);
+            });
+        }
+        currentPage = 1;
+        renderPigs();
     }
 
     // =========================================================================
@@ -4673,6 +4700,18 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
+
+    // Pagination button handlers
+    prevBtn?.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage -= 1;
+            renderPigs();
+        }
+    });
+    nextBtn?.addEventListener('click', () => {
+        currentPage += 1;
+        renderPigs();
+    });
 
     // Main buttons
     if (addPigBtn)       addPigBtn.addEventListener("click", openAddPigModal);
