@@ -17,21 +17,60 @@
     --chart-yellow: #ffd700;
     --chart-red: #8b2436;
 }
+
+.user-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.notification-btn,
+.user-profile-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    position: relative;
+    padding: 5px;
+    transition: transform 0.3s ease;
+}
+
+.notification-btn .notification-icon,
+.user-profile-btn .user-icon {
+    color: #F16877 !important;
+}
+
+
+.notification-btn:hover .notification-icon,
+.user-profile-btn:hover .user-icon {
+    color: #d95866; /* darker pink on hover */
+}
+
+.notification-btn:hover,
+.user-profile-btn:hover {
+    transform: scale(1.1);
+}
 /* Modal Styles */
 
-.notification-badge {
+
+
+.notificationBadge {
     position: absolute;
-    top: -5px;
-    right: -8px;
-    background-color: var(--primary-pink);
-    color: white;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 5px;
+    top: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    background: linear-gradient(135deg, var(--primary-pink), var(--primary-pink-dark));
     border-radius: 50%;
-    border: 2px solid white;
-    min-width: 18px;
-    text-align: center;
+    border: 1px solid white;
+    display: inline-block;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
 }
 
 .notification-modal {

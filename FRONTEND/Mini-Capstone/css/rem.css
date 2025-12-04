@@ -259,6 +259,10 @@ body {
       vertical-align: middle;    /* baseline alignment */
   }
 
+  .page-title i{
+    font-size: 50px;
+  }
+
 
 .search-input {
     border: none;
