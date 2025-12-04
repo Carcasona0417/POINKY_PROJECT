@@ -338,6 +338,78 @@ body {
         width: 100%;
     }
 }
+
+/* =========================================
+   TABLE FOOTER (Pagination) - Local copy
+   (moved here per request so this page uses its own styles)
+========================================= */
+
+.table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    color: var(--text-light);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.pagination-info {
+    font-size: 14px;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Prev/Next arrow buttons */
+.pagination-btn {
+    background: none;
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--text-dark);
+}
+
+.pagination-btn:hover:not(:disabled) {
+    border-color: var(--primary-pink);
+    color: var(--primary-pink);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-page {
+    font-weight: 600;
+    padding: 0 10px;
+}
+
+/* Expense container: fixed-height scroll area with footer pinned to bottom */
+.expense-container {
+    position: relative;
+}
+.expense-container .table-scroll {
+    max-height: 260px;
+    overflow-y: auto;
+    padding-bottom: 60px;
+}
+.expense-container .table-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
 </style>
 
 </head>
@@ -402,6 +474,14 @@ body {
                 </thead>
                 <tbody id="weightBody"></tbody>
             </table>
+                <div class="table-footer">
+                    <div class="pagination-info">Showing <span id="weightShowingCount">0</span> of <span id="weightTotalCount">0</span></div>
+                    <div class="pagination-controls">
+                        <button id="weightPrevBtn" class="pagination-btn" disabled>&lt;</button>
+                        <span id="weightPageLabel" class="pagination-page">Page 1</span>
+                        <button id="weightNextBtn" class="pagination-btn" disabled>&gt;</button>
+                    </div>
+                </div>
         </div>
 
         <!-- TAB: EXPENSES -->
@@ -413,17 +493,30 @@ body {
                 </button>
             </div>
 
-            <table class="records-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Expense</th>
-                        <th>Category</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="expenseBody"></tbody>
-            </table>
+            <div class="records-container expense-container">
+                <div class="table-scroll">
+                    <table class="records-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Expense</th>
+                                <th>Category</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expenseBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="table-footer">
+                    <div class="pagination-info">Showing <span id="expenseShowingCount">0</span> of <span id="expenseTotalCount">0</span></div>
+                    <div class="pagination-controls">
+                        <button id="expensePrevBtn" class="pagination-btn" disabled>&lt;</button>
+                        <span id="expensePageLabel" class="pagination-page">Page 1</span>
+                        <button id="expenseNextBtn" class="pagination-btn" disabled>&gt;</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- TAB: HEALTH -->
@@ -446,6 +539,14 @@ body {
                 </thead>
                 <tbody id="healthBody"></tbody>
             </table>
+            <div class="table-footer">
+                <div class="pagination-info">Showing <span id="vaccineShowingCount">0</span> of <span id="vaccineTotalCount">0</span></div>
+                <div class="pagination-controls">
+                    <button id="vaccinePrevBtn" class="pagination-btn" disabled>&lt;</button>
+                    <span id="vaccinePageLabel" class="pagination-page">Page 1</span>
+                    <button id="vaccineNextBtn" class="pagination-btn" disabled>&gt;</button>
+                </div>
+            </div>
         </div>
 
     </div>
@@ -503,10 +604,39 @@ document.addEventListener("click", () => dropdown.style.display = "none");
     const expenseBody = document.getElementById("expenseBody");
     const healthBody  = document.getElementById("healthBody");
 
+    // Pagination state (client-side, 5 per page)
+    let weightPage = 1, expensePage = 1, vaccinePage = 1;
+    const PAGE_SIZE = 5;
+
+    // Keep reference to last rendered pig object so pagination handlers can re-render
+    let lastPig = null;
+
+    // Pagination controls elements
+    const weightPrevBtn = document.getElementById('weightPrevBtn');
+    const weightNextBtn = document.getElementById('weightNextBtn');
+    const weightPageLabel = document.getElementById('weightPageLabel');
+    const weightShowingCount = document.getElementById('weightShowingCount');
+    const weightTotalCount = document.getElementById('weightTotalCount');
+
+    const expensePrevBtn = document.getElementById('expensePrevBtn');
+    const expenseNextBtn = document.getElementById('expenseNextBtn');
+    const expensePageLabel = document.getElementById('expensePageLabel');
+    const expenseShowingCount = document.getElementById('expenseShowingCount');
+    const expenseTotalCount = document.getElementById('expenseTotalCount');
+
+    const vaccinePrevBtn = document.getElementById('vaccinePrevBtn');
+    const vaccineNextBtn = document.getElementById('vaccineNextBtn');
+    const vaccinePageLabel = document.getElementById('vaccinePageLabel');
+    const vaccineShowingCount = document.getElementById('vaccineShowingCount');
+    const vaccineTotalCount = document.getElementById('vaccineTotalCount');
+
     const btnAddWeight  = document.getElementById("btnAddWeight");
     const btnAddExpense = document.getElementById("btnAddExpense");
     const btnAddVaccine = document.getElementById("btnAddVaccine");
     const btnEditPig    = document.getElementById("btnEditPig");
+
+    // scroll container for expenses (used to reset scroll when changing pages)
+    const expenseScroll = document.querySelector('.expense-container .table-scroll');
 
     let pigLoadedFromMessage = false;
     let weightLoaded = false; // prevent duplicate fetches
@@ -587,6 +717,8 @@ document.addEventListener("click", () => dropdown.style.display = "none");
         pigLoadedFromMessage = true;
         // Reset weightLoaded flag so we fetch fresh data from backend
         weightLoaded = false;
+        // Reset pagination when a new pig is received
+        weightPage = 1; expensePage = 1; vaccinePage = 1;
         renderPig(data.pig);
     });
 
@@ -621,6 +753,8 @@ document.addEventListener("click", () => dropdown.style.display = "none");
     // RENDER PIG DATA
     // =======================================================
     async function renderPig(pig) {
+        // store last pig for pagination handlers
+        lastPig = pig;
         nameEl.textContent   = pig.name;
         breedEl.textContent  = pig.breed;
         genderEl.textContent = pig.gender;
@@ -664,41 +798,149 @@ document.addEventListener("click", () => dropdown.style.display = "none");
             console.warn('fetchWeightHistory failed', e);
         }
 
+        // Render expenses and vaccines sections (use existing pagination state)
+        try {
+            renderExpenseSection(pig);
+            renderVaccineSection(pig);
+        } catch (e) {
+            console.warn('Error rendering expense/vaccine sections', e);
+        }
+
 
     // Render weight UI section (initial + table) from a pig-like object with weightHistory
     function renderWeightSection(pig) {
         weightBody.innerHTML = "";
-        if (!pig.weightHistory?.length) {
-            emptyRow(weightBody, 4, "No weight records.");
-            iwEl.textContent = "-";
-            cwEl.textContent = pig.weight ? pig.weight : "-";
-            return;
-        }
+        const history = Array.isArray(pig.weightHistory) ? pig.weightHistory.slice().reverse() : [];
+        const total = history.length;
+        const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-        // Initial weight is first record
-        iwEl.textContent = pig.weightHistory[0].weight ? pig.weightHistory[0].weight + ' kg' : '-';
+        // Clamp page
+        if (weightPage < 1) weightPage = 1;
+        if (weightPage > totalPages) weightPage = totalPages;
 
-        // Current weight is latest record
-        const latest = pig.weightHistory[pig.weightHistory.length - 1];
+        // Initial + current weight (derived from full history)
+        iwEl.textContent = pig.weightHistory?.[0]?.weight ? pig.weightHistory[0].weight + ' kg' : '-';
+        const latest = pig.weightHistory && pig.weightHistory[pig.weightHistory.length - 1];
         cwEl.textContent = latest && latest.weight ? `${latest.weight} kg` : (pig.weight ? pig.weight : '-');
 
-        [...pig.weightHistory].slice().reverse().forEach((rec, idx) => {
-            const actualIndex = pig.weightHistory.length - 1 - idx;
-            weightBody.innerHTML += `
-                <tr>
-                    <td>${rec.date}</td>
-                    <td>${rec.weight} kg</td>
-                    <td><img src="${rec.img || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22%3E%3C/svg%3E'}" class="pig-thumb" onclick="openImageViewer(this.src)" onerror="this.style.display='none'"></td>
-                    <td>
-                        <button class="action-btn action-btn-edit" onclick="editWeightRecord(${actualIndex})" title="Edit" aria-label="Edit weight" ${pig.status === 'sold' || pig.status === 'deceased' ? 'disabled' : ''}>
-                            <i class="fas fa-edit" aria-hidden="true"></i>
-                        </button>
-                        <button class="action-btn action-btn-delete" onclick="deleteWeightRecord(${actualIndex})" title="Delete" aria-label="Delete weight">
-                            <i class="fas fa-trash" aria-hidden="true"></i>
-                        </button>
-                    </td>
-                </tr>`;
-        });
+        if (history.length === 0) {
+            emptyRow(weightBody, 4, "No weight records.");
+        } else {
+            const start = (weightPage - 1) * PAGE_SIZE;
+            const pageItems = history.slice(start, start + PAGE_SIZE);
+            pageItems.forEach((rec, idx) => {
+                const actualIndex = (pig.weightHistory.length - 1) - (start + idx);
+                weightBody.innerHTML += `
+                    <tr>
+                        <td>${rec.date}</td>
+                        <td>${rec.weight} kg</td>
+                        <td><img src="${rec.img || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22%3E%3C/svg%3E'}" class="pig-thumb" onclick="openImageViewer(this.src)" onerror="this.style.display='none'"></td>
+                        <td>
+                            <button class="action-btn action-btn-edit" onclick="editWeightRecord(${actualIndex})" title="Edit" aria-label="Edit weight" ${pig.status === 'sold' || pig.status === 'deceased' ? 'disabled' : ''}>
+                                <i class="fas fa-edit" aria-hidden="true"></i>
+                            </button>
+                            <button class="action-btn action-btn-delete" onclick="deleteWeightRecord(${actualIndex})" title="Delete" aria-label="Delete weight">
+                                <i class="fas fa-trash" aria-hidden="true"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        // Update pagination UI
+        if (weightShowingCount) weightShowingCount.textContent = Math.min(PAGE_SIZE, total - ((weightPage - 1) * PAGE_SIZE)) > 0 ? Math.min(PAGE_SIZE, total - ((weightPage - 1) * PAGE_SIZE)) : 0;
+        if (weightTotalCount) weightTotalCount.textContent = total;
+        if (weightPageLabel) weightPageLabel.textContent = `Page ${weightPage} of ${totalPages}`;
+        if (weightPrevBtn) weightPrevBtn.disabled = weightPage <= 1;
+        if (weightNextBtn) weightNextBtn.disabled = weightPage >= totalPages;
+    }
+
+    // Render expenses section (paginated)
+    function renderExpenseSection(pig) {
+        expenseBody.innerHTML = "";
+        const isInactive = pig.status === 'sold' || pig.status === 'deceased';
+        const expenses = Array.isArray(pig.expenses) ? pig.expenses.slice().reverse() : [];
+        const expTotal = expenses.length;
+        const expTotalPages = Math.max(1, Math.ceil(expTotal / PAGE_SIZE));
+        if (expensePage < 1) expensePage = 1;
+        if (expensePage > expTotalPages) expensePage = expTotalPages;
+
+        if (expenses.length === 0) {
+            emptyRow(expenseBody, 4, "No expenses.");
+        } else {
+            const startE = (expensePage - 1) * PAGE_SIZE;
+            const pageExps = expenses.slice(startE, startE + PAGE_SIZE);
+            pageExps.forEach((exp, idx) => {
+                const actualIdx = (pig.expenses.length - 1) - (startE + idx);
+                expenseBody.innerHTML += `
+                    <tr>
+                        <td>${exp.date}</td>
+                        <td>₱${exp.price}</td>
+                        <td>${exp.category || '-'}</td>
+                        <td>
+                            <button class="action-btn action-btn-edit" onclick="editExpenseRecord(${actualIdx})" title="Edit" aria-label="Edit expense" ${isInactive ? 'disabled' : ''}>
+                                <i class="fas fa-edit" aria-hidden="true"></i>
+                            </button>
+                            <button class="action-btn action-btn-delete" onclick="deleteExpenseRecord(${actualIdx})" title="Delete" aria-label="Delete expense">
+                                <i class="fas fa-trash" aria-hidden="true"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        // Update expense pagination UI
+        if (expenseShowingCount) expenseShowingCount.textContent = Math.min(PAGE_SIZE, expTotal - ((expensePage - 1) * PAGE_SIZE)) > 0 ? Math.min(PAGE_SIZE, expTotal - ((expensePage - 1) * PAGE_SIZE)) : 0;
+        if (expenseTotalCount) expenseTotalCount.textContent = expTotal;
+        if (expensePageLabel) expensePageLabel.textContent = `Page ${expensePage} of ${expTotalPages}`;
+        if (expensePrevBtn) expensePrevBtn.disabled = expensePage <= 1;
+        if (expenseNextBtn) expenseNextBtn.disabled = expensePage >= expTotalPages;
+
+        // scroll to top of the expenses list when page changes
+        if (expenseScroll) expenseScroll.scrollTop = 0;
+    }
+
+    // Render vaccination (health) section (paginated)
+    function renderVaccineSection(pig) {
+        healthBody.innerHTML = "";
+        const isInactive = pig.status === 'sold' || pig.status === 'deceased';
+        const vaccines = Array.isArray(pig.vaccinations) ? pig.vaccinations.slice().reverse() : [];
+        const vacTotal = vaccines.length;
+        const vacTotalPages = Math.max(1, Math.ceil(vacTotal / PAGE_SIZE));
+        if (vaccinePage < 1) vaccinePage = 1;
+        if (vaccinePage > vacTotalPages) vaccinePage = vacTotalPages;
+
+        if (vaccines.length === 0) {
+            emptyRow(healthBody, 5, "No vaccination records.");
+        } else {
+            const startV = (vaccinePage - 1) * PAGE_SIZE;
+            const pageVaccs = vaccines.slice(startV, startV + PAGE_SIZE);
+            pageVaccs.forEach((v, idx) => {
+                const actualIdx = (pig.vaccinations.length - 1) - (startV + idx);
+                healthBody.innerHTML += `
+                    <tr>
+                        <td>${v.date}</td>
+                        <td>${v.dueDate}</td>
+                        <td>${v.type}</td>
+                        <td>${formatStatus(v.status)}</td>
+                        <td>
+                            <button class="action-btn action-btn-edit" onclick="editVaccinationRecord(${actualIdx})" title="Edit" aria-label="Edit vaccination" ${isInactive ? 'disabled' : ''}>
+                                <i class="fas fa-edit" aria-hidden="true"></i>
+                            </button>
+                            <button class="action-btn action-btn-delete" onclick="deleteVaccinationRecord(${actualIdx})" title="Delete" aria-label="Delete vaccination">
+                                <i class="fas fa-trash" aria-hidden="true"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        // Update vaccine pagination UI
+        if (vaccineShowingCount) vaccineShowingCount.textContent = Math.min(PAGE_SIZE, vacTotal - ((vaccinePage - 1) * PAGE_SIZE)) > 0 ? Math.min(PAGE_SIZE, vacTotal - ((vaccinePage - 1) * PAGE_SIZE)) : 0;
+        if (vaccineTotalCount) vaccineTotalCount.textContent = vacTotal;
+        if (vaccinePageLabel) vaccinePageLabel.textContent = `Page ${vaccinePage} of ${vacTotalPages}`;
+        if (vaccinePrevBtn) vaccinePrevBtn.disabled = vaccinePage <= 1;
+        if (vaccineNextBtn) vaccineNextBtn.disabled = vaccinePage >= vacTotalPages;
     }
 
     // Fetch weight history from backend for current pig and render
@@ -777,7 +1019,16 @@ document.addEventListener("click", () => dropdown.style.display = "none");
                 }
 
                 console.log('fetchWeightHistory: about to render with:', ph);
-                renderWeightSection(ph);
+                // merge server-returned weight history into lastPig if available
+                if (lastPig && typeof lastPig === 'object') {
+                    lastPig.weightHistory = ph.weightHistory || [];
+                    if (ph.weight !== undefined && ph.weight !== null) lastPig.weight = ph.weight;
+                    // render using merged data
+                    renderWeightSection(lastPig);
+                } else {
+                    // no lastPig (unlikely) — render using server-provided object
+                    renderWeightSection(ph);
+                }
                 // mark loaded only after successful render
                 weightLoaded = true;
             }
@@ -785,22 +1036,59 @@ document.addEventListener("click", () => dropdown.style.display = "none");
             console.warn('fetchWeightHistory error', err);
         }
     }
-        // EXPENSES TABLE
+
+    // Pagination button wiring (use lastPig so we don't rely on parent calls)
+    if (weightPrevBtn) weightPrevBtn.addEventListener('click', () => {
+        if (weightPage > 1) weightPage = Math.max(1, weightPage - 1);
+        if (lastPig) renderWeightSection(lastPig);
+    });
+    if (weightNextBtn) weightNextBtn.addEventListener('click', () => {
+        weightPage = weightPage + 1;
+        if (lastPig) renderWeightSection(lastPig);
+    });
+
+    if (expensePrevBtn) expensePrevBtn.addEventListener('click', () => {
+        if (expensePage > 1) expensePage = Math.max(1, expensePage - 1);
+        if (lastPig) renderExpenseSection(lastPig);
+    });
+    if (expenseNextBtn) expenseNextBtn.addEventListener('click', () => {
+        expensePage = expensePage + 1;
+        if (lastPig) renderExpenseSection(lastPig);
+    });
+
+    if (vaccinePrevBtn) vaccinePrevBtn.addEventListener('click', () => {
+        if (vaccinePage > 1) vaccinePage = Math.max(1, vaccinePage - 1);
+        if (lastPig) renderVaccineSection(lastPig);
+    });
+    if (vaccineNextBtn) vaccineNextBtn.addEventListener('click', () => {
+        vaccinePage = vaccinePage + 1;
+        if (lastPig) renderVaccineSection(lastPig);
+    });
+        // EXPENSES TABLE (paginated)
         expenseBody.innerHTML = "";
-        if (!pig.expenses?.length) {
+        const expenses = Array.isArray(pig.expenses) ? pig.expenses.slice().reverse() : [];
+        const expTotal = expenses.length;
+        const expTotalPages = Math.max(1, Math.ceil(expTotal / PAGE_SIZE));
+        if (expensePage < 1) expensePage = 1;
+        if (expensePage > expTotalPages) expensePage = expTotalPages;
+
+        if (expenses.length === 0) {
             emptyRow(expenseBody, 4, "No expenses.");
         } else {
-            pig.expenses.forEach((exp, idx) => {
+            const startE = (expensePage - 1) * PAGE_SIZE;
+            const pageExps = expenses.slice(startE, startE + PAGE_SIZE);
+            pageExps.forEach((exp, idx) => {
+                const actualIdx = (pig.expenses.length - 1) - (startE + idx);
                 expenseBody.innerHTML += `
                     <tr>
                         <td>${exp.date}</td>
                         <td>₱${exp.price}</td>
                         <td>${exp.category || '-'}</td>
                         <td>
-                            <button class="action-btn action-btn-edit" onclick="editExpenseRecord(${idx})" title="Edit" aria-label="Edit expense" ${isInactive ? 'disabled' : ''}>
+                            <button class="action-btn action-btn-edit" onclick="editExpenseRecord(${actualIdx})" title="Edit" aria-label="Edit expense" ${isInactive ? 'disabled' : ''}>
                                 <i class="fas fa-edit" aria-hidden="true"></i>
                             </button>
-                            <button class="action-btn action-btn-delete" onclick="deleteExpenseRecord(${idx})" title="Delete" aria-label="Delete expense">
+                            <button class="action-btn action-btn-delete" onclick="deleteExpenseRecord(${actualIdx})" title="Delete" aria-label="Delete expense">
                                 <i class="fas fa-trash" aria-hidden="true"></i>
                             </button>
                         </td>
@@ -808,12 +1096,28 @@ document.addEventListener("click", () => dropdown.style.display = "none");
             });
         }
 
-        // VACCINES
+        // Update expense pagination UI
+        if (expenseShowingCount) expenseShowingCount.textContent = Math.min(PAGE_SIZE, expTotal - ((expensePage - 1) * PAGE_SIZE)) > 0 ? Math.min(PAGE_SIZE, expTotal - ((expensePage - 1) * PAGE_SIZE)) : 0;
+        if (expenseTotalCount) expenseTotalCount.textContent = expTotal;
+        if (expensePageLabel) expensePageLabel.textContent = `Page ${expensePage} of ${expTotalPages}`;
+        if (expensePrevBtn) expensePrevBtn.disabled = expensePage <= 1;
+        if (expenseNextBtn) expenseNextBtn.disabled = expensePage >= expTotalPages;
+
+        // VACCINES (paginated)
         healthBody.innerHTML = "";
-        if (!pig.vaccinations?.length) {
+        const vaccines = Array.isArray(pig.vaccinations) ? pig.vaccinations.slice().reverse() : [];
+        const vacTotal = vaccines.length;
+        const vacTotalPages = Math.max(1, Math.ceil(vacTotal / PAGE_SIZE));
+        if (vaccinePage < 1) vaccinePage = 1;
+        if (vaccinePage > vacTotalPages) vaccinePage = vacTotalPages;
+
+        if (vaccines.length === 0) {
             emptyRow(healthBody, 5, "No vaccination records.");
         } else {
-            pig.vaccinations.forEach((v, idx) => {
+            const startV = (vaccinePage - 1) * PAGE_SIZE;
+            const pageVaccs = vaccines.slice(startV, startV + PAGE_SIZE);
+            pageVaccs.forEach((v, idx) => {
+                const actualIdx = (pig.vaccinations.length - 1) - (startV + idx);
                 healthBody.innerHTML += `
                     <tr>
                         <td>${v.date}</td>
@@ -821,16 +1125,23 @@ document.addEventListener("click", () => dropdown.style.display = "none");
                         <td>${v.type}</td>
                         <td>${formatStatus(v.status)}</td>
                         <td>
-                            <button class="action-btn action-btn-edit" onclick="editVaccinationRecord(${idx})" title="Edit" aria-label="Edit vaccination" ${isInactive ? 'disabled' : ''}>
+                            <button class="action-btn action-btn-edit" onclick="editVaccinationRecord(${actualIdx})" title="Edit" aria-label="Edit vaccination" ${isInactive ? 'disabled' : ''}>
                                 <i class="fas fa-edit" aria-hidden="true"></i>
                             </button>
-                            <button class="action-btn action-btn-delete" onclick="deleteVaccinationRecord(${idx})" title="Delete" aria-label="Delete vaccination">
+                            <button class="action-btn action-btn-delete" onclick="deleteVaccinationRecord(${actualIdx})" title="Delete" aria-label="Delete vaccination">
                                 <i class="fas fa-trash" aria-hidden="true"></i>
                             </button>
                         </td>
                     </tr>`;
             });
         }
+
+        // Update vaccine pagination UI
+        if (vaccineShowingCount) vaccineShowingCount.textContent = Math.min(PAGE_SIZE, vacTotal - ((vaccinePage - 1) * PAGE_SIZE)) > 0 ? Math.min(PAGE_SIZE, vacTotal - ((vaccinePage - 1) * PAGE_SIZE)) : 0;
+        if (vaccineTotalCount) vaccineTotalCount.textContent = vacTotal;
+        if (vaccinePageLabel) vaccinePageLabel.textContent = `Page ${vaccinePage} of ${vacTotalPages}`;
+        if (vaccinePrevBtn) vaccinePrevBtn.disabled = vaccinePage <= 1;
+        if (vaccineNextBtn) vaccineNextBtn.disabled = vaccinePage >= vacTotalPages;
     }
 
     // =======================================================
@@ -842,7 +1153,11 @@ document.addEventListener("click", () => dropdown.style.display = "none");
         try {
             if (window.parent && typeof window.parent.getPigDataById === "function") {
                 const pig = window.parent.getPigDataById(pigId, farmId);
-                if (pig) return renderPig(pig);
+                if (pig) {
+                    // Reset pagination for the newly loaded pig
+                    weightPage = 1; expensePage = 1; vaccinePage = 1;
+                    return renderPig(pig);
+                }
             }
         } catch (err) {}
 

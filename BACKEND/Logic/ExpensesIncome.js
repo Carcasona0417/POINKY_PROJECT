@@ -241,13 +241,10 @@ export function getExpenseCategories() {
     return [
         'Feed',
         'Medicine',
-        'Vaccination',
         'Labor',
         'Transportation',
         'Piglets',
-        'Utilities',
-        'Sold',
-        'Others'
+        'Utilities'
     ];
 }
 
