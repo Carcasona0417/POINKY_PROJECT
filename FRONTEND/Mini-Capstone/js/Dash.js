@@ -80,8 +80,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     {
                         label: 'Farm Expenses',
                         data: farmExpenseData,
-                        backgroundColor: '#ffd700',
-                        hoverBackgroundColor: '#ffe44d',
+                        backgroundColor: '#F16877',
+                        hoverBackgroundColor: '#F16877',
                         barPercentage: 0.65,
                         categoryPercentage: 0.8,
                         borderRadius: 4

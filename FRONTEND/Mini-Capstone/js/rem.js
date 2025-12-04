@@ -25,6 +25,14 @@ document.addEventListener('DOMContentLoaded', async function () {
     const totalCount     = document.getElementById('totalCount');
     const searchInput    = document.getElementById('searchInput');
 
+    // Pagination state
+    const prevBtn = document.querySelector('.prev-btn');
+    const nextBtn = document.querySelector('.next-btn');
+    const pageSpan = document.querySelector('.pagination-page');
+    let currentPage = 1;
+    const pageSize = 5; // limit 5 per page
+    let lastFilteredList = null; // keep track of current filter for pagination
+
     let reminders = []; 
     let editingIndex = null; // null = adding new, number = editing
     let farms = [];
@@ -58,6 +66,9 @@ document.addEventListener('DOMContentLoaded', async function () {
                         notes: rem.Description || ''
                     };
                 });
+                // reset pagination when fetching from server
+                currentPage = 1;
+                lastFilteredList = null;
                 renderTable();
             } else {
                 console.error('Failed to fetch reminders:', data.message);
@@ -296,12 +307,26 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     /* ---------- TABLE RENDERING ---------- */
 function renderTable(filteredList = null) {
-    const list = filteredList || reminders;
-    if (!tableBody) return;
+    // If a filteredList is explicitly provided, update the lastFilteredList
+    if (typeof filteredList !== 'undefined') lastFilteredList = filteredList;
 
+    const listAll = lastFilteredList || reminders;
+    const total = listAll.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    // Clamp currentPage
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    const start = (currentPage - 1) * pageSize;
+    const end = start + pageSize;
+    const pageItems = listAll.slice(start, end);
+
+    if (!tableBody) return;
     tableBody.innerHTML = '';
 
-    list.forEach((rem, index) => { // <-- keep track of index for edit/delete
+    pageItems.forEach((rem, idx) => {
+        const index = start + idx; // original index in the full list
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${rem.date  || '-'}</td>
@@ -320,23 +345,22 @@ function renderTable(filteredList = null) {
         `;
         tableBody.appendChild(tr);
 
-        // Edit button
         tr.querySelector('.edit-btn').addEventListener('click', () => {
             editReminder(index);
         });
-
-        // Delete button
         tr.querySelector('.delete-btn').addEventListener('click', () => {
             deleteReminder(index);
         });
     });
 
-    const total   = reminders.length;
-    const showing = list.length;
-
     if (activeTodoSpan) activeTodoSpan.textContent = total;
     if (totalCount)     totalCount.textContent     = total;
-    if (showingCount)   showingCount.textContent   = showing;
+    if (showingCount)   showingCount.textContent   = pageItems.length;
+
+    // Update pagination controls
+    if (pageSpan) pageSpan.textContent = `Page ${currentPage} of ${totalPages}`;
+    if (prevBtn) prevBtn.disabled = currentPage <= 1;
+    if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
 }
 
 /* ---------- EDIT REMINDER ---------- */
@@ -673,7 +697,10 @@ saveBtn?.addEventListener('click', async () => {
     searchInput?.addEventListener('input', (e) => {
         const q = e.target.value.toLowerCase();
         if (!q) {
-            renderTable();
+            // clear filter
+            lastFilteredList = null;
+            currentPage = 1;
+            renderTable(null);
             return;
         }
 
@@ -685,7 +712,22 @@ saveBtn?.addEventListener('click', async () => {
             (rem.date  && rem.date.toLowerCase().includes(q))
         );
 
+        // apply filter and reset to first page
+        currentPage = 1;
+        lastFilteredList = filtered;
         renderTable(filtered);
+    });
+
+    // Pagination button handlers
+    prevBtn?.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage -= 1;
+            renderTable(lastFilteredList);
+        }
+    });
+    nextBtn?.addEventListener('click', () => {
+        currentPage += 1;
+        renderTable(lastFilteredList);
     });
 
     /* ---------- INITIAL RENDER ---------- */

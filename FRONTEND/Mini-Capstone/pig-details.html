@@ -516,28 +516,33 @@ document.addEventListener("click", () => dropdown.style.display = "none");
     // =======================================================
     function callParentAction(label, fnName, data) {
 
-        let canDirect = false;
-
+        // Use postMessage as the primary transport to notify the parent window.
+        // Directly invoking parent functions can fail due to scoping or timing
+        // differences; postMessage is consistent across embedding scenarios.
         try {
-            canDirect = !!(window.parent && typeof window.parent[fnName] === "function");
-        } catch (err) { canDirect = false; }
-
-        if (canDirect) {
-            try {
-                window.parent[fnName](pigId, farmId, data);
-                return;
-            } catch (err) { 
-                console.warn('Direct call failed:', err);
-            }
+            window.parent.postMessage({ type: "openAction", action: fnName, pigId, farmId, data }, "*");
+            return;
+        } catch (postErr) {
+            console.warn('postMessage to parent failed, falling back to direct call', postErr);
         }
 
-        // fallback
-        console.log('Using postMessage for:', fnName);
-        window.parent.postMessage(
-            { type: "openAction", action: fnName, pigId, farmId, data },
-            "*"
-        );
+        // Fallback: attempt direct call if postMessage is unavailable for some reason
+        try {
+            if (window.parent && typeof window.parent[fnName] === 'function') {
+                window.parent[fnName](pigId, farmId, data);
+                return;
+            }
+        } catch (directErr) {
+            console.warn('Direct call fallback failed for', fnName, directErr);
+        }
+
+        console.warn('callParentAction: unable to notify parent for', fnName);
     }
+
+    // Expose `callParentAction` to the global/window scope so
+    // functions defined in the global scope (e.g. `editWeightRecord`)
+    // can call it directly when `postMessage` fallback isn't used.
+    try { window.callParentAction = callParentAction; } catch (e) { /* noop if not allowed */ }
 
     // =======================================================
     // BUTTON HANDLERS
@@ -1027,10 +1032,22 @@ window.submitWeightRecordToAPI = async function(pigId, farmId, weightData, isEdi
                     method = 'POST';
                 }
 
+                // Avoid sending full base64 data URLs to the server. If the
+                // photoPath looks like a data URL, send null so backend won't
+                // attempt to store an oversized string in a VARCHAR column.
+                let safePhoto = null;
+                try {
+                    if (weightData.photoPath && typeof weightData.photoPath === 'string' && !weightData.photoPath.startsWith('data:')) {
+                        safePhoto = weightData.photoPath;
+                    } else {
+                        safePhoto = null;
+                    }
+                } catch (e) { safePhoto = null; }
+
                 body = {
                     weight: parseFloat(weightData.weight),
                     date: weightData.date,
-                    photoPath: weightData.photoPath || null
+                    photoPath: safePhoto
                 };
 
                 const attempt = await fetch(url, {

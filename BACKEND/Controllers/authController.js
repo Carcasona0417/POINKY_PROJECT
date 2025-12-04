@@ -81,7 +81,7 @@ export const sendOTP = async (req, res, next) => {
 
         otpStore[email] = {
             otp: otp,
-            expiresAt: Date.now() + (5 * 60 * 1000) // 5 minutes
+            expiresAt: Date.now() + (10 * 60 * 1000) // 5 minutes
         };
 
         res.send({ success: true, message: "OTP has been sent." });
@@ -133,8 +133,24 @@ export const confirmOTP = async (req, res, next) => {
         next(err);
     }
 };
-
 export const updatePassword = async (req, res, next) => {
+
+    try {
+        const { email, newPassword } = req.body;
+        
+        if (!email || !newPassword) {
+            return res.status(400).send({ success: false, message: 'Email and newPassword are required' });
+        }
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await updateUserPassword(email, hashedPassword);
+        return res.send({ success: true, message: 'Password Successfully Updated!' });
+    }
+    catch (err) {
+        next(err);
+    }
+}
+
+export const updatePasswordByUID = async (req, res, next) => {
     try {
         // Expecting: { userId, oldPassword, newPassword }
         const { userId, oldPassword, newPassword } = req.body;

@@ -1,5 +1,4 @@
 
-
 /* ----------------------------------------- */
 /*              ROOT VARIABLES               */
 /* ----------------------------------------- */
@@ -1018,4 +1017,58 @@ input[type="date"]:focus {
     border-color: #4a90e2;
     outline: none;
 }
+
+
+/* =========================================
+   TABLE FOOTER (Pagination)
+========================================= */
+
+.table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    color: var(--text-light);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.pagination-info {
+    font-size: 14px;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Prev/Next arrow buttons */
+.pagination-btn {
+    background: none;
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--text-dark);
+}
+
+.pagination-btn:hover:not(:disabled) {
+    border-color: var(--primary-pink);
+    color: var(--primary-pink);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-page {
+    font-weight: 600;
+    padding: 0 10px;
+}
+
 

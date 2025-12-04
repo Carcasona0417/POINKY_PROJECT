@@ -108,7 +108,7 @@ function readFileAsDataURL(file) {
 }
 
 // API helper to call backend for weight records
-async function callWeightRecordAPI(pigId, weightData, isEdit = false) {
+async function callWeightRecordAPI(pigId, weightData, isEdit = false, weightId = null) {
     try {
         // Build candidate API bases
         let candidates = [];
@@ -133,8 +133,13 @@ async function callWeightRecordAPI(pigId, weightData, isEdit = false) {
 
         for (const base of candidates) {
             try {
-                let url = `${base.replace(/\/$/, '')}/api/pigs/${pigIdEncoded}/weights`;
-                
+                let url;
+                if (isEdit && weightId) {
+                    url = `${base.replace(/\/$/, '')}/api/pigs/${pigIdEncoded}/weights/${encodeURIComponent(weightId)}`;
+                } else {
+                    url = `${base.replace(/\/$/, '')}/api/pigs/${pigIdEncoded}/weights`;
+                }
+
                 const response = await fetch(url, {
                     method: method,
                     headers: { 'Content-Type': 'application/json' },
@@ -627,7 +632,7 @@ window.openEditPigDetailsFromDetails = function (pigId, farmId) {
 
     // Hide details while editing
     const pigDetailsModal = document.getElementById("pigDetailsModal");
-    if (pigDetailsModal) pigDetailsModal.style.display = "none";
+    if (pigDetailsModal) pigDetailsModal.style.display = "flex";
 
     // Populate form
     const nameInput   = document.getElementById("editPigName");
@@ -1061,9 +1066,26 @@ window.addEventListener("message", (ev) => {
                     window.openEditPigFromDetails(pigId, farmId);
                 }
                 break;
+            case "openEditWeightFromDetails":
+                // Some iframes post this action under "openAction" instead of
+                // the dedicated "recordAction" channel. Support both for
+                // backward-compatibility.
+                if (typeof window.openEditWeightFromDetails === "function") {
+                    const recordData = data.data || null;
+                    window.openEditWeightFromDetails(pigId, farmId, recordData);
+                }
+                break;
             case "openDeletePigFromDetails":
                 if (typeof window.openDeletePigFromDetails === "function") {
                     window.openDeletePigFromDetails(pigId, farmId);
+                }
+                break;
+            case "openDeleteRecordConfirmModal":
+                // Allow iframe to request deletion confirmation by name
+                if (typeof window.openDeleteRecordConfirmModal === "function") {
+                    const payload = data.data || {};
+                    // payload is expected to include { type, index }
+                    window.openDeleteRecordConfirmModal(payload.type, pigId, farmId, payload.index);
                 }
                 break;
             default:
@@ -1164,6 +1186,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const pigsTableBody          = document.getElementById("pigsTableBody");
     let   pigCheckboxes          = document.querySelectorAll(".pig-checkbox");
     let   pigRows                = document.querySelectorAll(".pig-row");
+    // Pagination controls
+    const prevBtn = document.querySelector('.prev-btn');
+    const nextBtn = document.querySelector('.next-btn');
+    const pageSpan = document.querySelector('.pagination-page');
+    let currentPage = 1;
+    const pageSize = 5; // limit 5 per page
+    let lastFilteredList = null; // When filtering/searching, set this to the filtered pigs array
 
     // Tabs / farms
     const tabsContainer = document.querySelector(".tabs-header");
@@ -1629,7 +1658,7 @@ document.addEventListener("DOMContentLoaded", function () {
             weightHistory: [{
                 date:   pigData.date,
                 weight: initialWeight,
-                img:    "Dash Icons/WPig.png"
+                img:    "dash-icons/Pig.png"
             }],
 
             expenses:      [],
@@ -1752,10 +1781,31 @@ document.addEventListener("DOMContentLoaded", function () {
     function loadFarmData() {
         const currentFarm = getCurrentFarm();
         if (!currentFarm || !pigsTableBody) return;
+        // Reset pagination when switching farms
+        lastFilteredList = null;
+        currentPage = 1;
+        renderPigs();
+    }
 
-        pigsTableBody.innerHTML = "";
+    // Render pigs using pagination and optional filtered list
+    function renderPigs() {
+        const currentFarm = getCurrentFarm();
+        if (!currentFarm || !pigsTableBody) return;
 
-        if (currentFarm.pigs.length === 0) {
+        const listAll = Array.isArray(lastFilteredList) ? lastFilteredList : (Array.isArray(currentFarm.pigs) ? currentFarm.pigs : []);
+        const total = listAll.length;
+        const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+        if (currentPage < 1) currentPage = 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const start = (currentPage - 1) * pageSize;
+        const end = start + pageSize;
+        const pageItems = listAll.slice(start, end);
+
+        pigsTableBody.innerHTML = '';
+
+        if (pageItems.length === 0) {
             pigsTableBody.innerHTML = `
                 <tr>
                     <td colspan="6" class="empty-farm">
@@ -1764,7 +1814,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 </tr>
             `;
         } else {
-            currentFarm.pigs.forEach(pig => {
+            pageItems.forEach(pig => {
                 const row = createPigRow(pig);
                 pigsTableBody.appendChild(row);
             });
@@ -1776,7 +1826,15 @@ document.addEventListener("DOMContentLoaded", function () {
         setupSelectAllCheckbox(selectAllCheckbox,      pigCheckboxes);
         setupSelectAllCheckbox(tableSelectAllCheckbox, pigCheckboxes);
 
-        updatePigCounts();
+        // Update counts (showing refers to pageItems length, total refers to all pigs in farm)
+        if (activePigsCount) activePigsCount.textContent = currentFarm.pigs.filter(p => p.status !== 'sold' && p.status !== 'deceased').length;
+        if (showingCount) showingCount.textContent = pageItems.length;
+        if (totalCount) totalCount.textContent = total;
+
+        if (pageSpan) pageSpan.textContent = `Page ${currentPage} of ${totalPages}`;
+        if (prevBtn) prevBtn.disabled = currentPage <= 1;
+        if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+
         updateFilterCounts();
     }
 
@@ -1888,10 +1946,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // API call to backend
             const isEdit = currentEditWeightRecordIndex !== null && pig.weightHistory[currentEditWeightRecordIndex];
+            // Avoid sending base64 image data to server (DB has limited column length).
+            // Keep the full dataURL locally for UI, but only send a small marker or null.
+            let photoToSend = null;
+            try {
+                if (imgData && typeof imgData === 'string' && !imgData.startsWith('data:')) {
+                    photoToSend = imgData;
+                } else {
+                    // if existingImg is a filename or path, prefer it; otherwise null
+                    if (existingImg && typeof existingImg === 'string' && !existingImg.startsWith('data:')) photoToSend = existingImg;
+                    else photoToSend = null;
+                }
+            } catch (e) { photoToSend = null; }
+
             const apiPayload = {
                 weight: parseFloat(weightVal),
                 date: dateVal,
-                photoPath: imgData || (isEdit ? existingImg : null)
+                photoPath: photoToSend
             };
 
             let apiSuccess = false;
@@ -1903,7 +1974,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.log('Payload:', apiPayload);
                 
                 // Try to call backend API
-                const apiResult = await callWeightRecordAPI(actualPigId, apiPayload, isEdit);
+                let weightRecordId = null;
+                if (isEdit && pig.weightHistory && pig.weightHistory[currentEditWeightRecordIndex]) {
+                    const existing = pig.weightHistory[currentEditWeightRecordIndex];
+                    weightRecordId = existing.weightId || (`W_${existing.date}`);
+                }
+                const apiResult = await callWeightRecordAPI(actualPigId, apiPayload, isEdit, weightRecordId);
                 console.log('API Result:', apiResult);
                 apiSuccess = apiResult && apiResult.success;
                 
@@ -2326,8 +2402,27 @@ document.addEventListener("DOMContentLoaded", function () {
             pig.date    = dateVal;
             pig.shortId = nameVal.substring(0, 3).toUpperCase();
 
-            // persist the edited pig details
-            saveFarmsToStorage();
+            // Attempt to persist edited pig details to server if pig has a server identifier
+            (async function persistPigEdit() {
+                const serverId = pig.PigID || pig.serverId || null;
+                if (serverId) {
+                    try {
+                        const payload = {
+                            PigName: pig.name || undefined,
+                            Breed: pig.breed || undefined,
+                            Gender: pig.gender || undefined,
+                            Age: pig.age || undefined,
+                            Date: pig.date || undefined
+                        };
+                        await callUpdatePigAPI(serverId, payload);
+                    } catch (err) {
+                        console.warn('Failed to update pig on server, saving locally:', err);
+                        showAlert('warning', 'Could not save pig details to server; changes saved locally.');
+                    }
+                }
+                // persist locally regardless
+                saveFarmsToStorage();
+            })();
 
             if (editPigDetailsModal) editPigDetailsModal.style.display = "none";
 
@@ -3019,19 +3114,17 @@ document.addEventListener("DOMContentLoaded", function () {
     // =========================================================================
 
     function filterPigs(filterType) {
-        const rows = document.querySelectorAll(".pig-row");
-        let visibleCount = 0;
+        const currentFarm = getCurrentFarm();
+        if (!currentFarm) return;
 
-        rows.forEach(row => {
-            if (filterType === "all" || row.dataset.status === filterType) {
-                row.style.display = "";
-                visibleCount++;
-            } else {
-                row.style.display = "none";
-            }
-        });
-
-        updateDisplayCounts(visibleCount);
+        // Build filtered list from data model and reset to first page
+        if (filterType === 'all') {
+            lastFilteredList = null;
+        } else {
+            lastFilteredList = currentFarm.pigs.filter(p => p.status === filterType);
+        }
+        currentPage = 1;
+        renderPigs();
     }
 
     function updatePigCounts() {
@@ -3079,29 +3172,22 @@ document.addEventListener("DOMContentLoaded", function () {
     // =========================================================================
 
     function searchPigs(searchTerm) {
-        const rows = document.querySelectorAll(".pig-row");
-        let visibleCount = 0;
+        const currentFarm = getCurrentFarm();
+        if (!currentFarm) return;
 
-        rows.forEach(row => {
-            const nameText = row.querySelector(".col-name")?.textContent.toLowerCase() || "";
-            const idText   = row.querySelector(".pig-id-badge")?.textContent.toLowerCase() || "";
-            const status   = row.dataset.status || "";
-
-            const matchesSearch =
-                !searchTerm ||
-                nameText.includes(searchTerm) ||
-                idText.includes(searchTerm) ||
-                status.includes(searchTerm);
-
-            if (matchesSearch) {
-                row.style.display = "";
-                visibleCount++;
-            } else {
-                row.style.display = "none";
-            }
-        });
-
-        updateDisplayCounts(visibleCount);
+        const term = (searchTerm || '').toLowerCase();
+        if (!term) {
+            lastFilteredList = null;
+        } else {
+            lastFilteredList = currentFarm.pigs.filter(pig => {
+                const nameText = (pig.name || '').toLowerCase();
+                const idText = (pig.shortId || '').toLowerCase();
+                const status = (pig.status || '').toLowerCase();
+                return nameText.includes(term) || idText.includes(term) || status.includes(term);
+            });
+        }
+        currentPage = 1;
+        renderPigs();
     }
 
     // =========================================================================
@@ -3760,7 +3846,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Build simple list with pig names and weights for review
         let pigsListHtml = '';
         pigIds.forEach(pigId => {
-            const pig = farm.pigs.find(p => p.id === pigId);
+            const pig = findPigObj(farm, pigId);
             if (!pig) return;
             let currentWeight = 0;
             if (pig.weightHistory && pig.weightHistory.length > 0) {
@@ -3822,7 +3908,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let receiptRows = '';
 
         pigIds.forEach(pigId => {
-            const pig = farm.pigs.find(p => p.id === pigId);
+            const pig = findPigObj(farm, pigId);
             if (!pig) return;
 
             let currentWeight = 0;
@@ -3864,7 +3950,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 <div class="receipt-list">
                     ${pigIds.map(pigId => {
-                        const pig = farm.pigs.find(p => p.id === pigId);
+                        const pig = findPigObj(farm, pigId);
                         if (!pig) return '';
                         let currentWeight = 0;
                         if (pig.weightHistory && pig.weightHistory.length > 0) {
@@ -4392,7 +4478,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            const pig = farm.pigs.find(p => p.id === pigId);
+            const pig = findPigObj(farm, pigId);
             if (!pig) {
                 showAlert("error", "Pig not found.");
                 return;
@@ -4615,6 +4701,18 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // Pagination button handlers
+    prevBtn?.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage -= 1;
+            renderPigs();
+        }
+    });
+    nextBtn?.addEventListener('click', () => {
+        currentPage += 1;
+        renderPigs();
+    });
+
     // Main buttons
     if (addPigBtn)       addPigBtn.addEventListener("click", openAddPigModal);
 
@@ -4642,3 +4740,34 @@ document.addEventListener("DOMContentLoaded", function () {
 });  // end DOMContentLoaded
 
 // Profile modal functionality removed from this file. See deleted profile scripts.
+
+// Compatibility aliases: some iframe code calls older or alternate function names
+// when posting messages to the parent. Ensure those names always resolve
+// to the implemented handlers so the edit/delete modals reliably open.
+try {
+    if (typeof window.openEditPigFromDetails === 'function' && typeof window.openEditPigDetailsFromDetails !== 'function') {
+        window.openEditPigDetailsFromDetails = function(pigId, farmId, data) {
+            try { return window.openEditPigFromDetails(pigId, farmId, data); } catch (e) { console.warn('openEditPigDetailsFromDetails alias failed', e); }
+        };
+    }
+
+    if (typeof window.openEditPigDetailsFromDetails === 'function' && typeof window.openEditPigFromDetails !== 'function') {
+        window.openEditPigFromDetails = function(pigId, farmId, data) {
+            try { return window.openEditPigDetailsFromDetails(pigId, farmId, data); } catch (e) { console.warn('openEditPigFromDetails alias failed', e); }
+        };
+    }
+
+    if (typeof window.openDeletePigFromDetails === 'function' && typeof window.openDeletePigDetailsFromDetails !== 'function') {
+        window.openDeletePigDetailsFromDetails = function(pigId, farmId, data) {
+            try { return window.openDeletePigFromDetails(pigId, farmId, data); } catch (e) { console.warn('openDeletePigDetailsFromDetails alias failed', e); }
+        };
+    }
+
+    if (typeof window.openDeletePigDetailsFromDetails === 'function' && typeof window.openDeletePigFromDetails !== 'function') {
+        window.openDeletePigFromDetails = function(pigId, farmId, data) {
+            try { return window.openDeletePigDetailsFromDetails(pigId, farmId, data); } catch (e) { console.warn('openDeletePigFromDetails alias failed', e); }
+        };
+    }
+} catch (e) {
+    console.warn('Compatibility alias registration failed', e);
+}

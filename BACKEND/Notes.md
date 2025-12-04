@@ -31,10 +31,9 @@
 
 # TO DO LISTS
 
-- Notification should be able to fetch data from the reminders
-- email should only recieve @gmail none other
-- username should not store number
-- condition for 8 characters 1 special and 1 uppercase (password)
+- Notification should be able to fetch data from the reminders 
+- email should only recieve @gmail none other ( Revoke )
+- username should not store number ( revoke )
 
 # WHAT WAS DONE? ( DESCRIPTION )
 - Done With the logic for the login and successful message in the login page
@@ -68,6 +67,7 @@
  
  - Done fixing the weight records and expenses 
  - Done with the reminders
+ - Done with the condition 8 char above for password
 
 
 # CHANGES 

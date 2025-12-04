@@ -1,3 +1,4 @@
+
 /* Universal Styles */
 :root {
     --primary-color: #F16877; /* Pinkish red */
@@ -1792,4 +1793,9 @@ a {
     outline: none;
 }
 
+}
+
+/* SweetAlert2 always on top of your modal */
+.swal2-container {
+    z-index: 11000 !important;
 }

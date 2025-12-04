@@ -144,7 +144,7 @@ export async function renamePig(PigID, PigName) {
 // Update pig details
 export async function updatePig(PigID, updates) {
     try {
-        const { PigName, Breed, Gender, Age, Weight, PigType, PigStatus } = updates;
+        const { PigName, Breed, Gender, Age, Date: DateAcquired, Weight, PigType, PigStatus } = updates;
         
         // Build dynamic update query based on provided fields
         const updateFields = [];
@@ -165,6 +165,10 @@ export async function updatePig(PigID, updates) {
         if (Age !== undefined && Age !== null) {
             updateFields.push('Age = ?');
             updateValues.push(Age);
+        }
+        if (DateAcquired !== undefined && DateAcquired !== null) {
+            updateFields.push('Date = ?');
+            updateValues.push(DateAcquired);
         }
         if (Weight !== undefined && Weight !== null) {
             updateFields.push('Weight = ?');
