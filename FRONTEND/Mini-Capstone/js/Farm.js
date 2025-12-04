@@ -55,6 +55,10 @@ function getCanonicalPigId(pigId, farmId) {
 // Persistence helpers
 // -------------------------
 const STORAGE_KEY = 'poinky_farms_v1';
+// Candidate API base (tries page origin then localhost fallback)
+const API_BASE = (window.location && window.location.origin && window.location.origin !== 'null') ? window.location.origin : 'http://localhost:8080';
+// Vaccination endpoints currently live under same base; kept for clarity
+const VACC_API_BASE = API_BASE;
 
 function computeNextIdsFromData() {
     try {
@@ -226,6 +230,211 @@ async function callWeightDeleteAPI(pigId, weightId) {
         throw lastError || new Error('No available API endpoint');
     } catch (err) {
         console.warn('callWeightDeleteAPI error:', err);
+        throw err;
+    }
+}
+
+// API helper to delete an expense record from backend
+async function callExpenseDeleteAPI(expId) {
+    try {
+        let candidates = [];
+        try { const origin = window.location.origin; if (origin && origin !== 'null') candidates.push(origin); } catch (e) {}
+        candidates.push('http://localhost:8080');
+        candidates = candidates.filter((v,i,a) => a.indexOf(v) === i);
+
+        const pageOrigin = window.location?.origin;
+        if (pageOrigin && (pageOrigin.includes(':5500') || pageOrigin.includes(':5501'))) {
+            candidates = candidates.filter(c => c !== 'http://localhost:8080');
+            candidates.unshift('http://localhost:8080');
+        }
+
+        const userId = localStorage.getItem('userID') || null;
+        let lastError = null;
+        for (const base of candidates) {
+            try {
+                const url = `${base.replace(/\/$/, '')}/api/expenses-records/delete-expense`;
+                const payload = { ExpID: expId, UserID: userId };
+                const resp = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (resp && resp.ok) {
+                    const data = await resp.json().catch(() => null);
+                    console.log('Expense delete API success:', data);
+                    return data;
+                } else {
+                    console.debug('Expense delete API returned status', resp && resp.status);
+                }
+            } catch (err) {
+                lastError = err;
+                console.debug('Failed to reach', base, err && err.message);
+            }
+        }
+        throw lastError || new Error('No available API endpoint');
+    } catch (err) {
+        console.warn('callExpenseDeleteAPI error:', err);
+        throw err;
+    }
+}
+
+// API helper to add a vaccination record (calls backend endpoint)
+async function callVaccinationAPI(pigId, vaccDate, dueDate, category, userId = null, farmId = null) {
+    try {
+        // Build candidate API bases similar to other helpers
+        let candidates = [];
+        try {
+            const origin = window.location.origin;
+            if (origin && origin !== 'null') candidates.push(origin);
+        } catch (e) {}
+        candidates.push('http://localhost:8080');
+        candidates = candidates.filter((v,i,a) => a.indexOf(v) === i);
+
+        const pageOrigin = window.location?.origin;
+        if (pageOrigin && (pageOrigin.includes(':5500') || pageOrigin.includes(':5501'))) {
+            candidates = candidates.filter(c => c !== 'http://localhost:8080');
+            candidates.unshift('http://localhost:8080');
+        }
+
+        const payload = {
+            PigID: pigId,
+            RemID: null,
+            Date: vaccDate,
+            DueDate: dueDate,
+            Category: category,
+            UserID: userId,
+            FarmID: farmId
+        };
+
+        let lastError = null;
+        let lastResponse = null;
+
+        for (const base of candidates) {
+            try {
+                const url = `${base.replace(/\/$/, '')}/api/vaccinations/add-vaccination`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response && response.ok) {
+                    const data = await response.json();
+                    console.log('Vaccination API success:', data);
+                    return data;
+                } else if (response) {
+                    const errorData = await response.json().catch(() => ({}));
+                    lastResponse = { status: response.status, data: errorData };
+                    console.error(`Vaccination API ${base} returned status ${response.status}:`, errorData);
+                } else {
+                    console.debug(`Vaccination API call to ${base} returned no response`);
+                }
+            } catch (err) {
+                lastError = err;
+                console.debug(`Failed to reach ${base}:`, err.message);
+            }
+        }
+
+        if (lastResponse) {
+            throw new Error(`Server returned ${lastResponse.status}: ${lastResponse.data?.message || 'Unknown error'}`);
+        }
+
+        throw lastError || new Error('No available API endpoint');
+    } catch (err) {
+        console.warn('callVaccinationAPI error:', err);
+        throw err;
+    }
+}
+
+// API helper to update an existing vaccination record
+async function callVaccinationUpdateAPI(pigId, originalDate, dueDate, category) {
+    try {
+        if (!pigId || !originalDate) throw new Error('pigId and originalDate required');
+        let candidates = [];
+        try { const origin = window.location.origin; if (origin && origin !== 'null') candidates.push(origin); } catch (e) {}
+        candidates.push('http://localhost:8080');
+        candidates = candidates.filter((v,i,a) => a.indexOf(v) === i);
+        const pageOrigin = window.location?.origin;
+        if (pageOrigin && (pageOrigin.includes(':5500') || pageOrigin.includes(':5501'))) {
+            candidates = candidates.filter(c => c !== 'http://localhost:8080');
+            candidates.unshift('http://localhost:8080');
+        }
+
+        const payload = {
+            PigID: pigId,
+            Date: originalDate,
+            DueDate: dueDate,
+            Category: category
+        };
+
+        let lastError = null;
+        for (const base of candidates) {
+            try {
+                const url = `${base.replace(/\/$/, '')}/api/vaccinations/update-vaccination`;
+                const resp = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (resp && resp.ok) {
+                    const data = await resp.json().catch(() => null);
+                    console.log('Vaccination update API success:', data);
+                    return data;
+                } else {
+                    console.debug('Vaccination update API returned status', resp && resp.status);
+                }
+            } catch (err) {
+                lastError = err;
+                console.debug('Failed to reach', base, err && err.message);
+            }
+        }
+        throw lastError || new Error('No available API endpoint');
+    } catch (err) {
+        console.warn('callVaccinationUpdateAPI error:', err);
+        throw err;
+    }
+}
+
+// API helper to delete a vaccination record from backend
+async function callVaccinationDeleteAPI(pigId, date) {
+    try {
+        if (!pigId || !date) throw new Error('pigId and date required');
+        let candidates = [];
+        try { const origin = window.location.origin; if (origin && origin !== 'null') candidates.push(origin); } catch (e) {}
+        candidates.push('http://localhost:8080');
+        candidates = candidates.filter((v,i,a) => a.indexOf(v) === i);
+        const pageOrigin = window.location?.origin;
+        if (pageOrigin && (pageOrigin.includes(':5500') || pageOrigin.includes(':5501'))) {
+            candidates = candidates.filter(c => c !== 'http://localhost:8080');
+            candidates.unshift('http://localhost:8080');
+        }
+
+        const payload = { PigID: pigId, Date: date };
+        let lastError = null;
+        for (const base of candidates) {
+            try {
+                const url = `${base.replace(/\/$/, '')}/api/vaccinations/delete-vaccination`;
+                const resp = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (resp && resp.ok) {
+                    const data = await resp.json().catch(() => null);
+                    console.log('Vaccination delete API success:', data);
+                    return data;
+                } else {
+                    console.debug('Vaccination delete API returned status', resp && resp.status);
+                }
+            } catch (err) {
+                lastError = err;
+                console.debug('Failed to reach', base, err && err.message);
+            }
+        }
+        throw lastError || new Error('No available API endpoint');
+    } catch (err) {
+        console.warn('callVaccinationDeleteAPI error:', err);
         throw err;
     }
 }
@@ -878,7 +1087,7 @@ window.deleteExpenseFromDetails = function (pigId, farmId, data) {
 };
 
 // VACCINATION RECORD EDIT
-window.openEditVaccinationFromDetails = function (pigId, farmId, data) {
+window.openEditVaccinationFromDetails = async function (pigId, farmId, data) {
     const addVaccinationModal = document.getElementById("addVaccinationModal");
     if (!addVaccinationModal) return;
 
@@ -892,8 +1101,45 @@ window.openEditVaccinationFromDetails = function (pigId, farmId, data) {
     const pig = findPigObj(farm, pigId);
     if (!pig || currentEditVaccinationIndex === undefined) return;
 
-    const record = pig.vaccinations[currentEditVaccinationIndex];
-    if (!record) return;
+    // If vaccinations aren't present locally, attempt to fetch from server
+    if (!Array.isArray(pig.vaccinations) || pig.vaccinations.length === 0) {
+        try {
+            const serverPigId = pig.serverId || pig.PigID || pig.id;
+            if (serverPigId) {
+                const url = `${VACC_API_BASE}/get-vaccinations?PigID=${encodeURIComponent(serverPigId)}`;
+                const resp = await fetch(url, { method: 'GET' });
+                if (resp && resp.ok) {
+                    const data = await resp.json().catch(() => null);
+                    const records = data && data.records ? data.records : (Array.isArray(data) ? data : []);
+                    // Normalize records to local shape
+                    pig.vaccinations = records.map(r => ({ date: r.Date || r.date || r.createdAt || '', dueDate: r.DueDate || r.dueDate || '', type: r.Category || r.category || r.type || '', status: r.status || 'scheduled' }));
+                    saveFarmsToStorage();
+                } else {
+                    console.debug('Failed to fetch vaccinations from server', resp && resp.status);
+                }
+            }
+        } catch (err) {
+            console.warn('Failed to fetch vaccinations for pig in openEditVaccinationFromDetails', err);
+        }
+    }
+
+    // Defensive: ensure vaccinations array exists and index is valid
+    if (!Array.isArray(pig.vaccinations)) {
+        console.warn('openEditVaccinationFromDetails: pig has no vaccinations array after fetch', { pigId, farmId, pig });
+        return;
+    }
+
+    const idx = Number(currentEditVaccinationIndex);
+    if (!Number.isFinite(idx) || idx < 0 || idx >= pig.vaccinations.length) {
+        console.warn('openEditVaccinationFromDetails: invalid vaccination index', { pigId, farmId, index: currentEditVaccinationIndex, length: pig.vaccinations.length });
+        return;
+    }
+
+    const record = pig.vaccinations[idx];
+    if (!record) {
+        console.warn('openEditVaccinationFromDetails: vaccination record not found after fetch', { pigId, farmId, index: idx });
+        return;
+    }
 
     console.debug("openEditVaccinationFromDetails called", { pigId, farmId, index: currentEditVaccinationIndex, record });
 
@@ -1202,6 +1448,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Backend API base for farms
     const FARM_API_BASE = 'http://localhost:8080/api/farm';
     const PIG_API_BASE  = 'http://localhost:8080/api/pigs';
+    const VACC_API_BASE = 'http://localhost:8080/api/vaccinations';
 
     // Simple helper to POST JSON and return parsed JSON (keeps fetch style consistent)
     async function postJSON(url, obj = {}) {
@@ -1251,7 +1498,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     return {
                         id: localId,
                         name: sf.FarmName || sf.name || (existing && existing.name) || 'Farm',
-                        // preserve existing pigs if present, otherwise start empty and let fetchPigsForFarm fill them
                         pigs: existing?.pigs || [],
                         serverId: sf.FarmID
                     };
@@ -1480,7 +1726,9 @@ document.addEventListener("DOMContentLoaded", function () {
         // If present, auto-close the alert after that many milliseconds (and hide undo).
         try {
             const args = Array.from(arguments);
-            const autoCloseMs = args[4];
+            let autoCloseMs = args[4];
+            // Normalize legacy default 2500 -> 2000
+            if (autoCloseMs === 2500) autoCloseMs = 2000;
             if (autoCloseMs && typeof autoCloseMs === 'number' && autoCloseMs > 0) {
                 autoCloseTimer = setTimeout(() => {
                     if (alertModal) {
@@ -1898,7 +2146,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 ? getFarmById(currentDetailFarmId)
                 : getCurrentFarm();
             if (!farm) {
-                showAlert("error", "Error: Farm not found.");
+                showAlert("error", "Error: Farm not found.",false,null, 2500);
                 return;
             }
 
@@ -1910,7 +2158,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 p.serverId === currentDetailPigId
             );
             if (!pig) {
-                showAlert("error", "Error: Pig not found. currentDetailPigId=" + currentDetailPigId);
+                showAlert("error", "Error: Pig not found. currentDetailPigId=" + currentDetailPigId,false,null, 2500);
                 if (addWeightModal) addWeightModal.style.display = "none";
                 document.body.style.overflow = "auto";
                 return;
@@ -2000,7 +2248,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // If API failed, show error and don't save locally
             if (!apiSuccess && apiError) {
-                showAlert("error", `Failed to save weight: ${apiError}. Please ensure the server is running and try again.`);
+                showAlert("error", `Failed to save weight: ${apiError}. Please ensure the server is running and try again.`,false,null, 5000);
                 return;
             }
 
@@ -2010,12 +2258,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 // UPDATE existing record
                 pig.weightHistory[currentEditWeightRecordIndex] = newRecord;
                 saveFarmsToStorage();
-                showAlert("success", "Weight record updated successfully!");
+                showAlert("success", "Weight record updated successfully!",false,null, 2500);
             } else {
                 // ADD new record
                 pig.weightHistory.push(newRecord);
                 saveFarmsToStorage();
-                showAlert("success", "Weight record added successfully!");
+                showAlert("success", "Weight record added successfully!", false, null, 2500);
             }
 
             pig.weight = `${weightVal}kg`;
@@ -2088,7 +2336,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const weightVal = document.getElementById("editWeightValue")?.value;
 
             if (!dateVal || !weightVal) {
-                showAlert("warning", "Please enter a date and weight.");
+                showAlert("warning", "Please enter a date and weight.", false, null, 2500 );
                 return;
             }
 
@@ -2096,13 +2344,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 ? getFarmById(currentDetailFarmId)
                 : getCurrentFarm();
             if (!farm) {
-                showAlert("error", "Error: Farm not found.");
+                showAlert("error", "Error: Farm not found.", false, null, 2500);
                 return;
             }
 
             const pig = farm.pigs.find(p => p.id === currentDetailPigId);
             if (!pig || currentEditWeightRecordIndex === null) {
-                showAlert("error", "Error: Could not save changes.");
+                showAlert("error", "Error: Could not save changes.", false, null, 2500);
                 currentEditWeightRecordIndex = null;
                 return;
             }
@@ -2158,7 +2406,7 @@ document.addEventListener("DOMContentLoaded", function () {
             // Persist edits (including any image update)
             saveFarmsToStorage();
 
-            showAlert("success", "Weight record updated successfully!");
+            showAlert("success", "Weight record updated successfully!", false, null, 2500);
         });
     }
 
@@ -2285,7 +2533,7 @@ document.addEventListener("DOMContentLoaded", function () {
             addPigForm.reset();
             closeAllModals();
 
-            showAlert("success", "Pig added successfully!");
+            showAlert("success", "Pig added successfully!", false, null, 2500);
         });
     }
 
@@ -2385,13 +2633,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 ? getFarmById(currentDetailFarmId)
                 : getCurrentFarm();
             if (!farm) {
-                showAlert("error", "Error: Farm not found.");
+                showAlert("error", "Error: Farm not found.", false, null, 2500);
                 return;
             }
 
             const pig = farm.pigs.find(p => p.id === currentDetailPigId);
             if (!pig) {
-                showAlert("error", "Error: Pig not found.");
+                showAlert("error", "Error: Pig not found.", false, null, 2500);
                 return;
             }
 
@@ -2417,7 +2665,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         await callUpdatePigAPI(serverId, payload);
                     } catch (err) {
                         console.warn('Failed to update pig on server, saving locally:', err);
-                        showAlert('warning', 'Could not save pig details to server; changes saved locally.');
+                        showAlert('warning', 'Could not save pig details to server; changes saved locally.', false, null, 2500);
                     }
                 }
                 // persist locally regardless
@@ -2456,7 +2704,7 @@ document.addEventListener("DOMContentLoaded", function () {
             loadFarmData();
             this.reset();
 
-            showAlert("success", "Pig details updated successfully!");
+            showAlert("success", "Pig details updated successfully!", false, null, 2500);
         });
     }
 
@@ -2517,7 +2765,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 ? getFarmById(currentDetailFarmId)
                 : getCurrentFarm();
             if (!farm) {
-                showAlert("error", "Error: Farm not found.");
+                showAlert("error", "Error: Farm not found.", false, null, 2500);
                 return;
             }
 
@@ -2553,7 +2801,7 @@ document.addEventListener("DOMContentLoaded", function () {
             ));
 
             if (!pig) {
-                showAlert("error", "Error: Pig not found.");
+                showAlert("error", "Error: Pig not found.", false, null, 2500);
                 if (addExpenseModal) addExpenseModal.style.display = "none";
                 document.body.style.overflow = "auto";
                 return;
@@ -2570,14 +2818,98 @@ document.addEventListener("DOMContentLoaded", function () {
             // Check if editing or adding
             if (currentEditExpenseIndex !== null && pig.expenses[currentEditExpenseIndex]) {
                 // UPDATE existing record
-                pig.expenses[currentEditExpenseIndex] = newExpense;
+                // Preserve existing ExpID if present so we can persist the edit to backend
+                const existing = pig.expenses[currentEditExpenseIndex] || {};
+                const ExpID = existing.ExpID || existing.ExpId || existing.expID || null;
+                // Merge new values but keep ExpID
+                const updatedRecord = Object.assign({}, newExpense);
+                if (ExpID) updatedRecord.ExpID = ExpID;
+
+                pig.expenses[currentEditExpenseIndex] = updatedRecord;
                 saveFarmsToStorage();
-                showAlert("success", "Expense record updated successfully!");
+                showAlert("success", "Expense record updated successfully!", false, null, 2500);
+
+                // Persist edit to server (best-effort)
+                (async function persistEdit() {
+                    try {
+                        const actualPigId = pig.PigID || pig.serverId || pig.id || currentDetailPigId;
+                        const userId = localStorage.getItem('userID') || null;
+
+                        // If we have an ExpID, call edit-expense endpoint
+                        if (!ExpID) {
+                            console.debug('No ExpID found for edited expense; skipping server update');
+                            return;
+                        }
+
+                        const payload = {
+                            ExpID: ExpID,
+                            UserID: userId,
+                            Date: updatedRecord.date,
+                            Amount: updatedRecord.price,
+                            Category: updatedRecord.category
+                        };
+
+                        const backendFallback = 'http://localhost:8080';
+                        let candidates = [];
+                        try {
+                            const parentOrigin = window.parent && window.parent.location && window.parent.location.origin;
+                            if (parentOrigin && parentOrigin !== 'null') candidates.push(parentOrigin);
+                        } catch (e) {}
+                        try {
+                            const pageOrigin = window.location && window.location.origin;
+                            if (pageOrigin && pageOrigin !== 'null') candidates.push(pageOrigin);
+                        } catch (e) {}
+                        candidates.push(backendFallback);
+                        candidates = candidates.filter((v, i, a) => a.indexOf(v) === i);
+                        const pageOrigin = window.location && window.location.origin || '';
+                        if (pageOrigin.includes(':5500') || pageOrigin.includes(':5501')) {
+                            candidates = candidates.filter(c => c !== backendFallback);
+                            candidates.unshift(backendFallback);
+                        }
+
+                        let res = null;
+                        let usedBase = null;
+                        let lastError = null;
+                        for (const base of candidates) {
+                            try {
+                                const url = base.replace(/\/$/, '') + '/api/expenses-records/edit-expense';
+                                console.debug('Attempting expense EDIT POST to', url, payload);
+                                const attempt = await fetch(url, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(payload)
+                                });
+                                if (attempt && attempt.ok) {
+                                    res = attempt;
+                                    usedBase = base;
+                                    break;
+                                } else {
+                                    const errData = await attempt.json().catch(() => null);
+                                    console.debug('Non-ok response from', base, attempt && attempt.status, errData);
+                                }
+                            } catch (err) {
+                                lastError = err;
+                                console.debug('Failed to reach', base, err && err.message);
+                            }
+                        }
+
+                        const data = res ? await res.json().catch(() => null) : null;
+                        if (!res) {
+                            console.warn('Server failed to update expense', lastError);
+                            showAlert('warning', 'Updated locally but failed to update on server.', false, null, 2500);
+                        } else {
+                            console.log('Expense edit saved on server (via', usedBase + ')', data);
+                        }
+                    } catch (err) {
+                        console.warn('Error persisting expense edit to server', err);
+                        showAlert('warning', 'Updated locally but server request failed.');
+                    }
+                })();
             } else {
                 // ADD new record locally
                 pig.expenses.push(newExpense);
                 saveFarmsToStorage();
-                showAlert("success", "Expense record added successfully!");
+                showAlert("success", "Expense record added successfully!", false, null, 2500);
 
                 // Persist to server (best-effort)
                 (async function persistExpense() {
@@ -2641,7 +2973,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         const data = res ? await res.json().catch(() => null) : null;
                         if (!res) {
                             console.warn('Server failed to save expense', lastError);
-                            showAlert('warning', 'Saved locally but failed to save on server.');
+                            showAlert('warning', 'Saved locally but failed to save on server.', false, null, 2500);
                         } else {
                             console.log('Expense saved on server (via', usedBase + ')', data);
                             if (data && data.data && data.data.ExpID) {
@@ -2652,7 +2984,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
                     } catch (err) {
                         console.warn('Error persisting expense to server', err);
-                        showAlert('warning', 'Saved locally but server request failed.');
+                        showAlert('warning', 'Saved locally but server request failed.', false, null, 2500);
                     }
                 })();
             }
@@ -2776,13 +3108,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 ? getFarmById(currentDetailFarmId)
                 : getCurrentFarm();
             if (!farm) {
-                showAlert("error", "Error: Farm not found.");
+                showAlert("error", "Error: Farm not found.", false, null, 2500);
                 return;
             }
 
-            const pig = farm.pigs.find(p => p.id === currentDetailPigId);
+            const pig = findPigObj(farm, currentDetailPigId);
             if (!pig) {
-                showAlert("error", "Error: Pig not found.");
+                showAlert("error", "Error: Pig not found. (id=" + currentDetailPigId + ")", false, null, 2500);
                 if (addVaccinationModal) addVaccinationModal.style.display = "none";
                 document.body.style.overflow = "auto";
                 return;
@@ -2798,16 +3130,71 @@ document.addEventListener("DOMContentLoaded", function () {
             };
 
             // Check if editing or adding
+            // Check if editing or adding
             if (currentEditVaccinationIndex !== null && pig.vaccinations[currentEditVaccinationIndex]) {
                 // UPDATE existing record
-                pig.vaccinations[currentEditVaccinationIndex] = newVaccination;
-                showAlert("success", "Vaccination record updated successfully!");
-            } else {
-                // ADD new record
-                pig.vaccinations.push(newVaccination);
-                showAlert("success", "Vaccination record added successfully!");
-            }
+                // Preserve original identifying date (backend uses PigID + Date to identify)
+                const existing = pig.vaccinations[currentEditVaccinationIndex] || {};
+                const originalDate = existing.date || existing.Date || existing.createdAt || null;
 
+                pig.vaccinations[currentEditVaccinationIndex] = newVaccination;
+                showAlert("success", "Vaccination record updated successfully!", false, null, 2500);
+
+                // Persist update to backend (best-effort)
+                (async function persistUpdate() {
+                    try {
+                        const actualPigId = pig.PigID || pig.serverId || null;
+                        if (!actualPigId || !originalDate) {
+                            console.debug('Skipping vaccination update API: missing server PigID or originalDate', { actualPigId, originalDate });
+                            return;
+                        }
+
+                        try {
+                            await callVaccinationUpdateAPI(actualPigId, originalDate, newVaccination.dueDate, newVaccination.type);
+                            console.log('Vaccination update synced to server');
+                        } catch (err) {
+                            console.warn('Failed to persist vaccination update to backend:', err);
+                            showAlert('warning', 'Updated locally but failed to update on server.', false, null, 2500);
+                        }
+                    } catch (err) { console.debug('persistUpdate wrapper error', err); }
+                })();
+
+            } else {
+                // ADD new record locally
+                pig.vaccinations.push(newVaccination);
+                showAlert("success", "Vaccination record added successfully!", false, null, 2500);
+
+                // Attempt to persist vaccination to backend (non-blocking)
+                (async function () {
+                    try {
+                        // Only attempt to sync if we have a server-side pig identifier
+                        const actualPigId = pig.PigID || pig.serverId || null;
+                        const actualFarmId = (farm && (farm.serverId || farm.FarmID)) ? (farm.serverId || farm.FarmID) : (farm.id || null);
+                        const userId = localStorage.getItem('userID') || null;
+
+                        if (!actualPigId) {
+                            console.debug('Skipping vaccination API call: pig has no server-side PigID or serverId', { pig });
+                            return;
+                        }
+
+                        try {
+                            const resp = await callVaccinationAPI(actualPigId, dateVal, dueDateVal, typeVal, userId, actualFarmId);
+                            if (!resp || !resp.success) {
+                                console.warn('Vaccination API returned unexpected response', resp);
+                                showAlert('error', 'Vaccination saved locally but failed to sync to server.', false, null, 2500);
+                                console.debug('Vaccination sync response:', resp);
+                            } else {
+                                console.log('Vaccination synced to server:', resp);
+                            }
+                        } catch (err) {
+                            console.warn('Failed to persist vaccination to backend:', err);
+                            showAlert('error', 'Vaccination saved locally but failed to sync to server. See console for details.', false, null, 2500);
+                        }
+                    } catch (err) {
+                        console.debug('callVaccinationAPI wrapper error:', err);
+                    }
+                })();
+            }
             if (addVaccinationModal) addVaccinationModal.style.display = "none";
 
             if (pigDetailsModal) pigDetailsModal.style.display = "flex";
@@ -2934,12 +3321,12 @@ document.addEventListener("DOMContentLoaded", function () {
             const pigAge = document.getElementById("editPigAge")?.value;
 
             if (!pigName || !pigBreed || !pigGender || !pigAge) {
-                showAlert("error", "Please fill in all required fields.");
+                showAlert("error", "Please fill in all required fields.", false, null, 2500);
                 return;
             }
 
             if (!currentDetailPigId) {
-                showAlert("error", "Error: Pig ID not found.");
+                showAlert("error", "Error: Pig ID not found.", false, null, 2500);
                 return;
             }
 
@@ -2947,7 +3334,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 ? getFarmById(currentDetailFarmId)
                 : getCurrentFarm();
             if (!farm) {
-                showAlert("error", "Error: Farm not found.");
+                showAlert("error", "Error: Farm not found.", false, null, 2500);
                 return;
             }
 
@@ -2958,7 +3345,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 p.serverId === currentDetailPigId
             );
             if (!pig) {
-                showAlert("error", "Error: Pig not found.");
+                showAlert("error", "Error: Pig not found.", false, null, 2500);
                 return;
             }
 
@@ -2979,7 +3366,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 const apiResult = await callUpdatePigAPI(actualPigId, pigData);
                 
                 if (!apiResult.success) {
-                    showAlert("error", "Failed to update pig: " + (apiResult.message || 'Unknown error'));
+                    showAlert("error", "Failed to update pig: " + (apiResult.message || 'Unknown error'), false, null, 2500);
                     return;
                 }
 
@@ -2992,7 +3379,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 pig.Age = parseInt(pigAge);
                 
                 saveFarmsToStorage();
-                showAlert("success", "Pig details updated successfully!");
+                showAlert("success", "Pig details updated successfully!", false, null, 2500);
 
                 // Close modal and refresh
                 if (editPigDetailsModal) editPigDetailsModal.style.display = "none";
@@ -3010,7 +3397,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 
             } catch (apiErr) {
                 console.error('Pig update API call failed:', apiErr);
-                showAlert("error", `Failed to update pig: ${apiErr.message || 'Server connection failed'}`);
+                showAlert("error", `Failed to update pig: ${apiErr.message || 'Server connection failed'}`, false, null, 2500);
             }
         });
     }
@@ -3519,11 +3906,11 @@ document.addEventListener("DOMContentLoaded", function () {
                         saveFarmsToStorage();
                         closeStatusModal();
                         loadFarmData();
-                        showAlert("success", `${pig.name} changed into Growing.`);
+                        showAlert("success", `${pig.name} changed into Growing.`, false, null, 2500);
                     } catch (err) {
                         closeStatusModal();
                         loadFarmData();
-                        showAlert("error", `Failed to update status on server: ${err?.message || err}`);
+                        showAlert("error", `Failed to update status on server: ${err?.message || err}`, false, null, 2500);
                     }
                     break;
                 }
@@ -3567,11 +3954,11 @@ document.addEventListener("DOMContentLoaded", function () {
                         saveFarmsToStorage();
                         closeStatusModal();
                         loadFarmData();
-                        showAlert("success", `${pig.name} changed into Deceased.`);
+                        showAlert("success", `${pig.name} changed into Deceased.`, false, null, 2500);
                     } catch (err) {
                         closeStatusModal();
                         loadFarmData();
-                        showAlert("error", `Failed to update status on server: ${err?.message || err}`);
+                        showAlert("error", `Failed to update status on server: ${err?.message || err}`, false, null, 2500);
                     }
                     break;
                 }
@@ -3611,7 +3998,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     const lastWeight = getLastWeight();
                     if (lastWeight == null) {
                         closeStatusModal();
-                        showAlert("error", "No weight record found to calculate total price.");
+                        showAlert("error", "No weight record found to calculate total price.", false, null, 2500);
                         return;
                     }
 
@@ -3681,11 +4068,11 @@ document.addEventListener("DOMContentLoaded", function () {
                         saveFarmsToStorage();
                         closeStatusModal();
                         loadFarmData();
-                        showAlert("success", `${pig.name} changed into Sold.`);
+                        showAlert("success", `${pig.name} changed into Sold.`, false, null, 2500);
                     } catch (err) {
                         closeStatusModal();
                         loadFarmData();
-                        showAlert("error", `Failed to update status on server: ${err?.message || err}`);
+                        showAlert("error", `Failed to update status on server: ${err?.message || err}`, false, null, 2500);
                     }
                     break;
                 }
@@ -3713,11 +4100,11 @@ document.addEventListener("DOMContentLoaded", function () {
                         saveFarmsToStorage();
                         closeStatusModal();
                         loadFarmData();
-                        showAlert("success", `${pig.name} changed into To Sale.`);
+                        showAlert("success", `${pig.name} changed into To Sale.`, false, null, 2500);
                     } catch (err) {
                         closeStatusModal();
                         loadFarmData();
-                        showAlert("error", `Failed to update status on server: ${err?.message || err}`);
+                        showAlert("error", `Failed to update status on server: ${err?.message || err}`, false, null, 2500);
                     }
                     break;
                 }
@@ -3737,9 +4124,12 @@ document.addEventListener("DOMContentLoaded", function () {
                         .map(cb => Number(cb.dataset.pigId));
 
                     let changedCount = 0;
-                    selectedIds.forEach(id => {
+                    const failedIds = [];
+
+                    // process sequentially to avoid overwhelming the backend and to collect per-pig results
+                    for (const id of selectedIds) {
                         const p = currentFarm.pigs.find(pg => pg.id === id);
-                        if (!p) return;
+                        if (!p) continue;
 
                         let currentWeight = 0;
                         if (p.weightHistory && p.weightHistory.length > 0) {
@@ -3747,24 +4137,56 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
                         const total = (currentWeight * pricePerKg).toFixed(2);
 
-                        p.status = "sold";
-                        p.statusHistory = p.statusHistory || [];
-                        p.statusHistory.push({
+                        const desiredStatus = "sold";
+                        const historyEntry = {
                             date: new Date().toISOString().split('T')[0],
                             status: 'sold',
                             pricePerKg: pricePerKg || null,
                             total: total || null,
                             notes: 'Bulk sold (shared price)'
-                        });
-                        changedCount++;
-                    });
+                        };
+
+                        try {
+                            // persist status change to server (best-effort)
+                            await updatePigStatusOnServer(p, currentFarm, desiredStatus, historyEntry);
+
+                            // apply locally after server confirmed (or for local-only pigs)
+                            p.status = desiredStatus;
+                            p.statusHistory = p.statusHistory || [];
+                            p.statusHistory.push(historyEntry);
+
+                            // persist expense for this status change (best-effort)
+                            const dateNow = historyEntry.date;
+                            const category = formatStatusText(desiredStatus);
+                            const amount = pricePerKg || 0;
+                            const expenseRes = await persistStatusExpense({ pig: p, farm: currentFarm, amount, category, date: dateNow });
+
+                            if (!Array.isArray(p.expenses)) p.expenses = [];
+                            const localExp = { date: dateNow, price: amount, category };
+                            if (expenseRes && expenseRes.success && expenseRes.data && expenseRes.data.data && expenseRes.data.data.ExpID) {
+                                localExp.ExpID = expenseRes.data.data.ExpID;
+                            }
+                            p.expenses.push(localExp);
+
+                            changedCount++;
+                        } catch (err) {
+                            console.error('Bulk sell failed for pig', id, err);
+                            failedIds.push(id);
+                            // do not mark pig as sold locally if server update fails
+                        }
+                    }
 
                     // clear temporary global
                     window._soldPricePerKg = null;
 
                     closeStatusModal();
                     loadFarmData();
-                    showAlert("success", `${changedCount} pig${changedCount > 1 ? 's' : ''} marked as Sold!`);
+
+                    if (failedIds.length === 0) {
+                        showAlert("success", `${changedCount} pig${changedCount > 1 ? 's' : ''} marked as Sold!`, false, null, 2500);
+                    } else {
+                        showAlert("warning", `${changedCount} pig${changedCount > 1 ? 's' : ''} marked as Sold. ${failedIds.length} failed to update on server.`, false, null, 5000);
+                    }
                     break;
                 }
 
@@ -3825,7 +4247,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                     }
                                 });
                                 loadFarmData();
-                                showAlert("success", "Undo successful! Pigs restored to Growing status.");
+                                showAlert("success", "Undo successful! Pigs restored to Growing status.", false, null, 2500);
                             }
                         }
                     }, 5000);
@@ -4064,7 +4486,7 @@ document.addEventListener("DOMContentLoaded", function () {
             .map(cb => Number(cb.dataset.pigId));
 
         if (selectedIds.length === 0) {
-            showAlert("warning", "Please select at least one pig to change status.");
+            showAlert("warning", "Please select at least one pig to change status.", false, null, 2500);
             return;
         }
 
@@ -4075,7 +4497,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (selectedIds.length === 1) {
             const pig = currentFarm.pigs.find(p => p.id === selectedIds[0]);
             if (!pig) {
-                showAlert("error", "Pig not found.");
+                showAlert("error", "Pig not found.", false, null, 2500);
                 return;
             }
             startStatusChangeFlow(pig, newStatus);
@@ -4097,7 +4519,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Multiple pigs: allow bulk updates for other statuses
         const allowedBulk = ['growing', 'tosale'];
         if (!allowedBulk.includes(newStatus)) {
-            showAlert("warning", "Cannot bulk-change to the selected status.");
+            showAlert("warning", "Cannot bulk-change to the selected status.", false, null, 2500);
             return;
         }
 
@@ -4114,9 +4536,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (changedCount > 0) {
             loadFarmData();
-            showAlert("success", `${changedCount} pig${changedCount > 1 ? 's' : ''} changed into ${formatStatusText(newStatus)}.`);
+            showAlert("success", `${changedCount} pig${changedCount > 1 ? 's' : ''} changed into ${formatStatusText(newStatus)}.`, false, null, 2500);
         } else {
-            showAlert("warning", "No pigs were updated.");
+            showAlert("warning", "No pigs were updated.", false, null, 2500);
         }
     }
 
@@ -4316,7 +4738,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const idx = farms.findIndex(f => f.id === id);
             if (idx === -1) {
-                showAlert('error', 'Farm not found.');
+                showAlert('error', 'Farm not found.', false, null, 2500);
                 return;
             }
 
@@ -4328,11 +4750,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 try {
                     const data = await postJSON(`${FARM_API_BASE}/delete-farm`, { FarmID: serverId });
                     if (!data || !data.success) {
-                        showAlert('warning', 'Server failed to delete farm; falling back to local delete.');
+                        showAlert('warning', 'Server failed to delete farm; falling back to local delete.', false, null, 2500);
                     }
                 } catch (err) {
                     console.warn('Server delete failed, falling back to local:', err);
-                    showAlert('warning', 'Could not contact server; deleted locally.');
+                    showAlert('warning', 'Could not contact server; deleted locally.', false, null, 2500);
                 }
             }
 
@@ -4354,7 +4776,7 @@ document.addEventListener("DOMContentLoaded", function () {
             document.body.style.overflow = 'auto';
 
             loadFarmData();
-            showAlert('success', 'Successfully Deleted Farm');
+            showAlert('success', 'Successfully Deleted Farm', false, null, 2500);
         });
     }
 
@@ -4392,7 +4814,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const fid = currentDetailFarmId || currentFarmId;
             const farm = fid ? getFarmById(fid) : getCurrentFarm();
             if (!farm) {
-                showAlert('error', 'Farm not found.');
+                showAlert('error', 'Farm not found.', false, null, 2500);
                 return;
             }
 
@@ -4403,7 +4825,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 p.serverId === pid
             );
             if (idx === -1) {
-                showAlert('error', 'Pig not found.');
+                showAlert('error', 'Pig not found.', false, null, 2500);
                 return;
             }
 
@@ -4418,7 +4840,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.log('Pig deleted successfully on server');
             } catch (apiErr) {
                 console.error('Pig delete API call failed:', apiErr);
-                showAlert("error", `Failed to delete pig: ${apiErr.message || 'Server connection failed'}`);
+                showAlert("error", `Failed to delete pig: ${apiErr.message || 'Server connection failed'}`, false, null, 2500);
                 return;
             }
 
@@ -4432,7 +4854,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (pigDetailsFrame) pigDetailsFrame.src = '';
 
             loadFarmData();
-            showAlert('success', 'Successfully Deleted Pig');
+            showAlert('success', 'Successfully Deleted Pig', false, null, 2500);
         });
     }
 
@@ -4474,13 +4896,13 @@ document.addEventListener("DOMContentLoaded", function () {
             const farm = farmId ? getFarmById(farmId) : getCurrentFarm();
             
             if (!farm) {
-                showAlert("error", "Farm not found.");
+                showAlert("error", "Farm not found.", false, null, 2500);
                 return;
             }
 
             const pig = findPigObj(farm, pigId);
             if (!pig) {
-                showAlert("error", "Pig not found.");
+                showAlert("error", "Pig not found.", false, null, 2500);
                 return;
             }
 
@@ -4503,7 +4925,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             console.log('Weight record deleted successfully on server');
                         } catch (apiErr) {
                             console.error('Weight record API deletion failed:', apiErr);
-                            showAlert("error", `Failed to delete weight: ${apiErr.message || 'Server connection failed'}`);
+                            showAlert("error", `Failed to delete weight: ${apiErr.message || 'Server connection failed'}`, false, null, 2500);
                             pendingDeleteData = null;
                             if (deleteRecordConfirmModal) deleteRecordConfirmModal.style.display = "none";
                             document.body.style.overflow = "auto";
@@ -4519,14 +4941,79 @@ document.addEventListener("DOMContentLoaded", function () {
                     break;
                 case "expense":
                     if (pig.expenses && pig.expenses[index]) {
+                        const record = pig.expenses[index];
+                        // Attempt server-side delete first if ExpID exists
+                        try {
+                            const expId = record.ExpID || record.ExpId || record.expID || null;
+                            if (expId) {
+                                console.log('Attempting expense delete API with ExpID:', expId);
+                                await callExpenseDeleteAPI(expId);
+                                console.log('Expense deleted successfully on server');
+                            } else {
+                                console.debug('No ExpID on expense record; skipping server delete');
+                            }
+                        } catch (apiErr) {
+                            console.error('Expense delete API failed:', apiErr);
+                            showAlert("error", `Failed to delete expense: ${apiErr.message || 'Server error'}`, false, null, 2500);
+                            pendingDeleteData = null;
+                            if (deleteRecordConfirmModal) deleteRecordConfirmModal.style.display = "none";
+                            document.body.style.overflow = "auto";
+                            return;
+                        }
+
+                        // Only delete locally if API succeeded (or if there was no ExpID)
                         pig.expenses.splice(index, 1);
+                        saveFarmsToStorage();
                         deleted = true;
                         typeName = "Expense record";
                     }
                     break;
                 case "vaccination":
+                    // Ensure vaccinations are loaded locally; if not, try fetching from server
+                    if (!Array.isArray(pig.vaccinations) || index < 0 || index >= (pig.vaccinations || []).length) {
+                        try {
+                            const serverPigId = pig.PigID || pig.serverId || pig.id;
+                            if (serverPigId) {
+                                const url = `${VACC_API_BASE}/get-vaccinations?PigID=${encodeURIComponent(serverPigId)}`;
+                                const resp = await fetch(url, { method: 'GET' });
+                                if (resp && resp.ok) {
+                                    const data = await resp.json().catch(() => null);
+                                    const records = data && data.records ? data.records : (Array.isArray(data) ? data : []);
+                                    pig.vaccinations = records.map(r => ({ date: r.Date || r.date || r.createdAt || '', dueDate: r.DueDate || r.dueDate || '', type: r.Category || r.category || r.type || '', status: r.status || 'scheduled' }));
+                                    saveFarmsToStorage();
+                                } else {
+                                    console.debug('Failed to fetch vaccinations for delete flow', resp && resp.status);
+                                }
+                            }
+                        } catch (err) {
+                            console.warn('Failed to fetch vaccinations for pig during delete flow', err);
+                        }
+                    }
+
                     if (pig.vaccinations && pig.vaccinations[index]) {
+                        const record = pig.vaccinations[index];
+                        // Attempt server-side delete first if we can identify the record
+                        try {
+                            const actualPigId = pig.PigID || pig.serverId || pig.id || null;
+                            const recDate = record.date || record.Date || record.createdAt || null;
+                            if (actualPigId && recDate) {
+                                console.log('Attempting vaccination delete API with pigId:', actualPigId, 'date:', recDate);
+                                await callVaccinationDeleteAPI(actualPigId, recDate);
+                                console.log('Vaccination deleted successfully on server');
+                            } else {
+                                console.debug('No server-side identifier for vaccination; skipping server delete');
+                            }
+                        } catch (apiErr) {
+                            console.error('Vaccination delete API failed:', apiErr);
+                            showAlert("error", `Failed to delete vaccination: ${apiErr.message || 'Server error'}`, false, null, 2500);
+                            pendingDeleteData = null;
+                            if (deleteRecordConfirmModal) deleteRecordConfirmModal.style.display = "none";
+                            document.body.style.overflow = "auto";
+                            return;
+                        }
+
                         pig.vaccinations.splice(index, 1);
+                        saveFarmsToStorage();
                         deleted = true;
                         typeName = "Vaccination record";
                     }
@@ -4539,6 +5026,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (pigDetailsFrame && pigDetailsFrame.contentWindow) {
                     const updatedPig = getPigDataById(pigId, farmId);
                     pigDetailsFrame.contentWindow.postMessage({ type: "pigData", pig: updatedPig }, "*");
+                }
+                // Show user feedback similar to other delete actions
+                try {
+                    showAlert('success', `${typeName} deleted successfully.`, false, null, 2500);
+                } catch (e) {
+                    console.debug('showAlert not available to display delete confirmation', e);
                 }
             }
 
@@ -4563,12 +5056,12 @@ document.addEventListener("DOMContentLoaded", function () {
             e.preventDefault();
             const name = (newFarmNameInput?.value || '').trim();
             if (!name) {
-                showAlert('warning', 'Please enter a farm name.');
+                showAlert('warning', 'Please enter a farm name.', false, null, 2500);
                 return;
             }
             const farm = getFarmById(currentEditFarmId);
             if (!farm) {
-                showAlert('error', 'Farm not found.');
+                showAlert('error', 'Farm not found.', false, null, 2500);
                 return;
             }
 
@@ -4578,11 +5071,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 try {
                     const data = await postJSON(`${FARM_API_BASE}/rename-farm`, { FarmID: serverId, FarmName: name });
                     if (!data || !data.success) {
-                        showAlert('warning', 'Server failed to rename farm; name updated locally.');
+                        showAlert('warning', 'Server failed to rename farm; name updated locally.', false, null, 2500);
                     }
                 } catch (err) {
                     console.warn('Server rename failed, updating locally:', err);
-                    showAlert('warning', 'Could not contact server; name updated locally.');
+                    showAlert('warning', 'Could not contact server; name updated locally.', false, null, 2500);
                 }
             }
 
@@ -4595,7 +5088,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (renameFarmModal) renameFarmModal.style.display = 'none';
             document.body.style.overflow = 'auto';
-            showAlert('success', 'Farm renamed successfully.');
+            showAlert('success', 'Farm renamed successfully.', false, null, 2500);
         });
     }
 

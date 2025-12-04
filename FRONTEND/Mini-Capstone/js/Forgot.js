@@ -15,7 +15,22 @@ const showStep = (stepId) => {
 };
 
 // --- SweetAlert2 Configuration for consistent styling ---
-const fireAlert = (icon, title, text, confirmButtonText = 'OK') => {
+  const fireAlert = (icon, title, text, timer = 1500) => {
+    return Swal.fire({
+        icon: icon,
+        title: title,
+        text: text,
+        showConfirmButton: false,
+        timer: timer,
+        timerProgressBar: true,
+        customClass: {
+            title: 'swal2-title-custom',
+            content: 'swal2-content-custom'
+        }
+    });
+};
+
+const fireAlert2 = (icon, title, text, confirmButtonText = 'OK') => {
     return Swal.fire({
         icon: icon,
         title: title,
@@ -73,7 +88,7 @@ document.getElementById('form-email').addEventListener('submit', async function(
         }
 
         // STEP 3: Show your SweetAlert (UI stays the same)
-        fireAlert(
+        fireAlert2(
             'success',
             'Email Sent!',
             `A 6-digit verification code has been sent to ${email}.`,

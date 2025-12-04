@@ -30,14 +30,10 @@
 
 
 # TO DO LISTS
-
-- Notification should be able to fetch data from the reminders 
 - email should only recieve @gmail none other ( Revoke )
 - username should not store number ( revoke )
 
-- bulk sold
-- Picture won't show
-- vaccination pig details
+- bulk sold 
 
 # WHAT WAS DONE? ( DESCRIPTION )
 - Done With the logic for the login and successful message in the login page

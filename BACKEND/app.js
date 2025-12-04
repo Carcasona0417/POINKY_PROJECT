@@ -8,6 +8,7 @@ import farmRoutes from './routes/farmRoutes.js';
 import expincRoutes from './routes/expincRoutes.js';
 import remRoutes from './routes/remRoutes.js';
 import notifRoutes from './routes/notifRoutes.js';
+import vacciRoutes from './routes/vacciRoutes.js';
 
 
 import errorHandler from './middleware/errorHandler.js';
@@ -31,6 +32,7 @@ app.use('/api/farm', farmRoutes);
 app.use('/api/expenses-records', expincRoutes);
 app.use('/api/reminders', remRoutes);
 app.use('/api/notifications', notifRoutes);
+app.use('/api/vaccinations', vacciRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
