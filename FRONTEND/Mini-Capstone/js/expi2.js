@@ -321,8 +321,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         EIData.forEach(d => {
             const monthIndex = d.month - 1;
-            incomeData[monthIndex] = d.income || 0;
-            expenseData[monthIndex] = d.expenses || 0;
+            incomeData[monthIndex] = Number(d.income || 0).toFixed(2);
+            expenseData[monthIndex] = Number(d.expenses || 0).toFixed(2);
         })
     
         const data ={

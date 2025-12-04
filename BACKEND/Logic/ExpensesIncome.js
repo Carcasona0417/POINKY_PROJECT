@@ -21,29 +21,41 @@ async function generateExpenseID() {
     return "E" + number.toString().padStart(3, "0");
 }
 
-// this for barchart
-export async function getUserExpenses(userId){
-    const [rows] = await pool.query(`
-        SELECT MONTH(Date) as month,
-        SUM(CASE WHEN Category = 'Sold' THEN Amount ELSE 0 END) AS income,
-        SUM(CASE WHEN Category != 'Sold' THEN Amount ELSE 0 END) AS expenses
-        FROM expenses
-        WHERE UserID = ?
-        GROUP BY MONTH(Date)
-        ORDER BY month
-        `, [userId]);
 
-        const result = [];
-        for (let m = 1; m <= 12; m++){
-            const row = rows.find(r => r.month === m );
-            result.push({
-                month: m,
-                income: row?.income || 0,
-                expenses: row?.expenses || 0
-            });
-        }
-        return result;
+export async function getUserExpenses(userId) {
+    const [rows] = await pool.query(`
+        SELECT 
+            MONTH(e.Date) AS month,
+            SUM(CASE WHEN e.Category = 'Sold' THEN e.Amount * w.Weight ELSE 0 END) AS income,
+            SUM(CASE WHEN e.Category != 'Sold' THEN e.Amount ELSE 0 END) AS expenses
+        FROM expenses e
+        LEFT JOIN (
+            SELECT wr.PigID, wr.Weight
+            FROM weight_records wr
+            INNER JOIN (
+                SELECT PigID, MAX(Date) AS LatestDate
+                FROM weight_records
+                GROUP BY PigID
+            ) lw ON lw.PigID = wr.PigID AND lw.LatestDate = wr.Date
+        ) w ON w.PigID = e.PigID
+        WHERE e.UserID = ?
+        GROUP BY MONTH(e.Date)
+        ORDER BY month
+    `, [userId]);
+
+    const result = [];
+    for (let m = 1; m <= 12; m++) {
+        const row = rows.find(r => r.month === m);
+        result.push({
+            month: m,
+            income: row?.income || 0,
+            expenses: row?.expenses || 0
+        });
     }
+
+    return result;
+}
+
 
     // for table expenses
 export async function getUserExpensesTable(userId) {
@@ -109,26 +121,47 @@ export async function getTotalExpenses(userId) {
 // TOTAL INCOME ESTIMATION - FROM SOLD PIGS
 export async function getEstimatedIncome(userId) {
     const [rows] = await pool.query(`
-        SELECT
-        SUM (Amount) AS EstimatedIncome
-        FROM expenses        
-        WHERE UserID = ? AND Category = 'Sold'
-        `,[userId]);
+        SELECT 
+            FORMAT(SUM(e.Amount * w.Weight), 2) AS EstimatedIncome
+        FROM expenses e
+        JOIN pig p ON e.PigID = p.PigID
+        JOIN weight_records w ON p.PigID = w.PigID
+        WHERE e.UserID = ? 
+          AND e.Category = 'Sold'
+          AND w.Date = (
+              SELECT MAX(wr.Date)
+              FROM weight_records wr
+              WHERE wr.PigID = p.PigID
+          )
+    `, [userId]);
 
-        return rows;
+    return rows;
 }
 
 // PROJECTED PROFIT - INCOME FROM SOLD PIGS MINUS EXPENSES
 export async function getProjectedProfit(userId) {
     const [rows] = await pool.query(`
         SELECT
-        SUM(CASE WHEN Category = 'Sold' THEN Amount ELSE 0 END) -
-        SUM(CASE WHEN Category != 'Sold' THEN Amount ELSE 0 END) AS ProjectedProfit
-        FROM expenses
-        WHERE UserID = ?
-        `,[userId]);
-        return rows;
-    }
+            FORMAT(
+                SUM(CASE WHEN e.Category = 'Sold' THEN e.Amount * w.Weight ELSE 0 END) -
+                SUM(CASE WHEN e.Category != 'Sold' THEN e.Amount ELSE 0 END), 2
+            ) AS ProjectedProfit
+        FROM expenses e
+        LEFT JOIN (
+            SELECT wr.PigID, wr.Weight
+            FROM weight_records wr
+            INNER JOIN (
+                SELECT PigID, MAX(Date) AS LatestDate
+                FROM weight_records
+                GROUP BY PigID
+            ) lw ON lw.PigID = wr.PigID AND lw.LatestDate = wr.Date
+        ) w ON w.PigID = e.PigID
+        WHERE e.UserID = ?
+    `, [userId]);
+
+    return rows;
+}
+
 
 /*---------------------
 |  EXPENSE LOGIC     |

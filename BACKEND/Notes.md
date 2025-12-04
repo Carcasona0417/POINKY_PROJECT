@@ -35,6 +35,10 @@
 - email should only recieve @gmail none other ( Revoke )
 - username should not store number ( revoke )
 
+- bulk sold
+- Picture won't show
+- vaccination pig details
+
 # WHAT WAS DONE? ( DESCRIPTION )
 - Done With the logic for the login and successful message in the login page
 - Done With the logic for the Sign up and successful message in the register page, also it will redirect to    login page
