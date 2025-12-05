@@ -36,7 +36,7 @@ Other Tools:
 # INSTALLATION
 
 # 1. Clone the repository
-git clone https://github.com/yourusername/POINKY_PROJECT.git
+git clone https://github.com/Carcasona0417/POINKY_PROJECT.git
 
 # 2. Navigate to the project folder
 cd POINKY_PROJECT
