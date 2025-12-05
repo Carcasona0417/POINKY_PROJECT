@@ -26,15 +26,10 @@
 - Total in the Pie chart does not concatenate ----- FIXED DURING TESTING
 - Pie chart won't show the breakdown instead it shows all in feeds ----- FIXED DURING TESTING
 
-- edit delete button are not working well in the farm page
+- edit delete button are not working well in the farm page ------- FIXED
 
 
 # TO DO LISTS
-- email should only recieve @gmail none other ( Revoke )
-- username should not store number ( revoke )
-
-- bulk sold 
-
 # WHAT WAS DONE? ( DESCRIPTION )
 - Done With the logic for the login and successful message in the login page
 - Done With the logic for the Sign up and successful message in the register page, also it will redirect to    login page
@@ -68,6 +63,7 @@
  - Done fixing the weight records and expenses 
  - Done with the reminders
  - Done with the condition 8 char above for password
+ - Done with integrating all the data
 
 
 # CHANGES 
@@ -78,8 +74,6 @@
 
 # WHAT IS NEED TO BE CHANGE
 - Change the alert into a modern success message
-- Breakdown the farm expenses
-
 
 # SECURITY CHECK (To be done by another programmer)
 -
