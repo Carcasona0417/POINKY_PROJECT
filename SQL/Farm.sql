@@ -9,3 +9,8 @@ CREATE TABLE Farm (
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
+
+-- Sample farm records
+INSERT INTO Farm (FarmID, FarmName, UserID) VALUES ('F001','Sunny Farm','U001');
+INSERT INTO Farm (FarmID, FarmName, UserID) VALUES ('F002','Riverside Farm','U002');
+INSERT INTO Farm (FarmID, FarmName, UserID) VALUES ('F003','Green Pastures','U003');

@@ -19,3 +19,8 @@ CREATE TABLE Vaccination_Record (
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
+
+-- Sample vaccination records
+INSERT INTO Vaccination_Record (PigID, RemID, DueDate, Category) VALUES
+('P001','R001','2025-11-15','Booster A'),
+('P002','R002','2025-12-01','Annual Vaccination');
