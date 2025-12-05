@@ -11,4 +11,11 @@ CREATE TABLE user (
 INSERT INTO user (UserID, Username, Email, Password)
 VALUES ('U001','John Doe','john@example.com','123456');
 
+-- Additional sample users
+INSERT INTO user (UserID, Username, Email, Password)
+VALUES ('U002','Jane Roe','jane@example.com','password123');
+
+INSERT INTO user (UserID, Username, Email, Password)
+VALUES ('U003','Alice Smith','alice@example.com','alicepwd');
+
 SELECT * FROM user;

@@ -19,3 +19,9 @@ CREATE TABLE Reminders (
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
+
+-- Sample reminders
+INSERT INTO Reminders (RemID, UserID, PigID, Date, Task, Notes) VALUES
+('R001','U001','P001','2025-11-15','Vaccination - Booster','Bring vaccine A'),
+('R002','U002','P002','2025-12-01','Weigh-in','Record weight and photo'),
+('R003','U001','P003','2026-01-10','Sell preparation','Check vaccinations and health');
