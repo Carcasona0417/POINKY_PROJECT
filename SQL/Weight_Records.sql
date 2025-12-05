@@ -16,6 +16,7 @@ CREATE TABLE Weight_Records (
 );
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 -- Auto-increment counter table for WeightID generation
 CREATE TABLE IF NOT EXISTS weight_id_counter (
     counter_id INT PRIMARY KEY DEFAULT 1,
@@ -23,9 +24,14 @@ CREATE TABLE IF NOT EXISTS weight_id_counter (
     CONSTRAINT pk_counter CHECK (counter_id = 1)
 );
 =======
+=======
+>>>>>>> Stashed changes
 -- Sample weight records
 INSERT INTO Weight_Records (WeightID, `Date`, Weight, PigID, PhotoPath) VALUES
 ('W001','2025-10-05',32.50,'P001','/img/weights/p001-20251005.jpg'),
 ('W002','2025-11-01',34.10,'P001','/img/weights/p001-20251101.jpg'),
 ('W003','2025-09-20',85.75,'P002','/img/weights/p002-20250920.jpg');
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
