@@ -54,10 +54,19 @@ export async function getChartData(userId) {
 
     const [rows] = await pool.query(`
         SELECT 
-            MONTH(Date) AS month,
-            SUM(CASE WHEN Category = 'Sold' THEN Amount ELSE 0 END) AS income,
-            SUM(CASE WHEN Category != 'Sold' THEN Amount ELSE 0 END) AS farm_expenses
-        FROM expenses
+            MONTH(e.Date) AS month,
+            SUM(CASE WHEN e.Category = 'Sold' THEN e.Amount * w.Weight ELSE 0 END) AS income,
+            SUM(CASE WHEN e.Category != 'Sold' THEN e.Amount ELSE 0 END) AS farm_expenses
+        FROM expenses e
+        LEFT JOIN (
+            SELECT wr.PigID, wr.Weight
+            FROM weight_records wr
+            INNER JOIN (
+                SELECT PigID, MAX(Date) AS LatestDate
+                FROM weight_records
+                GROUP BY PigID
+            ) lw ON lw.PigID = wr.PigID AND lw.LatestDate = wr.Date
+        ) w ON w.PigID = e.PigID
         WHERE UserID = ?
         GROUP BY MONTH(Date)
         ORDER BY month

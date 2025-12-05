@@ -16,6 +16,7 @@ import {
     getPigsDropdown,
     getCategoriesDropdown,
     addNewExpense,
+    addExpenseForPig,
     editExistingExpense,
     deleteExistingExpense,
     cancelSoldPigRecord,
@@ -60,6 +61,7 @@ router.post('/dropdown-categories', getCategoriesDropdown);
 // EXPENSE CRUD ROUTES
 // ============================================
 router.post('/add-expense', addNewExpense);
+router.post('/add-expense-for-pig', addExpenseForPig);
 router.post('/edit-expense', editExistingExpense);
 router.post('/delete-expense', deleteExistingExpense);
 

@@ -6,6 +6,9 @@ import dashboardRoutes from './routes/dashboardRoutes.js';
 import pigRoutes from './routes/pigRoutes.js';
 import farmRoutes from './routes/farmRoutes.js';
 import expincRoutes from './routes/expincRoutes.js';
+import remRoutes from './routes/remRoutes.js';
+import notifRoutes from './routes/notifRoutes.js';
+import vacciRoutes from './routes/vacciRoutes.js';
 
 
 import errorHandler from './middleware/errorHandler.js';
@@ -15,7 +18,11 @@ const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+// Accept larger JSON bodies because frontend may (mistakenly) send images as data URLs.
+// We still avoid storing large data in the DB, but increasing the parser limit prevents
+// "request entity too large" errors from aborting useful requests.
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ limit: '5mb', extended: true }));
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -23,6 +30,9 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/pigs', pigRoutes);
 app.use('/api/farm', farmRoutes);
 app.use('/api/expenses-records', expincRoutes);
+app.use('/api/reminders', remRoutes);
+app.use('/api/notifications', notifRoutes);
+app.use('/api/vaccinations', vacciRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const navbar = document.querySelector('.navbar');
     const navLinks = document.querySelector('.nav-links');
 
+   
     // Hamburger menu toggle
     if (hamburger) {
         hamburger.addEventListener('click', function() {
@@ -97,6 +98,8 @@ document.addEventListener('DOMContentLoaded', function() {
     setupMobileFormToggles();
 });
 
+
+
 // Form toggle functions
 function showSignUp() {
     const signInForm = document.querySelector('.sign-in');
@@ -121,6 +124,23 @@ function showSignUp() {
         if (authContainer) authContainer.scrollTop = 0;
     }
 }
+
+ // --- SweetAlert2 Configuration for consistent styling ---
+   const fireAlert = (icon, title, text, timer = 1500) => {
+    return Swal.fire({
+        icon: icon,
+        title: title,
+        text: text,
+        showConfirmButton: false,
+        timer: timer,
+        timerProgressBar: true,
+        customClass: {
+            title: 'swal2-title-custom',
+            content: 'swal2-content-custom'
+        }
+    });
+};
+
 
 function showSignIn() {
     const signInForm = document.querySelector('.sign-in');
@@ -311,21 +331,27 @@ if (loginForm) {
         const data = await response.json();
 
         if (data.success) {
-
-            // ADD here! Modernized alert for successful login
+            
 
             localStorage.setItem("userID", data.user.UserID);
+            try {
+                if (data.user.Username) localStorage.setItem('username', data.user.Username);
+                if (data.user.Email) localStorage.setItem('email', data.user.Email);
+            } catch (err) { /* ignore storage errors */ }
            
-            alert(data.message); 
-            window.location.replace("Dashboard.html");
+          
+           fireAlert('success','Success',data.message).then(() => {
+                window.location.href = "Dashboard.html";
+            });
+
 
             //closeModal();
         } else {
-            alert(data.message); 
+            fireAlert('error','Error', data.message); 
         }
     } catch (err) {
         console.error('Login error:', err);
-        alert('Something went wrong. Try again.');
+        fireAlert('error','Error','Something went wrong. Try again.');
     }
     });
 }
@@ -340,6 +366,11 @@ if (registerForm) {
     const username = registerForm.querySelector('input[type="text"]').value;
     const email = registerForm.querySelector('input[type="email"]').value;
     const password = registerForm.querySelector('input[type="password"]').value;
+
+    if (password.length < 8) {
+        fireAlert('warning','Warning','Password must be at least 8 characters long.');
+        return;
+    }
     try {
         const response = await fetch('http://localhost:8080/api/auth/register', {
             method: 'POST', 
@@ -351,12 +382,12 @@ if (registerForm) {
 
         if (data.success) {
             // Modernized alert for successful registration
-            alert('Registration successful! You can now log in.');
+            fireAlert('success','Success','Registration successful! You can now log in.');
             showSignIn();
         }
     } catch (err) {
         console.error('Registration error:', err);
-        alert('Something went wrong. Try again.');
+        fireAlert('error','Error','Something went wrong. Try again.');
     }   
 
     });
@@ -396,14 +427,14 @@ function validateSignUpForm() {
     if (password === '') {
         showError('passwordError', 'Password is required');
         isValid = false;
-    } else if (password.length < 6) {
+    } else if (password.length < 8) {
         showError('passwordError', 'Password must be at least 6 characters');
         isValid = false;
     }
 
     if (isValid) {
         // Form is valid, you can submit it here
-        alert('Sign up successful!');
+        fireAlert('success','Success','Sign up successful!');
         // document.getElementById('signupForm').submit(); // Uncomment to actually submit the form
     }
 }
@@ -433,7 +464,7 @@ function validateSignInForm() {
 
     if (isValid) {
         // Form is valid, you can submit it here
-        alert('Login successful!');
+        Firealert('success','Success','Login successful!');
         // document.getElementById('signinForm').submit(); // Uncomment to actually submit the form
     }
 }

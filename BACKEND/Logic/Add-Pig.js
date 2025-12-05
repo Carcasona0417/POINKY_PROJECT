@@ -3,7 +3,8 @@ import { addWeightRecord, getWeightHistory, getCurrentWeight, getInitialWeight }
 
 export async function addPig(data) {
 
-    const{ PigID, PigName, Breed, Gender, Date, Age, Weight, PigType, PigStatus, FarmID } = data;
+    // Avoid shadowing the global `Date` constructor by renaming the incoming field
+    const{ PigID, PigName, Breed, Gender, Date: AcquiredDate, Age, Weight, PigType, PigStatus, FarmID } = data;
 
     // Generate PigID if not provided
     let finalPigID = PigID;
@@ -35,13 +36,26 @@ export async function addPig(data) {
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
-    [finalPigID, PigName, Breed, Gender, Date, Age, Weight, PigType, PigStatus, FarmID]);
+    [finalPigID, PigName, Breed, Gender, AcquiredDate, Age, Weight, PigType, PigStatus, FarmID]);
 
     // If an initial Weight was provided, also insert an initial weight record
     let insertedWeightRecord = null;
     try {
         if (Weight !== undefined && Weight !== null && Weight !== '') {
-            const weightDate = Date ? (new Date(Date)).toISOString().slice(0,10) : (new Date()).toISOString().slice(0,10);
+            // Use the provided acquired date for the initial weight if available,
+            // otherwise use today's date. `AcquiredDate` may be a string or Date-like.
+            let weightDate;
+            try {
+                if (AcquiredDate) {
+                    weightDate = (new Date(AcquiredDate)).toISOString().slice(0,10);
+                } else {
+                    weightDate = (new Date()).toISOString().slice(0,10);
+                }
+            } catch (e) {
+                // Fallback to today if parsing fails
+                weightDate = (new Date()).toISOString().slice(0,10);
+            }
+
             insertedWeightRecord = await addWeightRecord(finalPigID, Weight, weightDate);
         }
     } catch (err) {
@@ -67,6 +81,23 @@ export async function getPigs(farmId){
             pig.initialWeight = `${parseFloat(pig.Weight)}kg`;
         } else {
             pig.initialWeight = '0kg';
+        }
+
+        // Attach expenses for this pig (so frontend can display them)
+        try {
+                const [expRows] = await pool.query(`
+                    SELECT
+                        ExpID,
+                        DATE_FORMAT(Date, '%Y-%m-%d') AS date,
+                        Amount AS price,
+                        Category AS category
+                    FROM expenses
+                    WHERE PigID = ?
+                    ORDER BY Date DESC
+                `, [pig.PigID]);
+                pig.expenses = Array.isArray(expRows) ? expRows : [];
+        } catch (e) {
+            pig.expenses = [];
         }
 
         pigs.push(pig);
@@ -113,7 +144,7 @@ export async function renamePig(PigID, PigName) {
 // Update pig details
 export async function updatePig(PigID, updates) {
     try {
-        const { PigName, Breed, Gender, Age, Weight, PigType, PigStatus } = updates;
+        const { PigName, Breed, Gender, Age, Date: DateAcquired, Weight, PigType, PigStatus } = updates;
         
         // Build dynamic update query based on provided fields
         const updateFields = [];
@@ -134,6 +165,10 @@ export async function updatePig(PigID, updates) {
         if (Age !== undefined && Age !== null) {
             updateFields.push('Age = ?');
             updateValues.push(Age);
+        }
+        if (DateAcquired !== undefined && DateAcquired !== null) {
+            updateFields.push('Date = ?');
+            updateValues.push(DateAcquired);
         }
         if (Weight !== undefined && Weight !== null) {
             updateFields.push('Weight = ?');

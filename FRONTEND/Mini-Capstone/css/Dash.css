@@ -1,3 +1,4 @@
+
 :root {
     --primary-pink: #ff6b81;
     --primary-pink-light: #ff9eb5;
@@ -251,22 +252,7 @@ body {
     transform: scale(1.1);
 }
 
-.notification-badge {
-    position: absolute;
-    top: -5px;
-    right: -8px;
-    background-color: var(--primary-pink);
-    color: white;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 5px;
-    border-radius: 50%;
-    border: 2px solid white;
-    min-width: 18px;
-    text-align: center;
-}
-
-/* =========================
+/* =========================da
    HEADER CONTENT
 ========================= */
 .header-content {
@@ -319,7 +305,7 @@ body {
 
 .notificationBadge {
     position: absolute;
-    top: 0;
+    top: 5;
     right: 0;
     width: 10px;
     height: 10px;

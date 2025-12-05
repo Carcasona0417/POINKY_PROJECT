@@ -1,5 +1,5 @@
 /* =========================================
-   GLOBAL VARIABLES & RESETS
+    GLOBAL VARIABLES & RESETS
 ========================================= */
 
 /* --- CSS Variables: Colors & Theme Tokens --- */
@@ -34,6 +34,12 @@ body {
     height: 100vh;
     overflow: hidden; /* Prevent body-level scroll (scroll stays in main-content) */
 }
+
+.pig-icon {
+    color: white;        /* icon color */
+    font-size: 24px;     /* adjust size */
+}
+
 
 /* =========================================
    SIDEBAR STYLES
@@ -223,6 +229,7 @@ body {
     text-align: center;
     margin-top: auto;
     margin-bottom: 50px;
+    position: relative;
     z-index: 1;
 }
 
@@ -235,36 +242,59 @@ body {
 }
 
 .page-icon {
-    width: 70px;
-    height: 70px;
+    width: 80px;
+    height: 80px;
 }
 
 /* Search bar container (copied from reminders styles) */
 .search-container {
-    background: white;
-    width: 100%;
-    max-width: 500px;
-    margin: 0 auto;
+    position: relative;            /* like filter container */
     display: flex;
     align-items: center;
-    padding: 12px 20px;
-    border-radius: 30px;
-    position: relative;
+    justify-content: flex-end;     /* float to right */
+    background: #ffffff;
+    border: 1px solid #dcdcdc;
+    border-radius: 999px;          /* rounded like filter */
+    padding: 10px 16px;
+    max-width: 350px;              /* same as filter toggle */
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #333;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+    margin-top: 20px;              /* adjust vertical position */
+    margin-left: auto;             /* push to right */
+}
+
+.search-container:hover {
+    border-color: #ff4861;
+    transform: translateY(-1px);
 }
 
 .search-input {
     border: none;
     outline: none;
     flex-grow: 1;
-    font-size: 16px;
+    font-size: 13px;
     font-family: 'Poppins', sans-serif;
     padding-right: 30px;
 }
 
 .search-icon {
-    color: var(--text-light);
     position: absolute;
+    color: #ff4861;
     right: 20px;
+}
+
+input[type="search"]::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    height: 14px;
+    width: 14px;
+    background: var(--text-light); /* gray background */
+    mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path stroke='black' stroke-width='2' d='M3 3L13 13M13 3L3 13'/></svg>") center / contain no-repeat;
+    cursor: pointer;
+    border-radius: 50%;
 }
 
 /* =========================================
@@ -607,6 +637,8 @@ body {
     border: 2px solid #000000;
     border-radius: 12px;
 }
+
+
 
 .pigs-table th {
     background-color: #FFB6C1;

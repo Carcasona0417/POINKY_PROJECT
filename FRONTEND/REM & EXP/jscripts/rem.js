@@ -1,5 +1,5 @@
 // rem.js
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
     /* ---------- ELEMENTS ---------- */
     const modalWrapper   = document.getElementById('addRem');
     const openModalBtn   = document.getElementById('addPigBtn');
@@ -25,7 +25,79 @@ document.addEventListener('DOMContentLoaded', function () {
     const totalCount     = document.getElementById('totalCount');
     const searchInput    = document.getElementById('searchInput');
 
-    let reminders = []; 
+    let reminders = [];
+    let editingIndex = null; // null = adding, number = editing
+    let farms = [];
+    let pigs = [];
+
+    // Load farms and pigs for dropdowns
+    async function loadFarmsAndPigs() {
+        const userId = localStorage.getItem('userID');
+        if (!userId) return;
+
+        try {
+            const [farmsRes, pigsRes] = await Promise.all([
+                fetch('http://localhost:8080/api/farm/get-user-farms', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ userId })
+                }),
+                fetch('http://localhost:8080/api/pigs/get-user-pigs', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ userId })
+                })
+            ]);
+
+            const farmsData = await farmsRes.json();
+            const pigsData  = await pigsRes.json();
+
+            farms = (farmsData && farmsData.farms) ? farmsData.farms : [];
+            pigs  = (pigsData && pigsData.pigs) ? pigsData.pigs : [];
+
+            // Populate farm select
+            if (farmSelect) {
+                farmSelect.innerHTML = '';
+                const empty = document.createElement('option'); empty.value = ''; empty.textContent = ''; farmSelect.appendChild(empty);
+                farms.forEach(f => { const opt = document.createElement('option'); opt.value = f.FarmID; opt.textContent = f.FarmName; farmSelect.appendChild(opt); });
+                toggleHasValue(farmSelect);
+            }
+
+            // Populate pig select
+            if (pigSelect) {
+                pigSelect.innerHTML = '';
+                const empty = document.createElement('option'); empty.value = ''; empty.textContent = ''; pigSelect.appendChild(empty);
+                pigs.forEach(p => { const opt = document.createElement('option'); opt.value = p.PigID; opt.textContent = p.PigName; opt.dataset.farmid = p.FarmID || ''; pigSelect.appendChild(opt); });
+                toggleHasValue(pigSelect);
+            }
+
+        } catch (err) {
+            console.error('Failed to load farms/pigs:', err);
+        }
+    }
+
+    async function fetchReminders() {
+        const userId = localStorage.getItem('userID');
+        try {
+            const response = await fetch('http://localhost:8080/api/reminders/get-reminders', {
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ userId })
+            });
+            const data = await response.json();
+            if (data.success) {
+                reminders = data.reminders.map(rem => ({
+                    id: rem.ReminderID || '',
+                    task: rem.Title,
+                    date: rem.Date,
+                    farm: rem.FarmName || '',
+                    farmId: rem.FarmID || '',
+                    pig: rem.PigName || '',
+                    pigId: rem.PigID || '',
+                    notes: rem.Description || ''
+                }));
+                renderTable();
+            } else {
+                console.error('Failed to fetch reminders:', data.message);
+            }
+        } catch (err) {
+            console.error('Error fetching reminders:', err);
+        }
+    }
 
     /* ---------- MODAL HANDLERS ---------- */
     function openModal() {
@@ -205,7 +277,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         tableBody.innerHTML = '';
 
-        list.forEach(rem => {
+        list.forEach((rem, index) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${rem.date  || '-'}</td>
@@ -213,8 +285,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td>${rem.farm  || '-'}</td>
                 <td>${rem.pig   || '-'}</td>
                 <td>${rem.notes || '-'}</td>
+                <td>
+                    <button class="edit-btn" data-index="${index}" title="Edit">Edit</button>
+                    <button class="delete-btn" data-index="${index}" title="Delete">Delete</button>
+                </td>
             `;
             tableBody.appendChild(tr);
+
+            tr.querySelector('.edit-btn').addEventListener('click', () => editReminder(index));
+            tr.querySelector('.delete-btn').addEventListener('click', () => deleteReminder(index));
         });
 
         const total   = reminders.length;
@@ -223,6 +302,77 @@ document.addEventListener('DOMContentLoaded', function () {
         if (activeTodoSpan) activeTodoSpan.textContent = total;
         if (totalCount)     totalCount.textContent     = total;
         if (showingCount)   showingCount.textContent   = showing;
+    }
+
+    // Edit handler
+    function editReminder(index) {
+        const rem = reminders[index];
+        if (!rem) return;
+        editingIndex = index;
+
+        // Pre-fill
+        if (dateInput) dateInput.value = rem.date || '';
+        if (taskInput) taskInput.value = rem.task || '';
+        if (notesInput) notesInput.value = rem.notes || '';
+        if (farmSelect) {
+            const match = Array.from(farmSelect.options).find(o => o.value === rem.farmId || o.text === rem.farm);
+            farmSelect.value = match ? match.value : '';
+        }
+        if (pigSelect) {
+            const match = Array.from(pigSelect.options).find(o => o.value === rem.pigId || o.text === rem.pig);
+            pigSelect.value = match ? match.value : '';
+        }
+
+        toggleHasValue(taskInput); toggleHasValue(farmSelect); toggleHasValue(pigSelect); toggleHasValue(notesInput);
+        updateDateWrapperState();
+        modalWrapper.classList.add('show');
+
+        // Temporary save behavior
+        saveBtn.onclick = async () => {
+            const newTask = taskInput.value.trim();
+            const newDate = dateInput.value;
+            const newFarm = farmSelect.value;
+            const newPig  = pigSelect.value;
+            const newNotes= notesInput.value.trim();
+
+            // Prepare IDs to send
+            const farmIdToSend = newFarm && newFarm !== '' ? newFarm : (rem.farmId && rem.farmId !== '' ? rem.farmId : null);
+            const pigIdToSend  = newPig  && newPig  !== '' ? newPig  : (rem.pigId  && rem.pigId  !== '' ? rem.pigId  : null);
+
+            if (rem.id) {
+                const userId = localStorage.getItem('userID');
+                const payload = { userId, farmId: farmIdToSend, pigId: pigIdToSend, date: newDate, task: newTask, notes: newNotes };
+                try {
+                    const resp = await fetch(`http://localhost:8080/api/reminders/${encodeURIComponent(rem.id)}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    const data = await resp.json();
+                    if (!data.success) { alert(data.message || 'Failed to update reminder'); return; }
+                } catch (err) { console.error('Failed to update reminder:', err); alert('Failed to update reminder'); return; }
+            }
+
+            // Update local
+            const farmName = farmSelect?.selectedOptions?.[0]?.text || rem.farm || '';
+            const pigName  = pigSelect?.selectedOptions?.[0]?.text  || rem.pig  || '';
+            rem.task = newTask; rem.date = newDate; rem.farm = farmName; rem.farmId = farmIdToSend || ''; rem.pig = pigName; rem.pigId = pigIdToSend || ''; rem.notes = newNotes;
+
+            renderTable(); showSuccess(); clearForm(); closeModal();
+            saveBtn.onclick = null;
+        };
+    }
+
+    // Delete handler
+    function deleteReminder(index) {
+        const rem = reminders[index];
+        if (confirm('Delete this reminder?')) {
+            if (rem && rem.id) {
+                fetch(`http://localhost:8080/api/reminders/${encodeURIComponent(rem.id)}`, { method: 'DELETE' })
+                    .then(r => r.json()).then(data => {
+                        if (!data.success) { alert(data.message || 'Failed to delete reminder'); return; }
+                        reminders.splice(index,1); renderTable();
+                    }).catch(err => { console.error('Failed to delete reminder:', err); alert('Failed to delete reminder'); });
+            } else {
+                reminders.splice(index,1); renderTable();
+            }
+        }
     }
 
     /* ---------- SAVE BUTTON ---------- */

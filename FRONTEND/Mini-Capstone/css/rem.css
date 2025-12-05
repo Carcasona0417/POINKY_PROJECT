@@ -1,3 +1,4 @@
+
 /* --- General Styles --- */
 :root {
     --primary-pink: #F08080; /* The main pink color */
@@ -255,6 +256,10 @@ body {
       font-size: 36px;           /* icon size */
       line-height: 1;            /* remove extra line height */
       vertical-align: middle;    /* baseline alignment */
+  }
+
+  .page-title i{
+    font-size: 50px;
   }
 
 

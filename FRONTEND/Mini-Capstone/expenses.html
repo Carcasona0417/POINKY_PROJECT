@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/exptri.css"> 
     <link rel="stylesheet" href="css/modalstyles.css">
+    <link rel="stylesheet" href="css/NotifModal.css">
 </head>
 <body> 
   
@@ -48,8 +49,8 @@
     </div>
 
     <div class="main-content page-enter">
-        <div class="header-bg">
-            <div class="top-bar">
+          <div class="header-bg">
+               <div class="top-bar">
                 <div class="user-actions">
                 <button type="button" class="notification-btn" id="notificationIcon">
                 <i class="fa-regular fa-bell notification-icon"></i>
@@ -455,7 +456,21 @@
 
 
 
-    <!-- Profile Modal -->
+    <!-- Notification Modal -->
+    <div class="notification-modal" id="notificationModal">
+        <div class="notification-modal-content">
+            <div class="notification-header">
+                <h2>Notifications</h2>
+                <button class="close-modal" onclick="document.getElementById('notificationModal').classList.remove('show')">
+                </button>
+            </div>
+            <div class="notification-list" id="notificationList">
+                <!-- Notifications will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+
+  <!-- Profile Modal -->
         <div class="profile-modal" id="profileModal">
             <div class="profile-modal-content">
                 <div class="profile-header">
@@ -484,10 +499,13 @@
                 </div>
             </div>
         </div>
+        </div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/expi2.js"></script>
     <script src="js/nav-transition.js"></script>
+    <script src="js/global-modals.js"></script>
+
 </body>
 </html>

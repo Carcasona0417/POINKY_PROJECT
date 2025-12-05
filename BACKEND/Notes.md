@@ -25,17 +25,15 @@
 - Bar Chart does not show farm expenses but it appears to be displaying feed expenses in backend ----- FIXED DURING TESTING
 - Total in the Pie chart does not concatenate ----- FIXED DURING TESTING
 - Pie chart won't show the breakdown instead it shows all in feeds ----- FIXED DURING TESTING
--
+
+- edit delete button are not working well in the farm page
 
 
 # TO DO LISTS
+- email should only recieve @gmail none other ( Revoke )
+- username should not store number ( revoke )
 
-- Notification should be able to fetch data from the reminders
-- Integrate backend logic for Reminders
-- Integrate backedn logic  for expenses - this will be including CRUD !!!
-- email should only recieve @gmail none other
-- username should not store number
-- condition for 8 characters 1 special and 1 uppercase (password)
+- bulk sold 
 
 # WHAT WAS DONE? ( DESCRIPTION )
 - Done With the logic for the login and successful message in the login page
@@ -62,7 +60,15 @@
  - done with the expenses an reports display including both tables
  - added logic CRUD for expenses 
  - Fixed the filter and the edit,add,delete, and cancel has been connected to the database
+
+- done with the logic for farm 
+- done displaying farm and pigs in farm
+- done function for adding weight pigs and farm
  
+ - Done fixing the weight records and expenses 
+ - Done with the reminders
+ - Done with the condition 8 char above for password
+
 
 # CHANGES 
 - I change the API instead of /login-register I change it into /login for login and /register for register because it's the url of each pages

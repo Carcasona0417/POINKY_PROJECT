@@ -55,7 +55,10 @@ export const addPig = async (req,res) => {
 
     } catch (err) {
         console.error(err);
-      res.status(500).send({ success: false, message: "Error adding pig" });
+        if (err.code === 'DUPLICATE_WEIGHT_DATE') {
+            return res.status(400).json({ success: false, message: 'you cannot add records on the same day on this pig' });
+        }
+        res.status(500).send({ success: false, message: "Error adding pig" });
 
     }
 }
@@ -126,6 +129,9 @@ export const addWeightRecord = async (req, res, next) => {
         res.status(201).json({ success: true, message: 'Weight record added successfully', record: newRecord });
     } catch (err) {
         console.error('addWeightRecord error:', err.message || err);
+        if (err.code === 'DUPLICATE_WEIGHT_DATE') {
+            return res.status(400).json({ success: false, message: 'you cannot add records on the same day on this pig' });
+        }
         if (err.message?.includes('FOREIGN KEY') || err.message?.includes('Pig') || err.code === 'ER_NO_REFERENCED_ROW') {
             return res.status(404).json({ success: false, message: 'Pig not found in database' });
         }
@@ -163,12 +169,18 @@ export const deleteWeightRecord = async (req, res, next) => {
             return res.status(400).json({ success: false, message: 'pigId and weightId are required' });
         }
 
-        const result = await weightService.deleteWeightRecord(pigId, weightId);
-        res.json({ success: true, message: 'Weight record deleted successfully', ...result });
+            const result = await weightService.deleteWeightRecord(pigId, weightId);
+            res.json({ success: true, message: 'Weight record deleted successfully', ...result });
     } catch (err) {
         console.error('deleteWeightRecord error:', err);
-        if (err.message === 'Weight record not found') {
-            return res.status(404).json({ success: false, message: 'Weight record not found' });
+            if (err.code === 'CANNOT_DELETE_INITIAL' || err.message === 'Cannot delete initial weight') {
+                return res.status(400).json({ success: false, message: 'Cannot delete the initial weight record' });
+            }
+            if (err.message === 'Weight record not found') {
+                return res.status(404).json({ success: false, message: 'Weight record not found' });
+            }
+        if (err.message === 'Cannot delete initial weight' || err.code === 'CANNOT_DELETE_INITIAL') {
+            return res.status(400).json({ success: false, message: 'Cannot delete initial weight record' });
         }
         next(err);
     }
@@ -178,7 +190,8 @@ export const deleteWeightRecord = async (req, res, next) => {
 export const updatePig = async (req, res, next) => {
     try {
         const { pigId } = req.params;
-        const { PigName, Breed, Gender, Age, Weight, PigType, PigStatus } = req.body;
+        // Include Date (acquired date) in accepted fields
+        const { PigName, Breed, Gender, Age, Date: DateAcquired, Weight, PigType, PigStatus } = req.body;
         
         if (!pigId) {
             return res.status(400).json({ success: false, message: 'pigId is required' });
@@ -189,6 +202,7 @@ export const updatePig = async (req, res, next) => {
             Breed,
             Gender,
             Age,
+            Date: DateAcquired,
             Weight,
             PigType,
             PigStatus

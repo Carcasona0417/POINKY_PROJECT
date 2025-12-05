@@ -15,7 +15,22 @@ const showStep = (stepId) => {
 };
 
 // --- SweetAlert2 Configuration for consistent styling ---
-const fireAlert = (icon, title, text, confirmButtonText = 'OK') => {
+  const fireAlert = (icon, title, text, timer = 1500) => {
+    return Swal.fire({
+        icon: icon,
+        title: title,
+        text: text,
+        showConfirmButton: false,
+        timer: timer,
+        timerProgressBar: true,
+        customClass: {
+            title: 'swal2-title-custom',
+            content: 'swal2-content-custom'
+        }
+    });
+};
+
+const fireAlert2 = (icon, title, text, confirmButtonText = 'OK') => {
     return Swal.fire({
         icon: icon,
         title: title,
@@ -73,7 +88,7 @@ document.getElementById('form-email').addEventListener('submit', async function(
         }
 
         // STEP 3: Show your SweetAlert (UI stays the same)
-        fireAlert(
+        fireAlert2(
             'success',
             'Email Sent!',
             `A 6-digit verification code has been sent to ${email}.`,
@@ -126,9 +141,33 @@ document.getElementById('form-code').addEventListener('submit', async function(e
 });
 
 // --- Step 2: Resend Code Handler ---
-document.getElementById('resend-code').addEventListener('click', function(e) {
+document.getElementById('resend-code').addEventListener('click', async function(e) {
     e.preventDefault();
-    fireAlert('info', 'Code Resent', 'A new verification code has been sent to your email.');
+
+    if (!globalEmail) {
+        fireAlert('error', 'Error', 'Email is missing. Please start from Step 1.');
+        return;
+    }
+
+    try {
+        const otpRes = await fetch('http://localhost:8080/api/auth/send-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: globalEmail })
+        });
+
+        const otpData = await otpRes.json();
+
+        if (!otpData.success) {
+            fireAlert('error', 'Error', 'Failed to resend OTP.');
+            return;
+        }
+
+        fireAlert('success', 'Code Resent', `A new verification code has been sent to ${globalEmail}.`);
+
+    } catch (err) {
+        fireAlert('error', 'Server Error', 'Something went wrong.');
+    }
 });
 
 
@@ -139,8 +178,8 @@ document.getElementById('form-new-password').addEventListener('submit', async fu
     const confirmPass = document.getElementById('confirm-password').value;
 
     // Password Validation (Example: Minimum length check)
-    if (newPass.length < 6) {
-        fireAlert('warning', 'Weak Password', 'Password must be at least 6 characters long.');
+    if (newPass.length < 8) {
+        fireAlert('warning', 'Weak Password', 'Password must be at least 8 characters long.');
         return;
     }
 
@@ -149,6 +188,7 @@ document.getElementById('form-new-password').addEventListener('submit', async fu
         fireAlert('error', 'Mismatched Passwords', 'The new password and confirmation password do not match.');
         return;
     }
+    
 
     try{
         const res = await fetch('http://localhost:8080/api/auth/update-password', {
@@ -164,8 +204,9 @@ document.getElementById('form-new-password').addEventListener('submit', async fu
             return;
         }
 
-        fireAlert('success', 'Password Updated!', 'Your password has been reset. Please proceed to login.')
-        .then(() => showStep('step-email-input'));
+       fireAlert('success', 'Success', 'Password updated!').then(() => {
+            window.location.href = "index.html#login"; 
+        });
 
     } catch(err) {
         fireAlert ('error', 'Server Error', 'Something went wrong.')

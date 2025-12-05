@@ -5,7 +5,10 @@ import {
     verifyEmail,
     sendOTP,
     confirmOTP,
-    updatePassword
+    updatePassword,
+    updatePasswordByUID
+    , updateProfile,
+    getProfile
 } from '../Controllers/authController.js';
 
 const router = express.Router();
@@ -17,5 +20,8 @@ router.post('/verify-email', verifyEmail);
 router.post('/send-otp', sendOTP);
 router.post('/confirm-otp', confirmOTP);
 router.post('/update-password', updatePassword);
+router.post('/update-profile', updateProfile);
+router.post('/get-profile', getProfile);
+router.post('/update-password-by-uid', updatePasswordByUID);
 
 export default router;

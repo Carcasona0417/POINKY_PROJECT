@@ -349,7 +349,7 @@ body {
     <div class="left-panel">
 
         <div class="left-header">
-            <img src="assets/dash-icons/Pig.png" alt="Pig Icon" class="pig-icon">
+            <img src="Dash Icons/WPig.png" alt="Pig Icon" class="pig-icon">
             <h3>Pig Details</h3>
 
             <div class="actions">
@@ -510,7 +510,6 @@ document.addEventListener("click", () => dropdown.style.display = "none");
 
     let pigLoadedFromMessage = false;
     let weightLoaded = false; // prevent duplicate fetches
-    let vaccinationLoaded = false; // prevent fallback overwrite when server data loaded
 
     // =======================================================
     // CALL PARENT ACTION SAFE (TRY DIRECT → FALLBACK POSTMESSAGE)
@@ -664,12 +663,6 @@ document.addEventListener("click", () => dropdown.style.display = "none");
         } catch (e) {
             console.warn('fetchWeightHistory failed', e);
         }
-        // Attempt to fetch vaccination history from backend and render
-        try {
-            await fetchVaccinationHistory();
-        } catch (e) {
-            console.warn('fetchVaccinationHistory failed', e);
-        }
 
 
     // Render weight UI section (initial + table) from a pig-like object with weightHistory
@@ -815,93 +808,18 @@ document.addEventListener("click", () => dropdown.style.display = "none");
             });
         }
 
-        // VACCINES: rendered by fetchVaccinationHistory (server) or fallback to parent data
-        // If parent provided `pig.vaccinations` we will still render that as a fallback
-        // Only run this fallback if server data DID NOT load (vaccinationLoaded=false)
-        if (!vaccinationLoaded) {
-            healthBody.innerHTML = "";
-            if (!pig.vaccinations?.length) {
-                emptyRow(healthBody, 5, "No vaccination records.");
-            } else {
-                pig.vaccinations.forEach((v, idx) => {
-                    healthBody.innerHTML += `
-                        <tr>
-                            <td>${v.date || v.createdAt || '-'}</td>
-                            <td>${v.dueDate || v.DueDate || '-'}</td>
-                            <td>${v.type || v.Category || v.category || '-'}</td>
-                            <td>${formatStatus(v.status || '-')}</td>
-                            <td>
-                                <button class="action-btn action-btn-edit" onclick="editVaccinationRecord(${idx})" title="Edit" aria-label="Edit vaccination" ${isInactive ? 'disabled' : ''}>
-                                    <i class="fas fa-edit" aria-hidden="true"></i>
-                                </button>
-                                <button class="action-btn action-btn-delete" onclick="deleteVaccinationRecord(${idx})" title="Delete" aria-label="Delete vaccination">
-                                    <i class="fas fa-trash" aria-hidden="true"></i>
-                                </button>
-                            </td>
-                        </tr>`;
-                });
-            }
-        }
-
-    // Fetch vaccination history from backend (tries multiple API bases)
-    async function fetchVaccinationHistory() {
-        try {
-            const candidates = getApiBase();
-            let res = null;
-            let usedBase = null;
-
-            // Build query params (include both camel and Pascal cases to match backend)
-            const params = new URLSearchParams();
-            if (pigId) {
-                params.set('pigId', pigId);
-                params.set('PigID', pigId);
-            }
-            console.debug('fetchVaccinationHistory: pigId', pigId, 'API candidates', candidates);
-
-            for (const base of candidates) {
-                const url = `${base.replace(/\/$/, '')}/api/vaccinations/get-vaccinations?${params.toString()}`;
-                try {
-                    console.debug('fetchVaccinationHistory: trying URL:', url);
-                    const attempt = await fetch(url, { method: 'GET' });
-                    if (attempt && attempt.ok) {
-                        res = attempt;
-                        usedBase = base;
-                        break;
-                    } else {
-                        console.debug('fetchVaccinationHistory: non-ok response', url, attempt && attempt.status);
-                    }
-                } catch (err) {
-                    console.debug('fetchVaccinationHistory: failed to reach', url, err && err.message);
-                }
-            }
-
-            if (!res) throw new Error('Failed to fetch vaccination records from any API base');
-            const data = await res.json();
-            console.debug('fetchVaccinationHistory: response from server', usedBase, data);
-            if (!data) return;
-            const records = (data.records && Array.isArray(data.records)) ? data.records : (Array.isArray(data) ? data : []);
-            if (data && data.success === false) console.warn('fetchVaccinationHistory: server reported failure', data.message || data.error || data);
-
-            // Normalize and render
-            healthBody.innerHTML = '';
-            if (!records.length) {
-                emptyRow(healthBody, 5, 'No vaccination records.');
-                vaccinationLoaded = true; // mark as attempted so fallback won't overwrite
-                return;
-            }
-
-            records.forEach((r, idx) => {
-                const date = r.Date || r.date || r.createdAt || '-';
-                const dueDate = r.DueDate || r.dueDate || '-';
-                const type = r.Category || r.category || r.type || '-';
-                // Force display status as Scheduled for server-returned records
-                const status = 'Scheduled';
+        // VACCINES
+        healthBody.innerHTML = "";
+        if (!pig.vaccinations?.length) {
+            emptyRow(healthBody, 5, "No vaccination records.");
+        } else {
+            pig.vaccinations.forEach((v, idx) => {
                 healthBody.innerHTML += `
                     <tr>
-                        <td>${date}</td>
-                        <td>${dueDate}</td>
-                        <td>${type}</td>
-                        <td>${status}</td>
+                        <td>${v.date}</td>
+                        <td>${v.dueDate}</td>
+                        <td>${v.type}</td>
+                        <td>${formatStatus(v.status)}</td>
                         <td>
                             <button class="action-btn action-btn-edit" onclick="editVaccinationRecord(${idx})" title="Edit" aria-label="Edit vaccination" ${isInactive ? 'disabled' : ''}>
                                 <i class="fas fa-edit" aria-hidden="true"></i>
@@ -912,12 +830,7 @@ document.addEventListener("click", () => dropdown.style.display = "none");
                         </td>
                     </tr>`;
             });
-            vaccinationLoaded = true;
-
-        } catch (err) {
-            console.warn('fetchVaccinationHistory error', err);
         }
-    }
     }
 
     // =======================================================
@@ -1069,154 +982,21 @@ window.deleteWeightRecord = async function(index) {
 };
 
 // EXPENSE RECORD HANDLERS
-// EXPENSE RECORD HANDLERS
 window.editExpenseRecord = function(index) {
-    console.log('editExpenseRecord called with index:', index);
-    const params = new URLSearchParams(window.location.search);
-    const pigId = params.get("id");
-    const farmId = params.get("farm");
-    console.log('pigId:', pigId, 'farmId:', farmId);
-    // Try to notify parent via the `recordAction` channel (Farm.js listens on this)
-    try {
-        window.parent.postMessage({ type: 'recordAction', action: 'openEditExpenseFromDetails', pigId, farmId, data: { index } }, "*");
-        return;
-    } catch (postErr) {
-        console.warn('postMessage recordAction failed for editExpense, falling back', postErr);
-    }
-
-    // Fallback: direct call if available
-    try {
-        if (window.parent && typeof window.parent.openEditExpenseFromDetails === 'function') {
-            window.parent.openEditExpenseFromDetails(pigId, farmId, { index });
-            return;
-        }
-    } catch (directErr) {
-        console.warn('Direct call fallback failed for openEditExpenseFromDetails', directErr);
-    }
-
-    // Last resort: use generic callParentAction (openAction channel)
     callParentAction("Edit Expense", "openEditExpenseFromDetails", { index });
 };
 
-window.deleteExpenseRecord = async function(index) {
-    console.log('deleteExpenseRecord called with index:', index);
-    const params = new URLSearchParams(window.location.search);
-    const pigId = params.get("id");
-    const farmId = params.get("farm");
-
-    console.log('pigId:', pigId, 'farmId:', farmId);
-
-    if (!pigId) {
-        showNotification('error', 'Pig ID not found');
-        return;
-    }
-
-    try {
-        let pig = null;
-        try {
-            if (window.parent && typeof window.parent.getPigDataById === 'function') {
-                pig = window.parent.getPigDataById(pigId, farmId);
-                console.log('Got pig from parent:', pig ? 'yes' : 'no');
-            }
-        } catch (e) {
-            console.warn('Error getting pig from parent:', e);
-        }
-
-        if (!pig || !pig.expenses || !pig.expenses[index]) {
-            showNotification('error', 'Expense record not found');
-            return;
-        }
-
-        const record = pig.expenses[index];
-
-        if (!confirm(`Delete expense record on ${record.date || 'unknown date'}? This action cannot be undone.`)) {
-            return;
-        }
-
-        // Prefer generic delete modal on parent if available
-        if (window.parent && typeof window.parent.openDeleteRecordConfirmModal === 'function') {
-            window.parent.openDeleteRecordConfirmModal('expense', pigId, farmId, index);
-        } else {
-            // Fallback to existing confirmDeleteExpense handler via postMessage/direct call
-            callParentAction("Delete Expense", "confirmDeleteExpense", { index });
-        }
-
-    } catch (err) {
-        console.warn('deleteExpenseRecord error:', err);
-        showNotification('error', 'Failed to delete expense record');
-    }
+window.deleteExpenseRecord = function(index) {
+    callParentAction("Delete Expense", "confirmDeleteExpense", { index });
 };
 
 // VACCINATION RECORD HANDLERS
 window.editVaccinationRecord = function(index) {
-    console.log('editVaccinationRecord called with index:', index);
-    const params = new URLSearchParams(window.location.search);
-    const pigId = params.get("id");
-    const farmId = params.get("farm");
-    console.log('pigId:', pigId, 'farmId:', farmId);
-    // Try to notify parent via the `recordAction` channel (Farm.js listens on this)
-    try {
-        window.parent.postMessage({ type: 'recordAction', action: 'openEditVaccinationFromDetails', pigId, farmId, data: { index } }, "*");
-        return;
-    } catch (postErr) {
-        console.warn('postMessage recordAction failed for editVaccination, falling back', postErr);
-    }
-
-    // Fallback: direct call if available
-    try {
-        if (window.parent && typeof window.parent.openEditVaccinationFromDetails === 'function') {
-            window.parent.openEditVaccinationFromDetails(pigId, farmId, { index });
-            return;
-        }
-    } catch (directErr) {
-        console.warn('Direct call fallback failed for openEditVaccinationFromDetails', directErr);
-    }
-
-    // Last resort: use generic callParentAction (openAction channel)
     callParentAction("Edit Vaccination", "openEditVaccinationFromDetails", { index });
 };
 
-window.deleteVaccinationRecord = async function(index) {
-    console.log('deleteVaccinationRecord called with index:', index);
-    const params = new URLSearchParams(window.location.search);
-    const pigId = params.get("id");
-    const farmId = params.get("farm");
-
-    console.log('pigId:', pigId, 'farmId:', farmId);
-
-    if (!pigId) {
-        showNotification('error', 'Pig ID not found');
-        return;
-    }
-
-    try {
-        let pig = null;
-        try {
-            if (window.parent && typeof window.parent.getPigDataById === 'function') {
-                pig = window.parent.getPigDataById(pigId, farmId);
-                console.log('Got pig from parent:', pig ? 'yes' : 'no');
-            }
-        } catch (e) {
-            console.warn('Error getting pig from parent:', e);
-        }
-
-        // Delegate deletion confirmation to parent — parent knows authoritative records
-        try {
-            if (window.parent && typeof window.parent.openDeleteRecordConfirmModal === 'function') {
-                window.parent.openDeleteRecordConfirmModal('vaccination', pigId, farmId, index);
-                return;
-            }
-        } catch (err) {
-            console.warn('Direct call to parent openDeleteRecordConfirmModal failed', err);
-        }
-
-        // Fallback: notify parent via openAction channel to open delete modal
-        callParentAction("Delete Vaccination", "openDeleteRecordConfirmModal", { type: 'vaccination', index });
-
-    } catch (err) {
-        console.warn('deleteVaccinationRecord error:', err);
-        showNotification('error', 'Failed to delete vaccination record');
-    }
+window.deleteVaccinationRecord = function(index) {
+    callParentAction("Delete Vaccination", "confirmDeleteVaccination", { index });
 };
 
 // Helper to call parent with optional data
@@ -1364,6 +1144,8 @@ window.deleteWeightRecordAPI = async function(pigId, farmId, recordIndex) {
     }
 };
 </script>
+</script>
+
 <!-- IMAGE VIEWER MODAL -->
 <div id="imgViewerModal" class="img-viewer-modal" aria-hidden="true">
     <div class="img-viewer-content" id="imgViewerContent" role="dialog" aria-modal="true">

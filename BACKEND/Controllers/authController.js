@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { createUser, getUserByCredentials, SendOTPEmail, updateUserPassword } from '../Logic/Login-register.js';
+import { createUser, getUserByCredentials, SendOTPEmail, updateUserPassword, updateUserProfile, getUserById, getUserByIdWithPassword, updateUserPasswordById } from '../Logic/Login-register.js';
 
 let otpStore = {};
 
@@ -25,6 +25,8 @@ export const loginUser = async (req, res, next) => {
             message: `Login successful! Welcome ${user.Username}.`,
             user: {
                 UserID: user.UserID,
+                Username: user.Username,
+                Email: user.Email
             }
         });
     } catch (err) {
@@ -79,7 +81,7 @@ export const sendOTP = async (req, res, next) => {
 
         otpStore[email] = {
             otp: otp,
-            expiresAt: Date.now() + (5 * 60 * 1000) // 5 minutes
+            expiresAt: Date.now() + (10 * 60 * 1000) // 5 minutes
         };
 
         res.send({ success: true, message: "OTP has been sent." });
@@ -131,28 +133,78 @@ export const confirmOTP = async (req, res, next) => {
         next(err);
     }
 };
-
 export const updatePassword = async (req, res, next) => {
+
     try {
         const { email, newPassword } = req.body;
-
-        // IF THE TEXTBOXES ARE EMPTY
+        
         if (!email || !newPassword) {
-            return res.status(400).send({
-                success: false,
-                message: "Email and new Password is required"
-            });
+            return res.status(400).send({ success: false, message: 'Email and newPassword are required' });
+        }
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await updateUserPassword(email, hashedPassword);
+        return res.send({ success: true, message: 'Password Successfully Updated!' });
+    }
+    catch (err) {
+        next(err);
+    }
+}
+
+export const updatePasswordByUID = async (req, res, next) => {
+    try {
+        // Expecting: { userId, oldPassword, newPassword }
+        const { userId, oldPassword, newPassword } = req.body;
+
+        if (!userId || !oldPassword || !newPassword) {
+            return res.status(400).send({ success: false, message: 'userId, oldPassword and newPassword are required' });
         }
 
+        const user = await getUserByIdWithPassword(userId);
+        if (!user) return res.status(404).send({ success: false, message: 'User not found' });
+
+        const match = await bcrypt.compare(oldPassword, user.Password);
+        if (!match) return res.status(401).send({ success: false, message: 'Old password is incorrect' });
+
         const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await updateUserPasswordById(userId, hashedPassword);
 
-        await updateUserPassword(email, hashedPassword);
+        return res.send({ success: true, message: 'Password Successfully Updated!' });
+    } catch (err) {
+        next(err);
+    }
+};
 
-        return res.send({
-            success: true,
-            message: "Password Successfully Updated!"
-        });
-        
+// Update user profile (username/email)
+export const updateProfile = async (req, res, next) => {
+    try {
+        const { userId, username, email } = req.body;
+
+        if (!userId) {
+            return res.status(400).send({ success: false, message: 'UserID is required' });
+        }
+        if (!username || !email) {
+            return res.status(400).send({ success: false, message: 'Username and email are required' });
+        }
+
+        await updateUserProfile(userId, username, email);
+
+        return res.send({ success: true, message: 'Profile updated successfully' });
+    } catch (err) {
+        if (err.message && err.message.includes('Email already in use')) {
+            return res.status(409).send({ success: false, message: err.message });
+        }
+        next(err);
+    }
+};
+
+// Get profile by userId
+export const getProfile = async (req, res, next) => {
+    try {
+        const { userId } = req.body;
+        if (!userId) return res.status(400).send({ success: false, message: 'userId required' });
+        const user = await getUserById(userId);
+        if (!user) return res.status(404).send({ success: false, message: 'User not found' });
+        return res.send({ success: true, user });
     } catch (err) {
         next(err);
     }
