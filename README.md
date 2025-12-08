@@ -1,4 +1,4 @@
-# POINKY_PROJECT
+# POINKY_PROJECT ( in FRONTEND folder open mini-capstone folder )
 
 # SYSTEM INTRODUCTION
 Farmers and pig owners often find it difficult to monitor and manage their incomes, expenses, Buying feeds schedules, vaccination records, and growth records manually. Traditional notebooks and physical logs are prone to loss or inaccuracy, and there is no centralized platform to track the stock of feeds, vaccination schedules, and pig conditions in real time.
